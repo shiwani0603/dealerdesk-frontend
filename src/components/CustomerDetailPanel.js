@@ -323,8 +323,8 @@ const CustomerDetailPanel = ({ customerId, planId, planType, onClose, onLogCall 
                   <div className="grid grid-cols-2 gap-x-4">
                     <Field label="Status" value={openInsurancePlan.planStatus} />
                     <Field label="Category" value={openInsurancePlan.policyCategory} />
-                    <Field label="Next Follow-up" value={formatDate(openInsurancePlan.nextFollowupDate)} />
-                    <Field label="Auto-close Date" value={formatDate(openInsurancePlan.autoCloseDate)} />
+                    <Field label="Next Follow-up" value={formatDate(openInsurancePlan?.nextFollowupDate)} />
+                    <Field label="Auto-close Date" value={formatDate(openInsurancePlan?.autoCloseDate)} />
                   </div>
                 </div>
               )}
@@ -379,15 +379,15 @@ const CustomerDetailPanel = ({ customerId, planId, planType, onClose, onLogCall 
                 <div className="bg-green-50 rounded-xl p-4 mb-3 border border-green-200">
                   <p className="text-xs font-medium text-green-600 mb-2">ACTIVE PLAN</p>
                   <div className="grid grid-cols-2 gap-x-4">
-                    <Field label="Service Due" value={openServicePlan.currentServiceDue} />
-                    <Field label="Due Date" value={formatDate(openServicePlan.calculatedNextDueDate)} highlight />
-                    <Field label="Next Follow-up" value={formatDate(openServicePlan.nextFollowupDate)} />
-                    <Field label="Auto-close" value={formatDate(openServicePlan.autoCloseDate)} />
+                    <Field label="Service Due" value={openServicePlan?.currentServiceDue} />
+                    <Field label="Due Date" value={formatDate(openServicePlan?.calculatedNextDueDate)} highlight />
+                    <Field label="Next Follow-up" value={formatDate(openServicePlan?.nextFollowupDate)} />
+                    <Field label="Auto-close" value={formatDate(openServicePlan?.autoCloseDate)} />
                   </div>
-                  {openServicePlan.appointmentDate && (
+                  {openServicePlan?.appointmentDate && (
                     <div className="mt-2 bg-green-100 rounded-lg p-2">
                       <p className="text-xs text-green-700 font-medium">
-                        📅 Appointment: {formatDate(openServicePlan.appointmentDate)} at {openServicePlan.appointmentTime || 'TBD'}
+                        📅 Appointment: {formatDate(openServicePlan?.appointmentDate)} at {openServicePlan.appointmentTime || 'TBD'}
                       </p>
                       <p className="text-xs text-green-600">
                         {openServicePlan.appointmentType === 'pickup' ? '🚗 Pickup' : '🏃 Self Visit'}

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { dashboardService, insuranceService, serviceService } from '../services/api';
 import CustomerDetailPanel from '../components/CustomerDetailPanel';
 import toast from 'react-hot-toast';
+import { InsurancePlanTable, ServicePlanTable } from '../components/PlanCards';
 
 const StatCard = ({ title, value, color, icon }) => (
   <div className={`bg-white rounded-xl p-5 shadow-sm border-l-4 ${color}`}>
@@ -16,245 +17,6 @@ const StatCard = ({ title, value, color, icon }) => (
     </div>
   </div>
 );
-
-const InsurancePlanTable = ({ plan, onOpenDetail }) => {
-  const customer = plan.customer;
-  const record = plan.latestRecord;
-  const lastLog = plan.followUpLogs?.[0];
-  const attemptCount = plan._count?.followUpLogs || 0;
-  const isOverdue = plan.nextFollowupDate && new Date(plan.nextFollowupDate) < new Date();
-  const isRedAlert = plan.autoCloseDate &&
-    new Date(plan.autoCloseDate) <= new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
-
-  const primaryMobile = customer?.contacts?.find(c => c.contactType === 'mobile' && c.isPrimary)?.value
-    || customer?.contacts?.find(c => c.contactType === 'mobile')?.value;
-
-  const renewalYear = plan.renewalCount > 0 ? `${plan.renewalCount + 1}${['st','nd','rd'][plan.renewalCount] || 'th'} Renewal` : '1st Renewal';
-
-  const outcomeLabel = {
-    appointment_fixed: '📅 Appointment Fixed',
-    appointment_discussion: '💬 Appointment Discussion',
-    interested_follow_up: '👍 Interested',
-    not_interested_follow_up: '👎 Not Interested',
-    not_connected: '📵 Not Connected',
-    payment_received_policy_pending: '💰 Payment Pending',
-    payment_received_policy_done: '✅ Payment Done',
-    lost_done_elsewhere: '❌ Lost',
-    invalid_data: '⚠️ Invalid Data',
-  };
-
-  return (
-    <div
-      className={`bg-white rounded-xl shadow-sm border cursor-pointer hover:shadow-md transition-all ${
-        isRedAlert ? 'border-red-300' : isOverdue ? 'border-orange-300' : 'border-gray-200'
-      }`}
-      onClick={() => onOpenDetail(plan, 'insurance')}
-    >
-      {/* Red alert banner */}
-      {isRedAlert && (
-        <div className="bg-red-50 px-4 py-1.5 rounded-t-xl border-b border-red-200">
-          <p className="text-xs text-red-600 font-medium">
-            🔴 Auto-close: {new Date(plan.autoCloseDate).toLocaleDateString('en-IN')}
-          </p>
-        </div>
-      )}
-
-      <div className="p-4">
-        {/* Top row - customer name + call button */}
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold text-gray-900">{customer?.name || 'Unknown Customer'}</h3>
-              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">🛡️ {renewalYear}</span>
-              {customer?.hasIncompleteData && (
-                <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">⚠️ Incomplete</span>
-              )}
-            </div>
-            <p className="text-sm text-gray-500 mt-0.5">
-              {customer?.registrationNumber || customer?.chassisNumber} • {customer?.make} {customer?.model}
-            </p>
-          </div>
-          {primaryMobile && (
-            <a
-              href={`tel:${primaryMobile}`}
-              onClick={(e) => e.stopPropagation()}
-              className="ml-3 w-10 h-10 flex items-center justify-center bg-green-500 hover:bg-green-600 text-white rounded-full text-lg transition-colors flex-shrink-0"
-              title={primaryMobile}
-            >
-              📞
-            </a>
-          )}
-        </div>
-
-        {/* Insurance details row */}
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          <div className="bg-blue-50 rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-400">Insurer</p>
-            <p className="text-sm font-medium text-blue-700 truncate">{record?.insurerName || '—'}</p>
-          </div>
-          <div className="bg-orange-50 rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-400">Expiry Date</p>
-            <p className="text-sm font-medium text-orange-700">
-              {record?.policyExpiryDate ? new Date(record.policyExpiryDate).toLocaleDateString('en-IN') : '—'}
-            </p>
-          </div>
-        </div>
-
-        {/* Bottom row - last action + attempts + followup date */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {lastLog ? (
-              <span className="text-xs text-gray-500">
-                {outcomeLabel[lastLog.callOutcome] || lastLog.callOutcome} • {new Date(lastLog.loggedAt).toLocaleDateString('en-IN')}
-              </span>
-            ) : (
-              <span className="text-xs text-gray-400">No calls yet</span>
-            )}
-            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-              {attemptCount} attempt{attemptCount !== 1 ? 's' : ''}
-            </span>
-          </div>
-          <div className="text-right">
-            {plan.nextFollowupDate && (
-              <p className={`text-xs font-medium ${isOverdue ? 'text-red-600' : 'text-gray-500'}`}>
-                {isOverdue ? '⚠️ ' : '📅 '}
-                {new Date(plan.nextFollowupDate).toLocaleDateString('en-IN')}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ServicePlanTable = ({ plan, onOpenDetail }) => {
-  const customer = plan.customer;
-  const record = plan.latestRecord;
-  const lastLog = plan.followUpLogs?.[0];
-  const attemptCount = plan._count?.followUpLogs || 0;
-  const isOverdue = plan.nextFollowupDate && new Date(plan.nextFollowupDate) < new Date();
-  const isRedAlert = plan.autoCloseDate &&
-    new Date(plan.autoCloseDate) <= new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
-
-  const primaryMobile = customer?.contacts?.find(c => c.contactType === 'mobile' && c.isPrimary)?.value
-    || customer?.contacts?.find(c => c.contactType === 'mobile')?.value;
-
-  const outcomeLabel = {
-    appointment_fixed: '📅 Appointment Fixed',
-    appointment_discussion: '💬 Appointment Discussion',
-    interested_follow_up: '👍 Interested',
-    not_interested_follow_up: '👎 Not Interested',
-    not_connected: '📵 Not Connected',
-    vehicle_reported: '✅ Vehicle Reported',
-    lost_done_elsewhere: '❌ Lost',
-    invalid_data: '⚠️ Invalid Data',
-  };
-
-  return (
-    <div
-      className={`bg-white rounded-xl shadow-sm border cursor-pointer hover:shadow-md transition-all ${
-        isRedAlert ? 'border-red-300' : isOverdue ? 'border-orange-300' : 'border-gray-200'
-      }`}
-      onClick={() => onOpenDetail(plan, 'service')}
-    >
-      {isRedAlert && (
-        <div className="bg-red-50 px-4 py-1.5 rounded-t-xl border-b border-red-200">
-          <p className="text-xs text-red-600 font-medium">
-            🔴 Auto-close: {new Date(plan.autoCloseDate).toLocaleDateString('en-IN')}
-          </p>
-        </div>
-      )}
-
-      <div className="p-4">
-        {/* Top row */}
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold text-gray-900">{customer?.name || 'Unknown Customer'}</h3>
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                🔧 {plan.currentServiceDue || 'Service Due'}
-              </span>
-              {customer?.hasIncompleteData && (
-                <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">⚠️ Incomplete</span>
-              )}
-            </div>
-            <p className="text-sm text-gray-500 mt-0.5">
-              {customer?.registrationNumber || customer?.chassisNumber} • {customer?.make} {customer?.model}
-            </p>
-          </div>
-          {primaryMobile && (
-            <a
-              href={`tel:${primaryMobile}`}
-              onClick={(e) => e.stopPropagation()}
-              className="ml-3 w-10 h-10 flex items-center justify-center bg-green-500 hover:bg-green-600 text-white rounded-full text-lg transition-colors flex-shrink-0"
-              title={primaryMobile}
-            >
-              📞
-            </a>
-          )}
-        </div>
-
-        {/* Service details row */}
-        <div className="grid grid-cols-3 gap-2 mb-3">
-          <div className="bg-green-50 rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-400">Due Date</p>
-            <p className="text-sm font-medium text-green-700">
-              {plan.calculatedNextDueDate ? new Date(plan.calculatedNextDueDate).toLocaleDateString('en-IN') : '—'}
-            </p>
-          </div>
-          <div className="bg-gray-50 rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-400">Last Mileage</p>
-            <p className="text-sm font-medium text-gray-700">
-              {record?.mileageAtService ? `${record.mileageAtService} km` : '—'}
-            </p>
-          </div>
-          <div className="bg-gray-50 rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-400">Last Service</p>
-            <p className="text-sm font-medium text-gray-700 truncate">
-              {record?.serviceType || '—'}
-            </p>
-          </div>
-        </div>
-
-        {/* Appointment if booked */}
-        {plan.appointmentDate && (
-          <div className="bg-blue-50 rounded-lg px-3 py-2 mb-2">
-            <p className="text-xs text-blue-600 font-medium">
-              📅 Appointment: {new Date(plan.appointmentDate).toLocaleDateString('en-IN')}
-              {plan.appointmentTime && ` at ${plan.appointmentTime}`}
-              {plan.appointmentType && ` • ${plan.appointmentType === 'pickup' ? '🚗 Pickup' : '🏃 Self Visit'}`}
-            </p>
-          </div>
-        )}
-
-        {/* Bottom row */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {lastLog ? (
-              <span className="text-xs text-gray-500">
-                {outcomeLabel[lastLog.callOutcome] || lastLog.callOutcome} • {new Date(lastLog.loggedAt).toLocaleDateString('en-IN')}
-              </span>
-            ) : (
-              <span className="text-xs text-gray-400">No calls yet</span>
-            )}
-            <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-              {attemptCount} attempt{attemptCount !== 1 ? 's' : ''}
-            </span>
-          </div>
-          <div className="text-right">
-            {plan.nextFollowupDate && (
-              <p className={`text-xs font-medium ${isOverdue ? 'text-red-600' : 'text-gray-500'}`}>
-                {isOverdue ? '⚠️ ' : '📅 '}
-                {new Date(plan.nextFollowupDate).toLocaleDateString('en-IN')}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const LogCallModal = ({ plan, module, onClose, onSuccess }) => {
   const [form, setForm] = useState({
@@ -298,7 +60,7 @@ const LogCallModal = ({ plan, module, onClose, onSuccess }) => {
     if (!form.callOutcome) { toast.error('Please select a call outcome'); return; }
     setLoading(true);
     try {
-      const logData = { ...form, dealershipId: plan.dealershipId };
+      const logData = { ...form, dealershipId: plan?.dealershipId };
       if (module === 'insurance') {
         await insuranceService.logCall(plan.id, logData);
       } else {
@@ -314,7 +76,7 @@ const LogCallModal = ({ plan, module, onClose, onSuccess }) => {
     }
   };
 
-  const customer = plan.customer;
+  const customer = plan?.customer;
   const primaryMobile = customer?.contacts?.find(c => c.contactType === 'mobile' && c.isPrimary)?.value
     || customer?.contacts?.find(c => c.contactType === 'mobile')?.value;
 
@@ -517,7 +279,7 @@ const TelecallerDashboard = () => {
   useEffect(() => { loadData(); }, []);
 
   const handleOpenDetail = (plan, module) => {
-    setSelectedCustomer({ customerId: plan.customerId, planId: plan.id, planType: module, plan });
+    setSelectedCustomer({ customerId: plan?.customerId, planId: plan.id, planType: module, plan });
   };
 
   const currentPlans = activeModule === 'insurance' ? insurancePlans : servicePlans;

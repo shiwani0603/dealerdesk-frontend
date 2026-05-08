@@ -39,15 +39,15 @@ export const InsurancePlanTable = ({ plans, onOpenDetail }) => {
         <div className="col-span-1 text-center">Follow-up</div>
         <div className="col-span-1 text-center">Calls</div>
       </div>
-      {plans.map((plan, i) => {
+      {plans.filter(p => p !== undefined && p !== null).map((plan, i) => {
         if (!plan) return null;
-        const customer = plan.customer || {};
-        const record = plan.latestRecord || {};
-        const lastLog = (plan.followUpLogs || [])[0];
-        const attemptCount = plan._count?.followUpLogs || 0;
-        const isOverdue = plan.nextFollowupDate && new Date(plan.nextFollowupDate) < new Date();
-        const isRedAlert = plan.autoCloseDate && new Date(plan.autoCloseDate) <= new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
-        const renewalYear = plan.renewalCount > 0 ? `${plan.renewalCount + 1}${['st','nd','rd'][plan.renewalCount] || 'th'}` : '1st';
+        const customer = plan?.customer || {};
+        const record = plan?.latestRecord || {};
+        const lastLog = (plan?.followUpLogs || [])[0];
+        const attemptCount = plan?._count?.followUpLogs || 0;
+        const isOverdue = plan?.nextFollowupDate && new Date(plan?.nextFollowupDate) < new Date();
+        const isRedAlert = plan?.autoCloseDate && new Date(plan?.autoCloseDate) <= new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+        const renewalYear = plan?.renewalCount > 0 ? `${plan?.renewalCount + 1}${['st','nd','rd'][plan?.renewalCount] || 'th'}` : '1st';
         const contacts = customer.contacts || [];
         const primaryMobile = contacts.find(c => c.contactType === 'mobile' && c.isPrimary)?.value || contacts.find(c => c.contactType === 'mobile')?.value;
         return (
@@ -67,7 +67,7 @@ export const InsurancePlanTable = ({ plans, onOpenDetail }) => {
               {lastLog ? (<><p className="text-xs text-gray-700 truncate">{outcomeLabel[lastLog.callOutcome] || lastLog.callOutcome}</p><p className="text-xs text-gray-400">{formatDate(lastLog.loggedAt)}</p></>) : (<p className="text-xs text-gray-400 italic">No calls yet</p>)}
             </div>
             <div className="col-span-1 text-center"><span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium">{renewalYear}</span></div>
-            <div className="col-span-1 text-center"><span className={`text-xs font-medium ${isOverdue ? 'text-red-600' : 'text-gray-600'}`}>{formatDate(plan.nextFollowupDate)}</span></div>
+            <div className="col-span-1 text-center"><span className={`text-xs font-medium ${isOverdue ? 'text-red-600' : 'text-gray-600'}`}>{formatDate(plan?.nextFollowupDate)}</span></div>
             <div className="col-span-1 text-center"><span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">{attemptCount}</span></div>
           </div>
         );
@@ -99,10 +99,10 @@ export const ServicePlanTable = ({ plans, onOpenDetail }) => {
       {plans.map((plan, i) => {
         if (!plan) return null;
         const customer = plan.customer || {};
-        const lastLog = (plan.followUpLogs || [])[0];
-        const attemptCount = plan._count?.followUpLogs || 0;
-        const isOverdue = plan.nextFollowupDate && new Date(plan.nextFollowupDate) < new Date();
-        const isRedAlert = plan.autoCloseDate && new Date(plan.autoCloseDate) <= new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+        const lastLog = (plan?.followUpLogs || [])[0];
+        const attemptCount = plan?._count?.followUpLogs || 0;
+        const isOverdue = plan?.nextFollowupDate && new Date(plan?.nextFollowupDate) < new Date();
+        const isRedAlert = plan?.autoCloseDate && new Date(plan?.autoCloseDate) <= new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
         const contacts = customer.contacts || [];
         const primaryMobile = contacts.find(c => c.contactType === 'mobile' && c.isPrimary)?.value || contacts.find(c => c.contactType === 'mobile')?.value;
         return (
@@ -115,14 +115,14 @@ export const ServicePlanTable = ({ plans, onOpenDetail }) => {
               {primaryMobile ? (<><a href={`tel:${primaryMobile}`} onClick={(e) => e.stopPropagation()} className="w-7 h-7 flex items-center justify-center bg-green-500 hover:bg-green-600 text-white rounded-full text-xs transition-colors flex-shrink-0">📞</a><span className="text-xs text-blue-600 font-medium truncate">{primaryMobile}</span></>) : (<span className="text-xs text-gray-400">—</span>)}
             </div>
             <div className="col-span-2">
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">🔧 {plan.currentServiceDue || 'Service'}</span>
-              {plan.appointmentDate && <p className="text-xs text-blue-600 mt-0.5">📅 {formatDate(plan.appointmentDate)} {plan.appointmentType === 'pickup' ? '🚗' : '🏃'}</p>}
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">🔧 {plan?.currentServiceDue || 'Service'}</span>
+              {plan?.appointmentDate && <p className="text-xs text-blue-600 mt-0.5">📅 {formatDate(plan?.appointmentDate)} {plan.appointmentType === 'pickup' ? '🚗' : '🏃'}</p>}
             </div>
             <div className="col-span-2 min-w-0">
               {lastLog ? (<><p className="text-xs text-gray-700 truncate">{outcomeLabel[lastLog.callOutcome] || lastLog.callOutcome}</p><p className="text-xs text-gray-400">{formatDate(lastLog.loggedAt)}</p></>) : (<p className="text-xs text-gray-400 italic">No calls yet</p>)}
             </div>
-            <div className="col-span-1 text-center"><span className={`text-xs font-medium ${isOverdue ? 'text-red-600' : 'text-green-700'}`}>{formatDate(plan.calculatedNextDueDate)}</span></div>
-            <div className="col-span-1 text-center"><span className={`text-xs font-medium ${isOverdue ? 'text-red-600' : 'text-gray-600'}`}>{formatDate(plan.nextFollowupDate)}</span></div>
+            <div className="col-span-1 text-center"><span className={`text-xs font-medium ${isOverdue ? 'text-red-600' : 'text-green-700'}`}>{formatDate(plan?.calculatedNextDueDate)}</span></div>
+            <div className="col-span-1 text-center"><span className={`text-xs font-medium ${isOverdue ? 'text-red-600' : 'text-gray-600'}`}>{formatDate(plan?.nextFollowupDate)}</span></div>
             <div className="col-span-1 text-center"><span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-medium">{attemptCount}</span></div>
           </div>
         );
