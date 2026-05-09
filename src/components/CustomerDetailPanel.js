@@ -135,7 +135,7 @@ const CustomerDetailPanel = ({ customerId, planId, planType, onClose, onLogCall 
             </p>
           </div>
           <button
-  onClick={() => onLogCall && onLogCall()}
+  onClick={() => onLogCall && onLogCall(customer?.insurancePlans?.[0] || customer?.servicePlans?.[0], planType)}
   className="px-3 py-1.5 bg-white text-blue-600 font-medium text-sm rounded-lg hover:bg-blue-50 transition-colors mr-2"
 >
   📞 Log Call
@@ -447,6 +447,16 @@ const CustomerDetailPanel = ({ customerId, planId, planType, onClose, onLogCall 
                   </div>
                 ) : (
                   <div className="space-y-3">
+                    {customer.followUpLogs?.map((log, i) => (
+  <div key={i} className="py-2 border-b border-gray-100 last:border-0">
+    <div className="flex items-center justify-between">
+      <span className="text-xs font-medium text-gray-700">{log.callOutcome?.replace(/_/g, ' ')}</span>
+      <span className="text-xs text-gray-400">{formatDate(log.loggedAt)}</span>
+    </div>
+    <p className="text-xs text-gray-500 mt-0.5">{log.planType} • {log.loggedBy?.name || 'System'}</p>
+    {log.notes && <p className="text-xs text-gray-600 mt-0.5">{log.notes}</p>}
+  </div>
+))}
                     {customer.notes?.map((note, i) => (
                       <div key={i} className="bg-amber-50 rounded-lg p-3 border border-amber-200">
                         <div className="flex items-center justify-between mb-1">
