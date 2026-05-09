@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { dashboardService, insuranceService, serviceService } from '../services/api';
 import CustomerDetailPanel from '../components/CustomerDetailPanel';
+import QuickLogModal from '../components/QuickLogModal';
 import toast from 'react-hot-toast';
 import { InsurancePlanTable, ServicePlanTable } from '../components/PlanCards';
+import SearchModal from '../components/SearchModal';
 
 const StatCard = ({ title, value, color, icon }) => (
   <div className={`bg-white rounded-xl p-5 shadow-sm border-l-4 ${color}`}>
@@ -209,7 +211,7 @@ const LogCallModal = ({ plan, module, onClose, onSuccess }) => {
             )}
 
             {/* Next followup */}
-            {!isClosingOutcome && (
+            {!isClosingOutcome && form.callOutcome !== 'appointment_fixed' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Next Follow-up Date</label>
                 <input type="date" value={form.nextFollowupDate}
@@ -256,8 +258,11 @@ const TelecallerDashboard = () => {
   const [activeTab, setActiveTab] = useState('today');
   const [activeModule, setActiveModule] = useState('insurance');
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [quickLogPlan, setQuickLogPlan] = useState(null);
+  const [showSearch, setShowSearch] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
+  
 
   const loadData = async () => {
     try {
@@ -310,7 +315,7 @@ const TelecallerDashboard = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/search')} className="p-2 text-gray-500 hover:text-blue-600 transition-colors" title="Search">🔍</button>
+            <button onClick={() => setShowSearch(true)} className="p-2 text-gray-500 hover:text-blue-600 transition-colors" title="Search">🔍</button>
             <button onClick={logout} className="text-sm text-gray-500 hover:text-red-600 transition-colors">Logout</button>
           </div>
         </div>
@@ -359,9 +364,9 @@ const TelecallerDashboard = () => {
             </div>
           ) : (
             activeModule === 'insurance' ? (
-              <InsurancePlanTable plans={displayPlans} onOpenDetail={handleOpenDetail} />
+              <InsurancePlanTable plans={displayPlans} onOpenDetail={handleOpenDetail} onQuickLog={(plan, module) => setQuickLogPlan({ plan, module })} />
             ) : (
-              <ServicePlanTable plans={displayPlans} onOpenDetail={handleOpenDetail} />
+              <ServicePlanTable plans={displayPlans} onOpenDetail={handleOpenDetail} onQuickLog={(plan, module) => setQuickLogPlan({ plan, module })} />
             )
           )}
         </div>
@@ -390,6 +395,23 @@ const TelecallerDashboard = () => {
           onSuccess={loadData}
         />
       )}
+      {quickLogPlan && (
+  <QuickLogModal
+    plan={quickLogPlan.plan}
+    module={quickLogPlan.module}
+    onClose={() => setQuickLogPlan(null)}
+    onSuccess={loadData}
+    onFullLog={(plan, module) => setSelectedPlan({ plan, module })}
+  />
+)}
+{showSearch && (
+  <SearchModal
+    onClose={() => setShowSearch(false)}
+    onSelectCustomer={(customerId) => {
+      setSelectedCustomer({ customerId, planId: null, planType: null });
+    }}
+  />
+)}
     </div>
   );
 };
