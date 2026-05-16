@@ -7,6 +7,7 @@ import QuickLogModal from '../components/QuickLogModal';
 import toast from 'react-hot-toast';
 import { InsurancePlanTable, ServicePlanTable } from '../components/PlanCards';
 import SearchModal from '../components/SearchModal';
+import Navbar from '../components/Navbar';
 
 const StatCard = ({ title, value, color, icon }) => (
   <div className={`bg-white rounded-xl p-5 shadow-sm border-l-4 ${color}`}>
@@ -305,21 +306,7 @@ const TelecallerDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div>
-            <h1 className="font-bold text-gray-900">DealerDesk CRM</h1>
-            <p className="text-xs text-gray-500">
-              {user?.name || user?.email || 'Admin'}
-              {user?.role === 'super_admin' ? ' (Super Admin)' : ` • ${user?.role}`}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button onClick={() => setShowSearch(true)} className="p-2 text-gray-500 hover:text-blue-600 transition-colors" title="Search">🔍</button>
-            <button onClick={logout} className="text-sm text-gray-500 hover:text-red-600 transition-colors">Logout</button>
-          </div>
-        </div>
-      </div>
+    <Navbar onSearchClick={() => setShowSearch(true)} />
 
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* Stats */}

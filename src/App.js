@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import AdminLogin from './pages/AdminLogin';
 import TelecallerDashboard from './pages/TelecallerDashboard';
+import UploadPage from './pages/UploadPage';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -42,7 +43,14 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
+      <Route
+  path="/upload"
+  element={
+    <ProtectedRoute allowedRoles={['manager', 'super_admin']}>
+      <UploadPage />
+    </ProtectedRoute>
+  }
+/>
       <Route
         path="/manager"
         element={
