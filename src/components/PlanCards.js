@@ -46,16 +46,35 @@ export const InsurancePlanTable = ({ plans, onOpenDetail, onQuickLog }) => {
         const attemptCount = plan?._count?.followUpLogs || 0;
         const isOverdue = plan?.nextFollowupDate && new Date(plan.nextFollowupDate) < new Date();
         const isRedAlert = plan?.autoCloseDate && new Date(plan.autoCloseDate) <= new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
+       
+       
         const getRenewalYear = () => {
-  const purchaseDate = plan?.customer?.vehiclePurchaseDate;
+          console.log('mfgYear:', plan?.customer?.manufacturingYear, 'purchaseDate:', plan?.customer?.vehiclePurchaseDate);
   const expiryDate = plan?.latestRecord?.policyExpiryDate;
-  if (!purchaseDate || !expiryDate) return plan?.renewalCount > 0 ? `${plan.renewalCount + 1}th` : '1st';
-  const purchaseYear = new Date(purchaseDate).getFullYear();
+  if (!expiryDate) return '?';
+  
   const expiryYear = new Date(expiryDate).getFullYear();
-  const renewalNum = expiryYear - purchaseYear;
-  if (renewalNum <= 0) return '1st';
-  const suffix = renewalNum === 1 ? 'st' : renewalNum === 2 ? 'nd' : renewalNum === 3 ? 'rd' : 'th';
-  return `${renewalNum}${suffix}`;
+  
+  // Use purchase date first
+  const purchaseDate = plan?.customer?.vehiclePurchaseDate;
+  if (purchaseDate) {
+    const purchaseYear = new Date(purchaseDate).getFullYear();
+    const renewalNum = expiryYear - purchaseYear;
+    if (renewalNum <= 0) return '1st';
+    const suffix = renewalNum === 1 ? 'st' : renewalNum === 2 ? 'nd' : renewalNum === 3 ? 'rd' : 'th';
+    return `${renewalNum}${suffix}`;
+  }
+  
+  // Fallback to manufacturing year
+  const mfgYear = plan?.customer?.manufacturingYear;
+  if (mfgYear) {
+    const renewalNum = expiryYear - mfgYear;
+    if (renewalNum <= 0) return '1st';
+    const suffix = renewalNum === 1 ? 'st' : renewalNum === 2 ? 'nd' : renewalNum === 3 ? 'rd' : 'th';
+    return `${renewalNum}~`; // ~ means approximate
+  }
+  
+  return '?';
 };
 const renewalYear = getRenewalYear();
         const contacts = customer.contacts || [];
