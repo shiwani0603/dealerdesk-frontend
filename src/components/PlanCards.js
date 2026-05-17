@@ -46,7 +46,18 @@ export const InsurancePlanTable = ({ plans, onOpenDetail, onQuickLog }) => {
         const attemptCount = plan?._count?.followUpLogs || 0;
         const isOverdue = plan?.nextFollowupDate && new Date(plan.nextFollowupDate) < new Date();
         const isRedAlert = plan?.autoCloseDate && new Date(plan.autoCloseDate) <= new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
-        const renewalYear = plan?.renewalCount > 0 ? `${plan.renewalCount + 1}${['st','nd','rd'][plan.renewalCount] || 'th'}` : '1st';
+        const getRenewalYear = () => {
+  const purchaseDate = plan?.customer?.vehiclePurchaseDate;
+  const expiryDate = plan?.latestRecord?.policyExpiryDate;
+  if (!purchaseDate || !expiryDate) return plan?.renewalCount > 0 ? `${plan.renewalCount + 1}th` : '1st';
+  const purchaseYear = new Date(purchaseDate).getFullYear();
+  const expiryYear = new Date(expiryDate).getFullYear();
+  const renewalNum = expiryYear - purchaseYear;
+  if (renewalNum <= 0) return '1st';
+  const suffix = renewalNum === 1 ? 'st' : renewalNum === 2 ? 'nd' : renewalNum === 3 ? 'rd' : 'th';
+  return `${renewalNum}${suffix}`;
+};
+const renewalYear = getRenewalYear();
         const contacts = customer.contacts || [];
         const primaryMobile = contacts.find(c => c.contactType === 'mobile' && c.isPrimary)?.value || contacts.find(c => c.contactType === 'mobile')?.value;
 
