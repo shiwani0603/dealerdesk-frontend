@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { dashboardService, insuranceService, serviceService } from '../services/api';
 import CustomerDetailPanel from '../components/CustomerDetailPanel';
