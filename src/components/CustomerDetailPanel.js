@@ -42,9 +42,9 @@ const CustomerDetailPanel = ({ customerId, planId, planType, onClose, onLogCall 
   const [editingNote, setEditingNote] = useState(false);
   const [stickyNote, setStickyNote] = useState('');
 
-  useEffect(() => {
-    loadCustomer();
-  }, [customerId]);
+useEffect(() => {
+  loadCustomer();
+}, [customerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadCustomer = async () => {
     try {
