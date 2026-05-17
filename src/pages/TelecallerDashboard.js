@@ -251,7 +251,7 @@ const LogCallModal = ({ plan, module, onClose, onSuccess }) => {
 };
 
 const TelecallerDashboard = () => {
-  const { logout } = useAuth();
+  useAuth();
   const [stats, setStats] = useState(null);
   const [insurancePlans, setInsurancePlans] = useState({ today: [], overdue: [], redAlert: [] });
   const [servicePlans, setServicePlans] = useState({ today: [], overdue: [], redAlert: [] });
