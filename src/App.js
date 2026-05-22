@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import AdminLogin from './pages/AdminLogin';
 import TelecallerDashboard from './pages/TelecallerDashboard';
+import ManagerDashboard from './pages/ManagerDashboard';
 import UploadPage from './pages/UploadPage';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -55,7 +56,15 @@ const AppRoutes = () => {
         path="/manager"
         element={
           <ProtectedRoute allowedRoles={['manager', 'super_admin']}>
-            <TelecallerDashboard />
+            <ManagerDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/manager-dashboard"
+        element={
+          <ProtectedRoute allowedRoles={['manager', 'super_admin']}>
+            <ManagerDashboard />
           </ProtectedRoute>
         }
       />

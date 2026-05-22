@@ -39,7 +39,9 @@ export const authService = {
 export const dashboardService = {
   getTelecaller: () => api.get('/dashboard/telecaller'),
   getTeamLeader: () => api.get('/dashboard/team-leader'),
-  getManager: (dealershipId) => api.get(`/dashboard/manager?dealershipId=${dealershipId}`),
+  getManager: () => api.get('/dashboard/manager'),
+  getPerformanceReport: (fromDate, toDate) =>
+    api.get(`/dashboard/reports/telecaller-performance?fromDate=${fromDate}&toDate=${toDate}`),
 };
 
 export const insuranceService = {

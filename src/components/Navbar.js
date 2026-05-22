@@ -10,6 +10,7 @@ const Navbar = ({ onSearchClick }) => {
   const isActive = (path) => location.pathname === path;
 
   const canUpload = ['manager', 'super_admin'].includes(user?.role);
+  const canViewTeam = ['manager', 'super_admin'].includes(user?.role);
 
   return (
     <div className="bg-white shadow-sm sticky top-0 z-10">
@@ -35,6 +36,17 @@ const Navbar = ({ onSearchClick }) => {
           >
             📋 Plans
           </button>
+
+          {canViewTeam && (
+            <button
+              onClick={() => navigate('/manager-dashboard')}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive('/manager-dashboard') || isActive('/manager') ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              👥 Team
+            </button>
+          )}
 
           {canUpload && (
             <button
