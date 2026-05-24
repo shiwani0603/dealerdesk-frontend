@@ -5,8 +5,14 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import AdminLogin from './pages/AdminLogin';
 import TelecallerDashboard from './pages/TelecallerDashboard';
+import TeamLeaderDashboard from './pages/TeamLeaderDashboard';
 import ManagerDashboard from './pages/ManagerDashboard';
 import UploadPage from './pages/UploadPage';
+import UserManagement from './pages/UserManagement';
+import DailyCallReport from './pages/DailyCallReport';
+import AdvancedSearch from './pages/AdvancedSearch';
+import SettingsPage from './pages/SettingsPage';
+import AdminPanel from './pages/AdminPanel';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -40,14 +46,14 @@ const AppRoutes = () => {
         path="/dashboard"
         element={
           <ProtectedRoute allowedRoles={['telecaller', 'team_leader', 'manager', 'super_admin']}>
-            <TelecallerDashboard />
+            {user?.role === 'team_leader' ? <TeamLeaderDashboard /> : <TelecallerDashboard />}
           </ProtectedRoute>
         }
       />
       <Route
   path="/upload"
   element={
-    <ProtectedRoute allowedRoles={['manager', 'super_admin']}>
+    <ProtectedRoute allowedRoles={['manager', 'team_leader', 'super_admin']}>
       <UploadPage />
     </ProtectedRoute>
   }
@@ -68,12 +74,20 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/users"
+        element={
+          <ProtectedRoute allowedRoles={['manager', 'super_admin']}>
+            <UserManagement />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/team-leader"
         element={
           <ProtectedRoute allowedRoles={['team_leader', 'manager', 'super_admin']}>
-            <TelecallerDashboard />
+            <TeamLeaderDashboard />
           </ProtectedRoute>
         }
       />
@@ -82,7 +96,34 @@ const AppRoutes = () => {
         path="/admin"
         element={
           <ProtectedRoute allowedRoles={['super_admin']}>
-            <TelecallerDashboard />
+            <AdminPanel />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/reports/daily-calls"
+        element={
+          <ProtectedRoute allowedRoles={['manager', 'team_leader', 'super_admin']}>
+            <DailyCallReport />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/search/advanced"
+        element={
+          <ProtectedRoute allowedRoles={['manager', 'team_leader', 'super_admin']}>
+            <AdvancedSearch />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute allowedRoles={['manager', 'team_leader', 'super_admin']}>
+            <SettingsPage />
           </ProtectedRoute>
         }
       />

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { dashboardService, insuranceService, serviceService } from '../services/api';
+import { dashboardService, insuranceService, serviceService, psfService } from '../services/api';
 import CustomerDetailPanel from '../components/CustomerDetailPanel';
 import QuickLogModal from '../components/QuickLogModal';
 import toast from 'react-hot-toast';
-import { InsurancePlanTable, ServicePlanTable } from '../components/PlanCards';
+import { InsurancePlanTable, ServicePlanTable, PsfPlanTable } from '../components/PlanCards';
 import SearchModal from '../components/SearchModal';
 import Navbar from '../components/Navbar';
 
@@ -249,30 +249,203 @@ const LogCallModal = ({ plan, module, onClose, onSuccess }) => {
   );
 };
 
+const CeiButton = ({ value, selected, onClick }) => (
+  <button type="button" onClick={() => onClick(value)}
+    className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${selected ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+    {value}
+  </button>
+);
+
+const PsfLogModal = ({ plan, onClose, onSuccess }) => {
+  const [callOutcome, setCallOutcome] = useState('');
+  const [notSatisfiedReason, setNotSatisfiedReason] = useState('');
+  const [cei, setCei] = useState({ overallCei: null, performanceCei: null, retentionCei: null, attributeCei: null, transparencyCei: null, explanationCei: null });
+  const [npsScore, setNpsScore] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const customer = plan?.customer || {};
+  const primaryMobile = customer?.contacts?.find(c => c.contactType === 'mobile' && c.isPrimary)?.value
+    || customer?.contacts?.find(c => c.contactType === 'mobile')?.value;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!callOutcome) { toast.error('Please select a call outcome'); return; }
+    if (callOutcome === 'not_satisfied' && !notSatisfiedReason.trim()) { toast.error('Please enter a reason for dissatisfaction'); return; }
+    setLoading(true);
+    try {
+      await psfService.logCall(plan.id, {
+        callOutcome,
+        notSatisfiedReason: callOutcome === 'not_satisfied' ? notSatisfiedReason : undefined,
+        ...(callOutcome === 'satisfied' && {
+          overallCei: cei.overallCei,
+          performanceCei: cei.performanceCei,
+          retentionCei: cei.retentionCei,
+          attributeCei: cei.attributeCei,
+          transparencyCei: cei.transparencyCei,
+          explanationCei: cei.explanationCei,
+          npsScore,
+        }),
+      });
+      toast.success(callOutcome === 'satisfied' ? 'PSF complete — customer satisfied!' : callOutcome === 'not_satisfied' ? 'PSF logged — team notified.' : 'Call logged — will retry.');
+      onSuccess();
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to log PSF call');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const ceiFields = [
+    { key: 'overallCei', label: 'Overall CEI' },
+    { key: 'performanceCei', label: 'Performance' },
+    { key: 'retentionCei', label: 'Retention' },
+    { key: 'attributeCei', label: 'Attribute' },
+    { key: 'transparencyCei', label: 'Transparency' },
+    { key: 'explanationCei', label: 'Explanation' },
+  ];
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-lg">⭐</div>
+              <h2 className="text-lg font-bold text-gray-900">PSF Call Log</h2>
+            </div>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+          </div>
+
+          {/* Customer info */}
+          <div className="bg-gray-50 rounded-xl p-3 mb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-gray-900">{customer.name}</p>
+                <p className="text-sm text-gray-500">{customer.registrationNumber} • {customer.make} {customer.model}</p>
+              </div>
+              {primaryMobile && <a href={`tel:${primaryMobile}`} className="text-green-500 text-2xl">📞</a>}
+            </div>
+            {primaryMobile && <p className="text-sm text-blue-600 font-medium mt-1">{primaryMobile}</p>}
+            {plan?.serviceRecord && (
+              <div className="mt-2 pt-2 border-t border-gray-200 flex items-center gap-3 text-xs text-gray-500">
+                <span>📅 {plan.serviceRecord.serviceDate ? new Date(plan.serviceRecord.serviceDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }) : '—'}</span>
+                {plan.serviceRecord.jobCardNumber && <span>📋 {plan.serviceRecord.jobCardNumber}</span>}
+                {(plan.serviceAdviserName || plan.serviceRecord.serviceAdviserName) && <span>👤 {plan.serviceAdviserName || plan.serviceRecord.serviceAdviserName}</span>}
+              </div>
+            )}
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Outcome buttons */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Call Outcome *</label>
+              <div className="space-y-2">
+                <button type="button" onClick={() => setCallOutcome('satisfied')}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-3 ${callOutcome === 'satisfied' ? 'bg-green-600 text-white' : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'}`}>
+                  <span className="text-xl">✅</span>
+                  <div>
+                    <div>Customer Satisfied</div>
+                    <div className={`text-xs mt-0.5 ${callOutcome === 'satisfied' ? 'text-green-100' : 'text-green-500'}`}>Plan will be closed</div>
+                  </div>
+                </button>
+                <button type="button" onClick={() => setCallOutcome('not_satisfied')}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-3 ${callOutcome === 'not_satisfied' ? 'bg-red-600 text-white' : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'}`}>
+                  <span className="text-xl">❌</span>
+                  <div>
+                    <div>Customer Not Satisfied</div>
+                    <div className={`text-xs mt-0.5 ${callOutcome === 'not_satisfied' ? 'text-red-100' : 'text-red-500'}`}>Service team will be notified</div>
+                  </div>
+                </button>
+                <button type="button" onClick={() => setCallOutcome('not_connected')}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-3 ${callOutcome === 'not_connected' ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                  <span className="text-xl">📵</span>
+                  <div>Not Connected</div>
+                </button>
+              </div>
+            </div>
+
+            {/* Not satisfied reason */}
+            {callOutcome === 'not_satisfied' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Dissatisfaction *</label>
+                <textarea value={notSatisfiedReason} onChange={e => setNotSatisfiedReason(e.target.value)}
+                  className="w-full px-3 py-2 border border-red-300 rounded-lg text-sm resize-none focus:ring-2 focus:ring-red-300"
+                  rows={3} placeholder="Describe the customer's complaint or concern..." />
+              </div>
+            )}
+
+            {/* CEI scores (only when satisfied) */}
+            {callOutcome === 'satisfied' && (
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-gray-700">CEI Scores (1–5) <span className="text-gray-400 font-normal">optional</span></p>
+                <div className="grid grid-cols-1 gap-3">
+                  {ceiFields.map(({ key, label }) => (
+                    <div key={key} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600 w-28">{label}</span>
+                      <div className="flex gap-1">
+                        {[1,2,3,4,5].map(v => (
+                          <CeiButton key={v} value={v} selected={cei[key] === v} onClick={(val) => setCei(prev => ({ ...prev, [key]: prev[key] === val ? null : val }))} />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">NPS Score (0–10) <span className="text-gray-400 font-normal">optional</span></p>
+                  <div className="flex gap-1 flex-wrap">
+                    {[0,1,2,3,4,5,6,7,8,9,10].map(v => (
+                      <button key={v} type="button" onClick={() => setNpsScore(prev => prev === v ? null : v)}
+                        className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${npsScore === v ? (v >= 9 ? 'bg-green-600 text-white' : v >= 7 ? 'bg-yellow-500 text-white' : 'bg-red-500 text-white') : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">0–6 Detractor · 7–8 Passive · 9–10 Promoter</p>
+                </div>
+              </div>
+            )}
+
+            <button type="submit" disabled={loading || !callOutcome}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50">
+              {loading ? 'Saving...' : 'Save PSF Log'}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const TelecallerDashboard = () => {
   useAuth();
   const [stats, setStats] = useState(null);
   const [insurancePlans, setInsurancePlans] = useState({ today: [], overdue: [], redAlert: [] });
   const [servicePlans, setServicePlans] = useState({ today: [], overdue: [], redAlert: [] });
+  const [psfPlans, setPsfPlans] = useState([]);
   const [activeTab, setActiveTab] = useState('today');
   const [activeModule, setActiveModule] = useState('insurance');
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [quickLogPlan, setQuickLogPlan] = useState(null);
+  const [psfLogPlan, setPsfLogPlan] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
 
   const loadData = async () => {
     try {
-      const [statsRes, insRes, svcRes] = await Promise.all([
+      const [statsRes, insRes, svcRes, psfRes] = await Promise.all([
         dashboardService.getTelecaller().catch(() => ({ data: {} })),
         insuranceService.getMyPlans().catch(() => ({ data: { today: [], overdue: [], redAlert: [] } })),
         serviceService.getMyPlans().catch(() => ({ data: { today: [], overdue: [], redAlert: [] } })),
+        psfService.getMyPlans().catch(() => ({ data: { plans: [] } })),
       ]);
       setStats(statsRes.data);
       setInsurancePlans(insRes.data);
       setServicePlans(svcRes.data);
+      setPsfPlans(psfRes.data?.plans || []);
     } catch (err) {
       toast.error('Failed to load dashboard');
     } finally {
@@ -284,6 +457,14 @@ const TelecallerDashboard = () => {
 
   const handleOpenDetail = (plan, module) => {
     setSelectedCustomer({ customerId: plan?.customerId, planId: plan.id, planType: module, plan });
+  };
+
+  const handleQuickLog = (plan, module) => {
+    if (module === 'psf') {
+      setPsfLogPlan(plan);
+    } else {
+      setQuickLogPlan({ plan, module });
+    }
   };
 
   const currentPlans = activeModule === 'insurance' ? insurancePlans : servicePlans;
@@ -325,34 +506,40 @@ const TelecallerDashboard = () => {
             className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeModule === 'service' ? 'bg-green-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
             🔧 Service ({(servicePlans.today?.length || 0) + (servicePlans.overdue?.length || 0)})
           </button>
+          <button onClick={() => setActiveModule('psf')}
+            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeModule === 'psf' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
+            ⭐ PSF ({psfPlans.length})
+          </button>
         </div>
 
-        {/* Plan tabs */}
-        <div className="flex gap-2 mb-4">
-          {['today', 'overdue', 'redAlert'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 hover:bg-gray-100 shadow-sm'}`}>
-              {tab === 'today' ? `Today (${currentPlans.today?.length || 0})` :
-               tab === 'overdue' ? `Overdue (${currentPlans.overdue?.length || 0})` :
-               `Red Alert (${currentPlans.redAlert?.length || 0})`}
-            </button>
-          ))}
-        </div>
+        {/* Plan sub-tabs (only for insurance/service) */}
+        {activeModule !== 'psf' && (
+          <div className="flex gap-2 mb-4">
+            {['today', 'overdue', 'redAlert'].map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 hover:bg-gray-100 shadow-sm'}`}>
+                {tab === 'today' ? `Today (${currentPlans.today?.length || 0})` :
+                 tab === 'overdue' ? `Overdue (${currentPlans.overdue?.length || 0})` :
+                 `Red Alert (${currentPlans.redAlert?.length || 0})`}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Plans list */}
         <div className="space-y-3">
-          {displayPlans?.length === 0 ? (
+          {activeModule === 'psf' ? (
+            <PsfPlanTable plans={psfPlans} onQuickLog={handleQuickLog} />
+          ) : displayPlans?.length === 0 ? (
             <div className="bg-white rounded-xl p-10 text-center shadow-sm">
               <p className="text-4xl mb-3">🎉</p>
               <p className="text-gray-500 font-medium">No plans in this category</p>
               <p className="text-gray-400 text-sm mt-1">Check other tabs or modules</p>
             </div>
+          ) : activeModule === 'insurance' ? (
+            <InsurancePlanTable plans={displayPlans} onOpenDetail={handleOpenDetail} onQuickLog={handleQuickLog} />
           ) : (
-            activeModule === 'insurance' ? (
-              <InsurancePlanTable plans={displayPlans} onOpenDetail={handleOpenDetail} onQuickLog={(plan, module) => setQuickLogPlan({ plan, module })} />
-            ) : (
-              <ServicePlanTable plans={displayPlans} onOpenDetail={handleOpenDetail} onQuickLog={(plan, module) => setQuickLogPlan({ plan, module })} />
-            )
+            <ServicePlanTable plans={displayPlans} onOpenDetail={handleOpenDetail} onQuickLog={handleQuickLog} />
           )}
         </div>
       </div>
@@ -387,6 +574,13 @@ const TelecallerDashboard = () => {
     onClose={() => setQuickLogPlan(null)}
     onSuccess={loadData}
     onFullLog={(plan, module) => setSelectedPlan({ plan, module })}
+  />
+)}
+{psfLogPlan && (
+  <PsfLogModal
+    plan={psfLogPlan}
+    onClose={() => setPsfLogPlan(null)}
+    onSuccess={loadData}
   />
 )}
 {showSearch && (

@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(Get-ChildItem \"c:\\\\dealerdesk\\\\backend\\\\src\" -Recurse | Where-Object { $_.Extension -match '\\\\.\\(js|ts\\)$' } | Select-Object FullName)"
+      "PowerShell(Get-ChildItem \"c:\\\\dealerdesk\\\\backend\\\\src\" -Recurse | Where-Object { $_.Extension -match '\\\\.\\(js|ts\\)$' } | Select-Object FullName)",
+      "PowerShell(head -50)"
     ]
   }
 }

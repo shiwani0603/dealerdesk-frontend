@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const Login = () => {
-  const [form, setForm] = useState({ mobile: '', password: '', dealershipId: '' });
+  const [form, setForm] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -13,13 +13,13 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const user = await login(form.mobile, form.password, form.dealershipId);
+      const user = await login(form.username, form.password);
       toast.success('Login successful!');
-      if (user.role === 'manager') navigate('/manager');
-      else if (user.role === 'team_leader') navigate('/team-leader');
+      if (user.role === 'manager' || user.role === 'super_admin') navigate('/manager-dashboard');
+      else if (user.role === 'team_leader') navigate('/dashboard');
       else navigate('/dashboard');
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Login failed. Please check your details.');
+      toast.error(err.response?.data?.error || 'Invalid username or password.');
     } finally {
       setLoading(false);
     }
@@ -32,7 +32,8 @@ const Login = () => {
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
             <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">DealerDesk CRM</h1>
@@ -41,27 +42,14 @@ const Login = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mobile Number
-            </label>
-            <input
-              type="tel"
-              value={form.mobile}
-              onChange={(e) => setForm({ ...form, mobile: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              placeholder="9876543210"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Dealership ID</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
             <input
               type="text"
-              value={form.dealershipId}
-              onChange={(e) => setForm({ ...form, dealershipId: e.target.value })}
+              value={form.username}
+              onChange={(e) => setForm({ ...form, username: e.target.value })}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              placeholder="Your dealership ID"
+              placeholder="e.g. john.doe"
+              autoComplete="username"
               required
             />
           </div>
@@ -74,6 +62,7 @@ const Login = () => {
               onChange={(e) => setForm({ ...form, password: e.target.value })}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
               placeholder="Enter your password"
+              autoComplete="current-password"
               required
             />
           </div>

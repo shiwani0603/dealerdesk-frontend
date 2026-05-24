@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { customerService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const Section = ({ title, children, defaultOpen = true }) => {
@@ -33,7 +34,26 @@ const Badge = ({ text, color }) => (
   </span>
 );
 
+const InputField = ({ label, value, onChange, type = 'text', options }) => (
+  <div className="mb-2">
+    <label className="block text-xs text-gray-500 font-medium uppercase tracking-wide mb-0.5">{label}</label>
+    {options ? (
+      <select value={value || ''} onChange={e => onChange(e.target.value)}
+        className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="">— Select —</option>
+        {options.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+    ) : (
+      <input type={type} value={value || ''} onChange={e => onChange(e.target.value)}
+        className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+    )}
+  </div>
+);
+
 const CustomerDetailPanel = ({ customerId, planId, planType, onClose, onLogCall }) => {
+  const { user } = useAuth();
+  const canEdit = ['manager', 'team_leader', 'telecaller'].includes(user?.role);
+
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('customer');
@@ -41,6 +61,12 @@ const CustomerDetailPanel = ({ customerId, planId, planType, onClose, onLogCall 
   const [newContact, setNewContact] = useState({ contactType: 'mobile', value: '' });
   const [editingNote, setEditingNote] = useState(false);
   const [stickyNote, setStickyNote] = useState('');
+
+  const [editingCustomer, setEditingCustomer] = useState(false);
+  const [custForm, setCustForm] = useState({});
+  const [editingVehicle, setEditingVehicle] = useState(false);
+  const [vehForm, setVehForm] = useState({});
+  const [saving, setSaving] = useState(false);
 
 useEffect(() => {
   loadCustomer();
@@ -80,6 +106,60 @@ useEffect(() => {
       loadCustomer();
     } catch (err) {
       toast.error('Failed to save note');
+    }
+  };
+
+  const openEditCustomer = () => {
+    setCustForm({
+      name: customer.name || '',
+      dateOfBirth: customer.dateOfBirth ? new Date(customer.dateOfBirth).toISOString().split('T')[0] : '',
+      age: customer.age || '',
+      panNumber: customer.panNumber || '',
+      city: customer.city || '',
+      pincode: customer.pincode || '',
+      address: customer.address || '',
+    });
+    setEditingCustomer(true);
+  };
+
+  const handleSaveCustomer = async () => {
+    setSaving(true);
+    try {
+      await customerService.updateCustomer(customerId, custForm);
+      toast.success('Customer details saved');
+      setEditingCustomer(false);
+      loadCustomer();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openEditVehicle = () => {
+    setVehForm({
+      registrationNumber: customer.registrationNumber || '',
+      engineNumber: customer.engineNumber || '',
+      fuelType: customer.fuelType || '',
+      transmissionType: customer.transmissionType || '',
+      manufacturingYear: customer.manufacturingYear || '',
+      vehiclePurchaseDate: customer.vehiclePurchaseDate ? new Date(customer.vehiclePurchaseDate).toISOString().split('T')[0] : '',
+      salesConsultantName: customer.salesConsultantName || '',
+    });
+    setEditingVehicle(true);
+  };
+
+  const handleSaveVehicle = async () => {
+    setSaving(true);
+    try {
+      await customerService.updateCustomer(customerId, vehForm);
+      toast.success('Vehicle details saved');
+      setEditingVehicle(false);
+      loadCustomer();
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to save');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -224,17 +304,51 @@ useEffect(() => {
           {/* Customer Tab */}
           {activeTab === 'customer' && (
             <div>
-              <Section title="Personal Details">
-                <div className="grid grid-cols-2 gap-x-4">
-                  <Field label="Full Name" value={customer.name} />
-                  <Field label="Date of Birth" value={formatDate(customer.dateOfBirth)} />
-                  <Field label="Age" value={customer.age} />
-                  <Field label="PAN Number" value={customer.panNumber} />
-                  <Field label="City" value={customer.city} />
-                  <Field label="Pincode" value={customer.pincode} />
+              <div className="border border-gray-200 rounded-xl overflow-hidden mb-3">
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50">
+                  <span className="font-semibold text-gray-700 text-sm">Personal Details</span>
+                  {canEdit && !editingCustomer && (
+                    <button onClick={openEditCustomer} className="text-xs text-blue-600 hover:underline font-medium">✏️ Edit</button>
+                  )}
                 </div>
-                <Field label="Address" value={customer.address} />
-              </Section>
+                <div className="px-4 py-3">
+                  {editingCustomer ? (
+                    <div>
+                      <div className="grid grid-cols-2 gap-x-3">
+                        <InputField label="Full Name" value={custForm.name} onChange={v => setCustForm(f => ({ ...f, name: v }))} />
+                        <InputField label="Date of Birth" type="date" value={custForm.dateOfBirth} onChange={v => setCustForm(f => ({ ...f, dateOfBirth: v }))} />
+                        <InputField label="Age" type="number" value={custForm.age} onChange={v => setCustForm(f => ({ ...f, age: v }))} />
+                        <InputField label="PAN Number" value={custForm.panNumber} onChange={v => setCustForm(f => ({ ...f, panNumber: v }))} />
+                        <InputField label="City" value={custForm.city} onChange={v => setCustForm(f => ({ ...f, city: v }))} />
+                        <InputField label="Pincode" value={custForm.pincode} onChange={v => setCustForm(f => ({ ...f, pincode: v }))} />
+                      </div>
+                      <InputField label="Address" value={custForm.address} onChange={v => setCustForm(f => ({ ...f, address: v }))} />
+                      <div className="flex gap-2 mt-3">
+                        <button onClick={handleSaveCustomer} disabled={saving}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded-lg disabled:opacity-50">
+                          {saving ? 'Saving…' : 'Save Changes'}
+                        </button>
+                        <button onClick={() => setEditingCustomer(false)}
+                          className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-semibold py-2 rounded-lg">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="grid grid-cols-2 gap-x-4">
+                        <Field label="Full Name" value={customer.name} />
+                        <Field label="Date of Birth" value={formatDate(customer.dateOfBirth)} />
+                        <Field label="Age" value={customer.age} />
+                        <Field label="PAN Number" value={customer.panNumber} />
+                        <Field label="City" value={customer.city} />
+                        <Field label="Pincode" value={customer.pincode} />
+                      </div>
+                      <Field label="Address" value={customer.address} />
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <Section title="Contact Numbers">
                 {allMobiles.map((c, i) => (
@@ -289,29 +403,67 @@ useEffect(() => {
 
           {/* Vehicle Tab */}
           {activeTab === 'vehicle' && (
-            <Section title="Vehicle Details">
-              <div className="grid grid-cols-2 gap-x-4">
-                <Field label="Make" value={customer.make} highlight />
-                <Field label="Model" value={customer.model} highlight />
-                <Field label="Sub Model" value={customer.subModel} />
-                <Field label="Fuel Type" value={customer.fuelType} />
-                <Field label="Transmission" value={customer.transmissionType} />
-                <Field label="Manufacturing Year" value={customer.manufacturingYear} />
-                <Field label="Purchase Date" value={formatDate(customer.vehiclePurchaseDate)} />
-                <Field label="Registration No" value={customer.registrationNumber} highlight />
-                <Field label="Chassis Number" value={customer.chassisNumber} />
-                <Field label="Engine Number" value={customer.engineNumber} />
-                {customer.chargerType && <Field label="Charger Type" value={customer.chargerType} />}
+            <div className="border border-gray-200 rounded-xl overflow-hidden mb-3">
+              <div className="flex items-center justify-between px-4 py-3 bg-gray-50">
+                <span className="font-semibold text-gray-700 text-sm">Vehicle Details</span>
+                {canEdit && !editingVehicle && (
+                  <button onClick={openEditVehicle} className="text-xs text-blue-600 hover:underline font-medium">✏️ Edit</button>
+                )}
               </div>
-              {customer.soldByOwnDealership && (
-                <div className="mt-3 bg-blue-50 rounded-lg p-3">
-                  <p className="text-xs text-blue-600 font-medium">✓ Sold by this dealership</p>
-                  {customer.salesConsultantName && (
-                    <p className="text-xs text-blue-500 mt-0.5">Sales by: {customer.salesConsultantName}</p>
-                  )}
+              <div className="px-4 py-3">
+                {/* Always show non-editable identifiers */}
+                <div className="grid grid-cols-2 gap-x-4 mb-3 pb-3 border-b border-gray-100">
+                  <Field label="Make" value={customer.make} highlight />
+                  <Field label="Model" value={customer.model} highlight />
+                  <Field label="Sub Model" value={customer.subModel} />
+                  <Field label="Chassis No" value={customer.chassisNumber} />
                 </div>
-              )}
-            </Section>
+
+                {editingVehicle ? (
+                  <div>
+                    <div className="grid grid-cols-2 gap-x-3">
+                      <InputField label="Registration No" value={vehForm.registrationNumber} onChange={v => setVehForm(f => ({ ...f, registrationNumber: v }))} />
+                      <InputField label="Engine Number" value={vehForm.engineNumber} onChange={v => setVehForm(f => ({ ...f, engineNumber: v }))} />
+                      <InputField label="Fuel Type" value={vehForm.fuelType} onChange={v => setVehForm(f => ({ ...f, fuelType: v }))}
+                        options={['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid', 'LPG']} />
+                      <InputField label="Transmission" value={vehForm.transmissionType} onChange={v => setVehForm(f => ({ ...f, transmissionType: v }))}
+                        options={['Manual', 'Automatic', 'AMT', 'CVT', 'DCT']} />
+                      <InputField label="Mfg. Year" type="number" value={vehForm.manufacturingYear} onChange={v => setVehForm(f => ({ ...f, manufacturingYear: v }))} />
+                      <InputField label="Purchase Date" type="date" value={vehForm.vehiclePurchaseDate} onChange={v => setVehForm(f => ({ ...f, vehiclePurchaseDate: v }))} />
+                      <div className="col-span-2">
+                        <InputField label="Sales Consultant" value={vehForm.salesConsultantName} onChange={v => setVehForm(f => ({ ...f, salesConsultantName: v }))} />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <button onClick={handleSaveVehicle} disabled={saving}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded-lg disabled:opacity-50">
+                        {saving ? 'Saving…' : 'Save Changes'}
+                      </button>
+                      <button onClick={() => setEditingVehicle(false)}
+                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-semibold py-2 rounded-lg">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-x-4">
+                    <Field label="Registration No" value={customer.registrationNumber} highlight />
+                    <Field label="Engine Number" value={customer.engineNumber} />
+                    <Field label="Fuel Type" value={customer.fuelType} />
+                    <Field label="Transmission" value={customer.transmissionType} />
+                    <Field label="Mfg. Year" value={customer.manufacturingYear} />
+                    <Field label="Purchase Date" value={formatDate(customer.vehiclePurchaseDate)} />
+                    {customer.salesConsultantName && <Field label="Sales Consultant" value={customer.salesConsultantName} />}
+                    {customer.chargerType && <Field label="Charger Type" value={customer.chargerType} />}
+                    {customer.soldByOwnDealership && (
+                      <div className="col-span-2 mt-1 bg-blue-50 rounded-lg p-2">
+                        <p className="text-xs text-blue-600 font-medium">✓ Sold by this dealership</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
           )}
 
           {/* Insurance Tab */}
@@ -321,7 +473,6 @@ useEffect(() => {
                 <div className="bg-blue-50 rounded-xl p-4 mb-3 border border-blue-200">
                   <p className="text-xs font-medium text-blue-600 mb-2">ACTIVE PLAN</p>
                   <div className="grid grid-cols-2 gap-x-4">
-                    <Field label="Status" value={openInsurancePlan.planStatus} />
                     <Field label="Category" value={openInsurancePlan.policyCategory} />
                     <Field label="Next Follow-up" value={formatDate(openInsurancePlan?.nextFollowupDate)} />
                     <Field label="Auto-close Date" value={formatDate(openInsurancePlan?.autoCloseDate)} />
@@ -329,15 +480,47 @@ useEffect(() => {
                 </div>
               )}
 
-              {latestInsurance ? (
-                <Section title="Latest Policy Details">
+              {customer.insuranceRecords?.length > 0 ? (
+                <Section title={`Policy Details (${customer.insuranceRecords.length})`}>
+                  <div className="overflow-x-auto -mx-4">
+                    <table className="w-full text-xs" style={{ minWidth: '520px' }}>
+                      <thead>
+                        <tr className="bg-gray-100 text-gray-600 font-semibold">
+                          <td className="px-3 py-2 w-8">S No</td>
+                          <td className="px-3 py-2">Policy No.</td>
+                          <td className="px-3 py-2">Insurance Company</td>
+                          <td className="px-3 py-2 whitespace-nowrap">Issue Date</td>
+                          <td className="px-3 py-2 whitespace-nowrap">OD Expiry</td>
+                          <td className="px-3 py-2 whitespace-nowrap">TP Expiry</td>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {customer.insuranceRecords.map((rec, i) => (
+                          <tr key={i} className={`border-t border-gray-100 ${i % 2 === 1 ? 'bg-gray-50' : 'bg-white'}`}>
+                            <td className="px-3 py-2 text-gray-400 font-medium">{i + 1}</td>
+                            <td className="px-3 py-2 font-mono text-gray-700 text-xs break-all">{rec.policyNumber || '—'}</td>
+                            <td className="px-3 py-2 text-gray-800">{rec.insurerName || '—'}</td>
+                            <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{formatDate(rec.policyInceptionDate)}</td>
+                            <td className={`px-3 py-2 whitespace-nowrap font-medium ${i === 0 ? 'text-orange-600' : 'text-gray-600'}`}>
+                              {formatDate(rec.odExpiryDate || rec.policyExpiryDate)}
+                            </td>
+                            <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{formatDate(rec.tpExpiryDate)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Section>
+              ) : (
+                <div className="text-center py-8 text-gray-400">
+                  <p className="text-3xl mb-2">🛡️</p>
+                  <p className="text-sm">No insurance records found</p>
+                </div>
+              )}
+
+              {latestInsurance && (
+                <Section title="Premium Details" defaultOpen={false}>
                   <div className="grid grid-cols-2 gap-x-4">
-                    <Field label="Policy Number" value={latestInsurance.policyNumber} />
-                    <Field label="Insurer" value={latestInsurance.insurerName} highlight />
-                    <Field label="Policy Type" value={latestInsurance.policyType} />
-                    <Field label="Fresh/Renewal" value={latestInsurance.isFreshPolicy ? 'Fresh Policy' : 'Renewal'} />
-                    <Field label="Expiry Date" value={formatDate(latestInsurance.policyExpiryDate)} highlight />
-                    <Field label="Inception Date" value={formatDate(latestInsurance.policyInceptionDate)} />
                     <Field label="IDV Value" value={formatCurrency(latestInsurance.idvValue)} />
                     <Field label="NCB %" value={latestInsurance.ncbPercentage ? `${latestInsurance.ncbPercentage}%` : '—'} />
                     <Field label="OD Premium" value={formatCurrency(latestInsurance.odPremium)} />
@@ -348,25 +531,6 @@ useEffect(() => {
                   {latestInsurance.addonDescription && (
                     <Field label="Add-ons" value={latestInsurance.addonDescription} />
                   )}
-                </Section>
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <p className="text-3xl mb-2">🛡️</p>
-                  <p className="text-sm">No insurance records found</p>
-                </div>
-              )}
-
-              {customer.insuranceRecords?.length > 1 && (
-                <Section title={`Policy History (${customer.insuranceRecords.length} records)`} defaultOpen={false}>
-                  {customer.insuranceRecords.map((rec, i) => (
-                    <div key={i} className="py-2 border-b border-gray-100 last:border-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-800">{rec.insurerName || 'Unknown Insurer'}</p>
-                        <p className="text-xs text-gray-400">{formatDate(rec.policyExpiryDate)}</p>
-                      </div>
-                      <p className="text-xs text-gray-500">{rec.policyNumber} • {formatCurrency(rec.grossPremium)}</p>
-                    </div>
-                  ))}
                 </Section>
               )}
             </div>
@@ -397,17 +561,31 @@ useEffect(() => {
                 </div>
               )}
 
-              {latestService ? (
-                <Section title="Last Service Details">
-                  <div className="grid grid-cols-2 gap-x-4">
-                    <Field label="Service Type" value={latestService.serviceType} highlight />
-                    <Field label="Service Date" value={formatDate(latestService.serviceDate)} highlight />
-                    <Field label="Mileage" value={latestService.mileageAtService ? `${latestService.mileageAtService} km` : '—'} />
-                    <Field label="Job Card No" value={latestService.jobCardNumber} />
-                    <Field label="Service Adviser" value={latestService.serviceAdviserName} />
-                    <Field label="Total Invoice" value={formatCurrency(latestService.totalInvoiceAmount)} />
-                    <Field label="Labour" value={formatCurrency(latestService.labourAmount)} />
-                    <Field label="Parts" value={formatCurrency(latestService.partsAmount)} />
+              {customer.serviceRecords?.length > 0 ? (
+                <Section title={`Service Detail (${customer.serviceRecords.length})`}>
+                  <div className="overflow-x-auto -mx-4">
+                    <table className="w-full text-xs" style={{ minWidth: '480px' }}>
+                      <thead>
+                        <tr className="bg-gray-100 text-gray-600 font-semibold">
+                          <td className="px-3 py-2 w-8">S No</td>
+                          <td className="px-3 py-2">Job Card No</td>
+                          <td className="px-3 py-2 whitespace-nowrap">Job Card Date</td>
+                          <td className="px-3 py-2">Service Type</td>
+                          <td className="px-3 py-2">Service Location</td>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {customer.serviceRecords.map((rec, i) => (
+                          <tr key={i} className={`border-t border-gray-100 ${i % 2 === 1 ? 'bg-gray-50' : 'bg-white'}`}>
+                            <td className="px-3 py-2 text-gray-400 font-medium">{i + 1}</td>
+                            <td className="px-3 py-2 font-mono text-gray-700">{rec.jobCardNumber || '—'}</td>
+                            <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{formatDate(rec.serviceDate)}</td>
+                            <td className="px-3 py-2 text-gray-800">{rec.serviceType || '—'}</td>
+                            <td className="px-3 py-2 text-gray-600">{rec.location?.name || '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </Section>
               ) : (
@@ -415,24 +593,6 @@ useEffect(() => {
                   <p className="text-3xl mb-2">🔧</p>
                   <p className="text-sm">No service records found</p>
                 </div>
-              )}
-
-              {customer.serviceRecords?.length > 1 && (
-                <Section title={`Service History (${customer.serviceRecords.length} records)`} defaultOpen={false}>
-                  {customer.serviceRecords.map((rec, i) => (
-                    <div key={i} className="py-2 border-b border-gray-100 last:border-0">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-800">{rec.serviceType}</p>
-                        <p className="text-xs text-gray-400">{formatDate(rec.serviceDate)}</p>
-                      </div>
-                      <p className="text-xs text-gray-500">
-                        {rec.jobCardNumber && `JC: ${rec.jobCardNumber} • `}
-                        {rec.mileageAtService && `${rec.mileageAtService} km • `}
-                        {formatCurrency(rec.totalInvoiceAmount)}
-                      </p>
-                    </div>
-                  ))}
-                </Section>
               )}
             </div>
           )}

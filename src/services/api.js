@@ -29,8 +29,8 @@ api.interceptors.response.use(
 );
 
 export const authService = {
-  login: (mobile, password, dealershipId) =>
-    api.post('/auth/login', { mobile, password, dealershipId }),
+  login: (username, password) =>
+    api.post('/auth/login', { username, password }),
   superAdminLogin: (email, password) =>
     api.post('/auth/super-admin/login', { email, password }),
   getMe: () => api.get('/auth/me'),
@@ -46,6 +46,7 @@ export const dashboardService = {
 
 export const insuranceService = {
   getMyPlans: () => api.get('/insurance/my-plans'),
+  getUnassigned: () => api.get('/insurance/unassigned'),
   getPlan: (id) => api.get(`/insurance/${id}`),
   logCall: (id, data) => api.post(`/insurance/${id}/log`, data),
   transferPlan: (id, newUserId) => api.put(`/insurance/${id}/transfer`, { newUserId }),
@@ -53,9 +54,11 @@ export const insuranceService = {
 
 export const serviceService = {
   getMyPlans: () => api.get('/service/my-plans'),
+  getUnassigned: () => api.get('/service/unassigned'),
   getPlan: (id) => api.get(`/service/${id}`),
   logCall: (id, data) => api.post(`/service/${id}/log`, data),
   markReported: (id) => api.put(`/service/${id}/reported`),
+  transferPlan: (id, newUserId) => api.put(`/service/${id}/transfer`, { newUserId }),
 };
 
 export const customerService = {
@@ -70,8 +73,49 @@ export const psfService = {
   logCall: (id, data) => api.post(`/psf/${id}/log`, data),
 };
 
+export const searchService = {
+  searchPlans: (params) => {
+    const q = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== '' && v !== null) q.set(k, v); });
+    return api.get(`/search/plans?${q}`);
+  },
+};
+
+export const reportService = {
+  getDailyCalls: (date, module, locationId) => {
+    const params = new URLSearchParams();
+    if (date) params.set('date', date);
+    if (module) params.set('module', module);
+    if (locationId && locationId !== 'ALL') params.set('locationId', locationId);
+    return api.get(`/dashboard/reports/daily-calls?${params}`);
+  },
+  getLostBusiness: (fromDate, toDate) =>
+    api.get(`/dashboard/reports/lost-business?fromDate=${fromDate}&toDate=${toDate}`),
+  getAutoClosed: () => api.get('/dashboard/reports/auto-closed'),
+  getPsfSummary: () => api.get('/dashboard/reports/psf-summary'),
+};
+
+export const userService = {
+  list: () => api.get('/users'),
+  listLocations: () => api.get('/users/locations'),
+  create: (data) => api.post('/users', data),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  toggleActive: (id) => api.put(`/users/${id}/toggle-active`),
+};
+
+export const notificationService = {
+  getAll: () => api.get('/notifications'),
+  resolve: (id) => api.put(`/notifications/${id}/resolve`),
+};
+
+export const settingsService = {
+  get: () => api.get('/settings'),
+  update: (data) => api.put('/settings', data),
+};
+
 export const dealershipService = {
   getAll: () => api.get('/dealerships'),
+  get: (id) => api.get(`/dealerships/${id}`),
   create: (data) => api.post('/dealerships', data),
   update: (id, data) => api.put(`/dealerships/${id}`, data),
   addLocation: (id, data) => api.post(`/dealerships/${id}/locations`, data),

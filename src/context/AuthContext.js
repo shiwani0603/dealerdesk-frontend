@@ -16,8 +16,8 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (mobile, password, dealershipId) => {
-    const response = await authService.login(mobile, password, dealershipId);
+  const login = async (username, password) => {
+    const response = await authService.login(username, password);
     const { token, user } = response.data;
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(user));
