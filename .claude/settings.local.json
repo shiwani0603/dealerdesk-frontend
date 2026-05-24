@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "PowerShell(Get-ChildItem \"c:\\\\dealerdesk\\\\backend\\\\src\" -Recurse | Where-Object { $_.Extension -match '\\\\.\\(js|ts\\)$' } | Select-Object FullName)",
-      "PowerShell(head -50)"
+      "PowerShell(head -50)",
+      "Bash(node -e \"const bcrypt = require\\('bcryptjs'\\); bcrypt.hash\\('Admin@2026', 12\\).then\\(h => console.log\\(h\\)\\);\")"
     ]
   }
 }

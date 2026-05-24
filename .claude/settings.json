@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(cd c:\\\\dealerdesk\\\\frontend; npx react-scripts build 2>&1 | Select-String -Pattern \"error|Error|warning|Warning\" | Where-Object { $_ -notmatch \"eslint-disable|console\\\\.\" } | Select-Object -First 20)"
+    ]
+  }
+}

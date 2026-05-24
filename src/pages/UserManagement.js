@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { userService } from '../services/api';
+import { userService, settingsService } from '../services/api';
 import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import { useAuth } from '../context/AuthContext';
@@ -106,7 +106,7 @@ const buildEditForm = (u) => ({
 
 // ─── Slide-in panel ──────────────────────────────────────────────────────────
 
-const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, onClose, onSaved }) => {
+const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSuperManager, onClose, onSaved }) => {
   const isEdit = !!editUser;
 
   // Lazy initializer runs once on mount — key={panelKey} guarantees fresh mount each open
@@ -159,8 +159,9 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, onClos
     }));
   };
 
-  const isFieldRole = ['telecaller', 'team_leader'].includes(isEdit ? editUser.role : form.role);
-  const isTelecaller = isEdit ? editUser.role === 'telecaller' : form.role === 'telecaller';
+  const currentRole = isEdit ? editUser.role : form.role;
+  const isFieldRole = ['telecaller', 'team_leader', 'manager', 'service_adviser'].includes(currentRole);
+  const isTelecaller = currentRole === 'telecaller';
 
   // Filter team leaders by module compatibility
   const compatibleTLs = teamLeaders.filter((tl) => {
@@ -301,8 +302,8 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, onClos
           {!isEdit && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
-              <div className="flex gap-2">
-                {['telecaller', 'team_leader'].map((r) => (
+              <div className="flex gap-2 flex-wrap">
+                {(isSuperManager ? ['telecaller', 'team_leader', 'manager'] : ['telecaller', 'team_leader']).map((r) => (
                   <button
                     key={r}
                     type="button"
@@ -451,7 +452,6 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, onClos
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 const UserManagement = () => {
-  useAuth();
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [locations, setLocations] = useState([]);
@@ -463,23 +463,30 @@ const UserManagement = () => {
   const [filterRole, setFilterRole] = useState('all');
   const [filterModule, setFilterModule] = useState('all');
   const [filterActive, setFilterActive] = useState('active');
+  const [canCreateUsers, setCanCreateUsers] = useState(false);
 
   const teamLeaders = users.filter((u) => u.role === 'team_leader' && u.isActive);
 
+  const { user: currentUser } = useAuth();
+  const isSuperManager = currentUser?.role === 'super_manager';
+
   const loadData = useCallback(async () => {
     try {
-      const [usersRes, locsRes] = await Promise.all([
+      const [usersRes, locsRes, settingsRes] = await Promise.all([
         userService.list(),
         userService.listLocations(),
+        settingsService.get().catch(() => null),
       ]);
       setUsers(usersRes.data.users);
       setLocations(locsRes.data.locations);
+      // super_manager always can create; manager only if dealership allows
+      setCanCreateUsers(isSuperManager || (settingsRes?.data?.settings?.managerCanCreateUsers ?? false));
     } catch {
       toast.error('Failed to load users');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isSuperManager]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -544,12 +551,14 @@ const UserManagement = () => {
             <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
             <p className="text-sm text-gray-500 mt-1">{users.filter((u) => u.isActive).length} active users</p>
           </div>
-          <button
-            onClick={openAdd}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors"
-          >
-            + Add User
-          </button>
+          {canCreateUsers && (
+            <button
+              onClick={openAdd}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors"
+            >
+              + Add User
+            </button>
+          )}
         </div>
 
         {/* Filters */}
@@ -657,7 +666,7 @@ const UserManagement = () => {
                 <tbody className="divide-y divide-gray-100">
                   {filteredUsers.map((user) => {
                     const roleStyle = ROLE_STYLES[user.role] || { label: user.role, cls: 'bg-gray-100 text-gray-600' };
-                    const isFieldRole = ['telecaller', 'team_leader'].includes(user.role);
+                    const isFieldRole = ['telecaller', 'team_leader', 'manager', 'service_adviser'].includes(user.role);
                     return (
                       <tr key={user.id} className={!user.isActive ? 'opacity-50' : ''}>
                         <td className="px-5 py-3.5">
@@ -728,6 +737,7 @@ const UserManagement = () => {
           locations={locations}
           teamLeaders={teamLeaders}
           existingUsernames={users.map((u) => u.username).filter(Boolean)}
+          isSuperManager={isSuperManager}
           onClose={() => setPanel((p) => ({ ...p, open: false, editUser: null }))}
           onSaved={handleSaved}
         />

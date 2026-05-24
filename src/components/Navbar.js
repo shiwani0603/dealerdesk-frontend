@@ -3,23 +3,36 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NotificationBell from './NotificationBell';
 
+const NavBtn = ({ label, path, active, onClick, activeClass = 'bg-blue-100 text-blue-700' }) => {
+  const cls = active ? activeClass : 'text-gray-600 hover:bg-gray-100';
+  return (
+    <button onClick={onClick} className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${cls}`}>
+      {label}
+    </button>
+  );
+};
+
 const Navbar = ({ onSearchClick }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const isActive = (path) => location.pathname === path;
+  const isSuperAdmin   = user?.role === 'super_admin';
+  const isSuperManager = user?.role === 'super_manager';
+  const isManager      = user?.role === 'manager';
+  const isTL           = user?.role === 'team_leader';
+  const canUpload      = ['manager', 'super_manager', 'team_leader'].includes(user?.role);
+  const canViewTeam    = isManager || isSuperManager;
+  const canManageUsers = isManager || isSuperManager;
 
-  const canUpload = ['manager', 'team_leader', 'super_admin'].includes(user?.role);
-  const canViewTeam = ['manager', 'super_admin'].includes(user?.role);
-  const isTL = user?.role === 'team_leader';
-  const canManageUsers = ['manager', 'super_admin'].includes(user?.role);
+  const homeRoute = isSuperAdmin ? '/admin' : '/dashboard';
 
   return (
     <div className="bg-white shadow-sm sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
         {/* Logo */}
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/dashboard')}>
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate(homeRoute)}>
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <span className="text-white text-sm font-bold">D</span>
           </div>
@@ -31,110 +44,72 @@ const Navbar = ({ onSearchClick }) => {
 
         {/* Nav links */}
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-              isActive('/dashboard') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            📋 Plans
-          </button>
+
+          {/* ── Super Admin: only admin-panel links ── */}
+          {isSuperAdmin && (
+            <NavBtn label="🏢 Dealerships" path="/admin"
+              active={isActive('/admin')} activeClass="bg-gray-100 text-gray-700"
+              onClick={() => navigate('/admin')} />
+          )}
+
+          {isSuperAdmin && (
+            <NavBtn label="🔧 Intervals" path="/admin/service-intervals"
+              active={isActive('/admin/service-intervals')} activeClass="bg-gray-100 text-gray-700"
+              onClick={() => navigate('/admin/service-intervals')} />
+          )}
+
+          {/* ── Telecaller / TL / Manager: dealership links ── */}
+          {!isSuperAdmin && (
+            <NavBtn label="📋 Plans" path="/dashboard"
+              active={isActive('/dashboard')} onClick={() => navigate('/dashboard')} />
+          )}
 
           {isTL && (
-            <button
-              onClick={() => navigate('/team-leader')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive('/team-leader') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              👥 Team
-            </button>
+            <NavBtn label="👥 Team" active={isActive('/team-leader')}
+              onClick={() => navigate('/team-leader')} />
           )}
 
           {canViewTeam && (
-            <button
-              onClick={() => navigate('/manager-dashboard')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive('/manager-dashboard') || isActive('/manager') ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              👥 Team
-            </button>
+            <NavBtn label="👥 Team"
+              active={isActive('/manager-dashboard') || isActive('/manager')}
+              activeClass="bg-purple-100 text-purple-700"
+              onClick={() => navigate('/manager-dashboard')} />
           )}
 
           {canManageUsers && (
-            <button
-              onClick={() => navigate('/users')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive('/users') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              👤 Users
-            </button>
+            <NavBtn label="👤 Users" active={isActive('/users')}
+              onClick={() => navigate('/users')} />
           )}
 
           {(canViewTeam || isTL) && (
-            <button
-              onClick={() => navigate('/reports/daily-calls')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive('/reports/daily-calls') ? 'bg-amber-100 text-amber-700' : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              📊 Daily Report
-            </button>
+            <NavBtn label="📊 Daily Report" active={isActive('/reports/daily-calls')}
+              activeClass="bg-amber-100 text-amber-700"
+              onClick={() => navigate('/reports/daily-calls')} />
           )}
 
           {(canViewTeam || isTL) && (
-            <button
-              onClick={() => navigate('/search/advanced')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive('/search/advanced') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              🔎 Plan Filter
-            </button>
+            <NavBtn label="🔎 Plan Filter" active={isActive('/search/advanced')}
+              onClick={() => navigate('/search/advanced')} />
           )}
 
           {canUpload && (
-            <button
-              onClick={() => navigate('/upload')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive('/upload') ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              📤 Upload
-            </button>
+            <NavBtn label="📤 Upload" active={isActive('/upload')}
+              onClick={() => navigate('/upload')} />
           )}
 
-          <button
-            onClick={onSearchClick}
-            className="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            🔍 Quick Find
-          </button>
+          {!isSuperAdmin && (
+            <button onClick={onSearchClick}
+              className="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors">
+              🔍 Quick Find
+            </button>
+          )}
 
           {(canViewTeam || isTL) && <NotificationBell />}
 
           {(canViewTeam || isTL) && (
-            <button
-              onClick={() => navigate('/settings')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive('/settings') ? 'bg-gray-100 text-gray-700' : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              ⚙️ Settings
-            </button>
-          )}
-
-          {user?.role === 'super_admin' && (
-            <button
-              onClick={() => navigate('/admin')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive('/admin') ? 'bg-gray-100 text-gray-700' : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              🏢 Admin
-            </button>
+            <NavBtn label="⚙️ Settings" active={isActive('/settings')}
+              activeClass="bg-gray-100 text-gray-700"
+              onClick={() => navigate('/settings')} />
           )}
 
           <button

@@ -13,6 +13,7 @@ import DailyCallReport from './pages/DailyCallReport';
 import AdvancedSearch from './pages/AdvancedSearch';
 import SettingsPage from './pages/SettingsPage';
 import AdminPanel from './pages/AdminPanel';
+import ServiceIntervalMaster from './pages/ServiceIntervalMaster';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -45,19 +46,21 @@ const AppRoutes = () => {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute allowedRoles={['telecaller', 'team_leader', 'manager', 'super_admin']}>
-            {user?.role === 'team_leader' ? <TeamLeaderDashboard /> : <TelecallerDashboard />}
+          <ProtectedRoute allowedRoles={['telecaller', 'team_leader', 'manager', 'super_manager', 'super_admin']}>
+            {user?.role === 'team_leader' ? <TeamLeaderDashboard /> :
+             (user?.role === 'manager' || user?.role === 'super_manager') ? <ManagerDashboard /> :
+             <TelecallerDashboard />}
           </ProtectedRoute>
         }
       />
       <Route
-  path="/upload"
-  element={
-    <ProtectedRoute allowedRoles={['manager', 'team_leader', 'super_admin']}>
-      <UploadPage />
-    </ProtectedRoute>
-  }
-/>
+        path="/upload"
+        element={
+          <ProtectedRoute allowedRoles={['manager', 'super_manager', 'team_leader', 'super_admin']}>
+            <UploadPage />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/manager"
         element={
@@ -77,7 +80,7 @@ const AppRoutes = () => {
       <Route
         path="/users"
         element={
-          <ProtectedRoute allowedRoles={['manager', 'super_admin']}>
+          <ProtectedRoute allowedRoles={['manager', 'super_manager', 'super_admin']}>
             <UserManagement />
           </ProtectedRoute>
         }
@@ -97,6 +100,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={['super_admin']}>
             <AdminPanel />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/service-intervals"
+        element={
+          <ProtectedRoute allowedRoles={['super_admin']}>
+            <ServiceIntervalMaster />
           </ProtectedRoute>
         }
       />

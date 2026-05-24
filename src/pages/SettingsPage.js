@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { settingsService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
@@ -54,14 +55,17 @@ const Section = ({ title, icon, children }) => (
 
 const SettingsPage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [settings, setSettings] = useState(null);
   const [form, setForm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [isSuperAdminWithoutDealer, setIsSuperAdminWithoutDealer] = useState(false);
 
-  const canEdit = ['manager', 'super_admin'].includes(user?.role);
+  const isSuperManager = user?.role === 'super_manager';
+  const canEdit = isSuperManager || (user?.role === 'manager' && settings?.managerCanEditSettings !== false);
 
   useEffect(() => {
     settingsService.get()
@@ -69,7 +73,13 @@ const SettingsPage = () => {
         setSettings(r.data.settings);
         setForm(r.data.settings);
       })
-      .catch(() => toast.error('Failed to load settings'))
+      .catch(err => {
+        if (err.response?.data?.error === 'super_admin_no_dealership') {
+          setIsSuperAdminWithoutDealer(true);
+        } else {
+          toast.error('Failed to load settings');
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -81,7 +91,7 @@ const SettingsPage = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await settingsService.update({
+      const payload = {
         maxFollowupGapDays: form.maxFollowupGapDays,
         followupStartDaysBefore: form.followupStartDaysBefore,
         autoCloseDays: form.autoCloseDays,
@@ -89,7 +99,12 @@ const SettingsPage = () => {
         callingMode: form.callingMode,
         exportRightsEnabled: form.exportRightsEnabled,
         mobileExportEnabled: form.mobileExportEnabled,
-      });
+      };
+      if (isSuperManager) {
+        payload.managerCanCreateUsers = form.managerCanCreateUsers;
+        payload.managerCanEditSettings = form.managerCanEditSettings;
+      }
+      const res = await settingsService.update(payload);
       setSettings(res.data.settings);
       setForm(res.data.settings);
       setDirty(false);
@@ -110,6 +125,26 @@ const SettingsPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (isSuperAdminWithoutDealer) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar onSearchClick={() => setShowSearch(true)} />
+        <div className="max-w-lg mx-auto px-4 py-20 text-center">
+          <p className="text-5xl mb-4">⚙️</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Settings are per-dealership</h2>
+          <p className="text-gray-500 text-sm mb-6">
+            As Super Admin you manage all dealerships. Each dealership has its own settings configured by its manager.
+          </p>
+          <button onClick={() => navigate('/admin')}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors">
+            Go to Admin Panel
+          </button>
+        </div>
+        {showSearch && <SearchModal onClose={() => setShowSearch(false)} onSelectCustomer={() => setShowSearch(false)} />}
       </div>
     );
   }
@@ -143,6 +178,53 @@ const SettingsPage = () => {
         </div>
 
         <div className="space-y-5">
+          {/* Locked by admin notice */}
+          {user?.role === 'manager' && settings?.managerCanEditSettings === false && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex items-start gap-3">
+              <span className="text-xl flex-shrink-0 mt-0.5">🔒</span>
+              <div>
+                <p className="text-sm font-semibold text-amber-800">Settings managed by admin</p>
+                <p className="text-xs text-amber-700 mt-0.5">Your admin has locked settings for this dealership. Contact them to make changes.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Active Modules — admin-only, read-only for everyone here */}
+          <Section title="Active Modules" icon="🔌">
+            <p className="text-xs text-gray-400 -mt-1">Module access is configured by your admin.</p>
+            <div className="flex gap-1.5 flex-wrap mt-1">
+              {Object.entries(form.modulesEnabled || {}).filter(([, v]) => v).length === 0
+                ? <span className="text-xs text-gray-400 italic">No modules enabled</span>
+                : Object.entries(form.modulesEnabled || {}).filter(([, v]) => v).map(([k]) => {
+                    const icons = { insurance: '🛡️', service: '🔧', psf: '😊', tyre_policy: '🔵', presale: '🚗', vas: '✨' };
+                    return (
+                      <span key={k} className="text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full font-medium">
+                        {icons[k] || '📦'} {k.replace('_', ' ')}
+                      </span>
+                    );
+                  })
+              }
+            </div>
+          </Section>
+
+          {/* Allowed Makes — admin-only, read-only */}
+          <Section title="Allowed Makes" icon="🚗">
+            <p className="text-xs text-gray-400 -mt-1">Vehicle makes allowed for upload, configured by your admin.</p>
+            <div className="flex gap-1.5 flex-wrap mt-1">
+              {(() => {
+                const makes = Array.isArray(form.allowedMakes) ? form.allowedMakes : [];
+                const labels = { tata: 'Tata', maruti: 'Maruti Suzuki', hyundai: 'Hyundai', honda: 'Honda', toyota: 'Toyota', mahindra: 'Mahindra', kia: 'Kia', mg: 'MG', renault: 'Renault', nissan: 'Nissan', volkswagen: 'Volkswagen', skoda: 'Skoda', jeep: 'Jeep', ford: 'Ford', mercedes: 'Mercedes-Benz', bmw: 'BMW', audi: 'Audi', volvo: 'Volvo', isuzu: 'Isuzu', force: 'Force' };
+                return makes.length === 0
+                  ? <span className="text-xs text-amber-500 italic">No makes configured — contact admin</span>
+                  : makes.map(m => (
+                      <span key={m} className="text-sm bg-green-50 text-green-700 px-3 py-1 rounded-full font-medium">
+                        🚗 {labels[m] || m}
+                      </span>
+                    ));
+              })()}
+            </div>
+          </Section>
+
           {/* Follow-up Rules */}
           <Section title="Follow-up Rules" icon="📅">
             <Field
@@ -219,9 +301,27 @@ const SettingsPage = () => {
             />
           </Section>
 
-          {!canEdit && (
+          {/* Manager Permissions — super_manager only */}
+          {isSuperManager && (
+            <Section title="Manager Permissions" icon="🔑">
+              <Toggle
+                value={form.managerCanCreateUsers ?? false}
+                onChange={v => set('managerCanCreateUsers', v)}
+                label="Manager Can Create Users"
+                hint="Allow managers to create telecallers, team leaders, and service advisers"
+              />
+              <Toggle
+                value={form.managerCanEditSettings ?? true}
+                onChange={v => set('managerCanEditSettings', v)}
+                label="Manager Can Edit Settings"
+                hint="Allow managers to change follow-up rules, calling mode, and export settings"
+              />
+            </Section>
+          )}
+
+          {!canEdit && !isSuperManager && user?.role !== 'team_leader' && (
             <p className="text-center text-xs text-gray-400 pb-2">
-              Only managers can change settings. Contact your manager to make changes.
+              Settings are managed by your admin.
             </p>
           )}
         </div>

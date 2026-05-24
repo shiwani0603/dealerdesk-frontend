@@ -6,6 +6,14 @@ import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import CustomerDetailPanel from '../components/CustomerDetailPanel';
 
+const MAKE_LABEL_MAP = {
+  tata: 'Tata', maruti: 'Maruti Suzuki', hyundai: 'Hyundai', honda: 'Honda',
+  toyota: 'Toyota', mahindra: 'Mahindra', kia: 'Kia', mg: 'MG',
+  renault: 'Renault', nissan: 'Nissan', volkswagen: 'Volkswagen', skoda: 'Skoda',
+  jeep: 'Jeep', ford: 'Ford', mercedes: 'Mercedes-Benz', bmw: 'BMW', audi: 'Audi',
+  volvo: 'Volvo', isuzu: 'Isuzu', force: 'Force',
+};
+
 const SYSTEM_FIELDS = {
   insurance: [
     'chassis_number', 'registration_number', 'engine_number', 'customer_name',
@@ -48,7 +56,7 @@ const UploadPage = () => {
   const [file, setFile] = useState(null);
   const [step, setStep] = useState(1);
   const [portals, setPortals] = useState([]);
-  const [makes, setMakes] = useState([]);
+  const [allowedMakes, setAllowedMakes] = useState([]);
 
   const [headers, setHeaders] = useState([]);
   const [sampleRows, setSampleRows] = useState([]);
@@ -67,7 +75,7 @@ const UploadPage = () => {
       try {
         const res = await api.get(`/upload/mappings?dealershipId=${dealershipId}`);
         setPortals(res.data.portals || []);
-        setMakes(res.data.makes || []);
+        setAllowedMakes(res.data.allowedMakes || []);
       } catch (err) {
         console.error('Failed to load mappings');
       }
@@ -227,14 +235,22 @@ const UploadPage = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Make *</label>
-                <select
-                  value={make}
-                  onChange={e => setMake(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                >
-                  <option value="">Select make...</option>
-                  {makes.map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
+                {allowedMakes.length === 0 ? (
+                  <div className="w-full px-3 py-2 border border-amber-300 bg-amber-50 rounded-lg text-sm text-amber-700">
+                    No makes configured — contact your admin
+                  </div>
+                ) : (
+                  <select
+                    value={make}
+                    onChange={e => setMake(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">Select make...</option>
+                    {allowedMakes.map(m => (
+                      <option key={m} value={m}>{MAKE_LABEL_MAP[m] || m}</option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
 

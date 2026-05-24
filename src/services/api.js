@@ -113,6 +113,14 @@ export const settingsService = {
   update: (data) => api.put('/settings', data),
 };
 
+export const serviceIntervalService = {
+  list: (params) => api.get('/service-intervals', { params }),
+  create: (data) => api.post('/service-intervals', data),
+  update: (id, data) => api.put(`/service-intervals/${id}`, data),
+  remove: (id) => api.delete(`/service-intervals/${id}`),
+  lookup: (params) => api.get('/service-intervals/lookup', { params }),
+};
+
 export const dealershipService = {
   getAll: () => api.get('/dealerships'),
   get: (id) => api.get(`/dealerships/${id}`),
@@ -120,6 +128,11 @@ export const dealershipService = {
   update: (id, data) => api.put(`/dealerships/${id}`, data),
   addLocation: (id, data) => api.post(`/dealerships/${id}/locations`, data),
   createUser: (id, data) => api.post(`/dealerships/${id}/users`, data),
+  getUsers: (id) => api.get(`/dealerships/${id}/users`),
+  updateUser: (id, userId, data) => api.put(`/dealerships/${id}/users/${userId}`, data),
+  toggleUserActive: (id, userId) => api.put(`/dealerships/${id}/users/${userId}/toggle-active`),
+  getSettings: (id) => api.get(`/dealerships/${id}/settings`),
+  updateSettings: (id, data) => api.put(`/dealerships/${id}/settings`, data),
   createCustomer: (id, data) => api.post(`/dealerships/${id}/customers`, data),
 };
 
