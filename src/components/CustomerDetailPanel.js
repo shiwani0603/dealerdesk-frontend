@@ -192,7 +192,6 @@ useEffect(() => {
   const allEmails = customer.contacts?.filter(c => c.contactType === 'email') || [];
 
   const latestInsurance = customer.insurancePlans?.[0]?.latestRecord;
-  const latestService = customer.serviceRecords?.[0];
   const openInsurancePlan = customer.insurancePlans?.find(p => p.planStatus === 'open');
   const openServicePlan = customer.servicePlans?.find(p => p.planStatus === 'open');
 

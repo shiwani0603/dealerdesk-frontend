@@ -77,8 +77,6 @@ const DailyCallReport = () => {
     next30Count: (acc.next30Count || 0) + r.next30Count,
   }), {});
 
-  const isToday = selectedDate === today;
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar onSearchClick={() => setShowSearch(true)} />

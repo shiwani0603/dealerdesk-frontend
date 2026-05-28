@@ -80,7 +80,7 @@ const UnassignedTab = ({ users }) => {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState(new Set());
   const [assignModal, setAssignModal] = useState(false);
-  const [assigning, setAssigning] = useState(false);
+  const [, setAssigning] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);

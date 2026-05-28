@@ -238,7 +238,7 @@ const ServiceIntervalMaster = () => {
   const [filterMake, setFilterMake] = useState('');
   const [filterFuel, setFilterFuel] = useState('');
   const [modal, setModal] = useState({ open: false, editing: null });
-  const [showSearch, setShowSearch] = useState(false);
+  const [, setShowSearch] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);

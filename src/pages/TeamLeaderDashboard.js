@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { dashboardService, insuranceService, serviceService, psfService } from '../services/api';
 import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
@@ -83,7 +82,6 @@ const TransferModal = ({ plan, module, telecallers, onClose, onSuccess }) => {
 };
 
 const TeamLeaderDashboard = () => {
-  const { user } = useAuth();
   const [teamStats, setTeamStats] = useState(null);
   const [insurancePlans, setInsurancePlans] = useState({ today: [], overdue: [], redAlert: [] });
   const [servicePlans, setServicePlans] = useState({ today: [], overdue: [], redAlert: [] });
