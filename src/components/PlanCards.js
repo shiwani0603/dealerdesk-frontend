@@ -83,7 +83,10 @@ export const InsurancePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer
           <div key={plan.id} className={`grid grid-cols-12 gap-2 px-4 py-2.5 border-b border-gray-100 hover:bg-blue-50 transition-colors items-center ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${isRedAlert ? 'border-l-4 border-l-red-400' : isOverdue ? 'border-l-4 border-l-orange-400' : ''}`}>
             {/* Customer - clickable */}
             <div className="col-span-3 min-w-0 cursor-pointer" onClick={() => onOpenDetail(plan, 'insurance')}>
-              <p className="text-sm font-semibold text-gray-900 truncate">{customer.name || 'Unknown'}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-semibold text-gray-900 truncate">{customer.name || 'Unknown'}</p>
+                {customer.hasIncompleteData && <span className="text-xs bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded flex-shrink-0">⚠️</span>}
+              </div>
               <p className="text-xs text-gray-500 truncate">{customer.registrationNumber || customer.chassisNumber} • {customer.make} {customer.model}</p>
             </div>
 
@@ -280,7 +283,10 @@ export const ServicePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer }
           <div key={plan.id} className={`grid grid-cols-12 gap-2 px-4 py-2.5 border-b border-gray-100 hover:bg-green-50 transition-colors items-center ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${isRedAlert ? 'border-l-4 border-l-red-400' : isOverdue ? 'border-l-4 border-l-orange-400' : ''}`}>
             {/* Customer */}
             <div className="col-span-3 min-w-0 cursor-pointer" onClick={() => onOpenDetail(plan, 'service')}>
-              <p className="text-sm font-semibold text-gray-900 truncate">{customer.name || 'Unknown'}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-semibold text-gray-900 truncate">{customer.name || 'Unknown'}</p>
+                {customer.hasIncompleteData && <span className="text-xs bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded flex-shrink-0">⚠️</span>}
+              </div>
               <p className="text-xs text-gray-500 truncate">{customer.registrationNumber || customer.chassisNumber} • {customer.make} {customer.model}</p>
             </div>
 

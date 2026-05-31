@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { customerService } from '../services/api';
+import { customerService, insuranceService, serviceService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -61,6 +61,11 @@ const CustomerDetailPanel = ({ customerId, planId, planType, onClose, onLogCall 
   const [newContact, setNewContact] = useState({ contactType: 'mobile', value: '' });
   const [editingNote, setEditingNote] = useState(false);
   const [stickyNote, setStickyNote] = useState('');
+  const [addingNote, setAddingNote] = useState(false);
+  const [noteForm, setNoteForm] = useState({ noteText: '', fromModule: '', toModule: '' });
+  const [savingNote, setSavingNote] = useState(false);
+  const [extendingAutoClose, setExtendingAutoClose] = useState(null); // 'insurance' | 'service'
+  const [newAutoCloseDate, setNewAutoCloseDate] = useState('');
 
   const [editingCustomer, setEditingCustomer] = useState(false);
   const [custForm, setCustForm] = useState({});
@@ -160,6 +165,39 @@ useEffect(() => {
       toast.error(err.response?.data?.error || 'Failed to save');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!noteForm.noteText.trim()) return;
+    setSavingNote(true);
+    try {
+      await customerService.addNote(customerId, noteForm);
+      toast.success('Note added');
+      setAddingNote(false);
+      setNoteForm({ noteText: '', fromModule: '', toModule: '' });
+      loadCustomer();
+    } catch (err) {
+      toast.error('Failed to add note');
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
+  const handleExtendAutoClose = async (planId) => {
+    if (!newAutoCloseDate || !planId) return;
+    try {
+      if (extendingAutoClose === 'insurance') {
+        await insuranceService.extendAutoClose(planId, newAutoCloseDate);
+      } else {
+        await serviceService.extendAutoClose(planId, newAutoCloseDate);
+      }
+      toast.success('Auto-close date extended');
+      setExtendingAutoClose(null);
+      setNewAutoCloseDate('');
+      loadCustomer();
+    } catch (err) {
+      toast.error('Failed to extend auto-close date');
     }
   };
 
@@ -474,8 +512,22 @@ useEffect(() => {
                   <div className="grid grid-cols-2 gap-x-4">
                     <Field label="Category" value={openInsurancePlan.policyCategory} />
                     <Field label="Next Follow-up" value={formatDate(openInsurancePlan?.nextFollowupDate)} />
-                    <Field label="Auto-close Date" value={formatDate(openInsurancePlan?.autoCloseDate)} />
+                    <div className="flex items-end gap-2">
+                      <Field label="Auto-close Date" value={formatDate(openInsurancePlan?.autoCloseDate)} />
+                      <button onClick={() => { setExtendingAutoClose('insurance'); setNewAutoCloseDate(''); }}
+                        className="text-xs text-blue-600 hover:underline mb-2 flex-shrink-0">Extend</button>
+                    </div>
                   </div>
+                  {extendingAutoClose === 'insurance' && (
+                    <div className="mt-2 flex gap-2 items-center">
+                      <input type="date" value={newAutoCloseDate} onChange={e => setNewAutoCloseDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="flex-1 text-sm border border-blue-300 rounded-lg px-2 py-1.5" />
+                      <button onClick={() => handleExtendAutoClose(openInsurancePlan.id)}
+                        className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg">Save</button>
+                      <button onClick={() => setExtendingAutoClose(null)} className="text-sm text-gray-500">✕</button>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -545,8 +597,22 @@ useEffect(() => {
                     <Field label="Service Due" value={openServicePlan?.currentServiceDue} />
                     <Field label="Due Date" value={formatDate(openServicePlan?.calculatedNextDueDate)} highlight />
                     <Field label="Next Follow-up" value={formatDate(openServicePlan?.nextFollowupDate)} />
-                    <Field label="Auto-close" value={formatDate(openServicePlan?.autoCloseDate)} />
+                    <div className="flex items-end gap-2">
+                      <Field label="Auto-close" value={formatDate(openServicePlan?.autoCloseDate)} />
+                      <button onClick={() => { setExtendingAutoClose('service'); setNewAutoCloseDate(''); }}
+                        className="text-xs text-green-600 hover:underline mb-2 flex-shrink-0">Extend</button>
+                    </div>
                   </div>
+                  {extendingAutoClose === 'service' && (
+                    <div className="mt-2 flex gap-2 items-center">
+                      <input type="date" value={newAutoCloseDate} onChange={e => setNewAutoCloseDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="flex-1 text-sm border border-green-300 rounded-lg px-2 py-1.5" />
+                      <button onClick={() => handleExtendAutoClose(openServicePlan.id)}
+                        className="text-sm bg-green-600 text-white px-3 py-1.5 rounded-lg">Save</button>
+                      <button onClick={() => setExtendingAutoClose(null)} className="text-sm text-gray-500">✕</button>
+                    </div>
+                  )}
                   {openServicePlan?.appointmentDate && (
                     <div className="mt-2 bg-green-100 rounded-lg p-2">
                       <p className="text-xs text-green-700 font-medium">
@@ -599,34 +665,81 @@ useEffect(() => {
           {/* History Tab */}
           {activeTab === 'history' && (
             <div>
-              <Section title="Follow-up History">
-                {customer.notes?.length === 0 && customer.insurancePlans?.[0]?.followUpLogs?.length === 0 ? (
-                  <div className="text-center py-4 text-gray-400">
-                    <p className="text-sm">No follow-up history yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {customer.followUpLogs?.map((log, i) => (
-  <div key={i} className="py-2 border-b border-gray-100 last:border-0">
-    <div className="flex items-center justify-between">
-      <span className="text-xs font-medium text-gray-700">{log.callOutcome?.replace(/_/g, ' ')}</span>
-      <span className="text-xs text-gray-400">{formatDate(log.loggedAt)}</span>
-    </div>
-    <p className="text-xs text-gray-500 mt-0.5">{log.planType} • {log.loggedBy?.name || 'System'}</p>
-    {log.notes && <p className="text-xs text-gray-600 mt-0.5">{log.notes}</p>}
-  </div>
-))}
-                    {customer.notes?.map((note, i) => (
-                      <div key={i} className="bg-amber-50 rounded-lg p-3 border border-amber-200">
-                        <div className="flex items-center justify-between mb-1">
-                          <Badge text={note.noteType === 'cross_module' ? '🔀 Cross Module' : '📌 Note'} color="bg-amber-100 text-amber-700" />
-                          <p className="text-xs text-gray-400">{formatDate(note.createdAt)}</p>
-                        </div>
-                        <p className="text-sm text-gray-700">{note.noteText}</p>
-                      </div>
-                    ))}
+              {/* Cross-module note creation */}
+              <div className="mb-3 border border-gray-200 rounded-xl overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50">
+                  <span className="font-semibold text-gray-700 text-sm">📝 Write Note</span>
+                  {!addingNote && (
+                    <button onClick={() => setAddingNote(true)} className="text-xs text-blue-600 hover:underline font-medium">+ Add</button>
+                  )}
+                </div>
+                {addingNote && (
+                  <div className="px-4 py-3 space-y-2">
+                    <textarea value={noteForm.noteText} onChange={e => setNoteForm(f => ({ ...f, noteText: e.target.value }))}
+                      className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 resize-none focus:ring-2 focus:ring-blue-300"
+                      rows={3} placeholder="Write your note here..." autoFocus />
+                    <div className="flex gap-2">
+                      <select value={noteForm.fromModule} onChange={e => setNoteForm(f => ({ ...f, fromModule: e.target.value }))}
+                        className="flex-1 text-xs border border-gray-300 rounded-lg px-2 py-1.5">
+                        <option value="">From module (optional)</option>
+                        <option value="insurance">Insurance</option>
+                        <option value="service">Service</option>
+                        <option value="psf">PSF</option>
+                      </select>
+                      <select value={noteForm.toModule} onChange={e => setNoteForm(f => ({ ...f, toModule: e.target.value }))}
+                        className="flex-1 text-xs border border-gray-300 rounded-lg px-2 py-1.5">
+                        <option value="">To module (optional)</option>
+                        <option value="insurance">Insurance</option>
+                        <option value="service">Service</option>
+                        <option value="psf">PSF</option>
+                      </select>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={handleAddNote} disabled={savingNote || !noteForm.noteText.trim()}
+                        className="flex-1 bg-blue-600 text-white text-sm py-2 rounded-lg disabled:opacity-50">
+                        {savingNote ? 'Saving...' : 'Save Note'}
+                      </button>
+                      <button onClick={() => setAddingNote(false)} className="flex-1 bg-gray-100 text-gray-600 text-sm py-2 rounded-lg">Cancel</button>
+                    </div>
                   </div>
                 )}
+              </div>
+
+              {/* Unified timeline */}
+              <Section title="Interaction Timeline">
+                {(() => {
+                  const logs = (customer.followUpLogs || []).map(l => ({ ...l, _type: 'log', _ts: new Date(l.loggedAt) }));
+                  const notes = (customer.notes || []).map(n => ({ ...n, _type: 'note', _ts: new Date(n.createdAt) }));
+                  const timeline = [...logs, ...notes].sort((a, b) => b._ts - a._ts);
+                  if (timeline.length === 0) {
+                    return <div className="text-center py-4 text-gray-400 text-sm">No interactions yet</div>;
+                  }
+                  return (
+                    <div className="space-y-2">
+                      {timeline.map((item, i) => item._type === 'log' ? (
+                        <div key={i} className="py-2 border-b border-gray-100 last:border-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-semibold text-gray-800">{item.callOutcome?.replace(/_/g, ' ')}</span>
+                            <span className="text-xs text-gray-400">{formatDate(item.loggedAt)}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">{item.planType} • {item.loggedBy?.name || 'System'}</p>
+                          {item.notes && <p className="text-xs text-gray-600 mt-0.5 italic">"{item.notes}"</p>}
+                        </div>
+                      ) : (
+                        <div key={i} className={`rounded-lg p-3 border ${item.noteType === 'cross_module' ? 'bg-blue-50 border-blue-200' : 'bg-amber-50 border-amber-200'}`}>
+                          <div className="flex items-center justify-between mb-1">
+                            <Badge
+                              text={item.noteType === 'cross_module' ? `🔀 ${item.fromModule || ''}→${item.toModule || ''}` : item.noteType === 'system_auto_close' ? '🤖 Auto-closed' : '📌 Note'}
+                              color={item.noteType === 'cross_module' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}
+                            />
+                            <p className="text-xs text-gray-400">{formatDate(item.createdAt)}</p>
+                          </div>
+                          <p className="text-sm text-gray-700">{item.noteText}</p>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </Section>
             </div>
           )}

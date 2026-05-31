@@ -51,6 +51,7 @@ export const insuranceService = {
   getPlan: (id) => api.get(`/insurance/${id}`),
   logCall: (id, data) => api.post(`/insurance/${id}/log`, data),
   transferPlan: (id, newUserId) => api.put(`/insurance/${id}/transfer`, { newUserId }),
+  extendAutoClose: (id, newAutoCloseDate) => api.put(`/insurance/${id}/extend-auto-close`, { newAutoCloseDate }),
 };
 
 export const serviceService = {
@@ -60,6 +61,7 @@ export const serviceService = {
   logCall: (id, data) => api.post(`/service/${id}/log`, data),
   markReported: (id) => api.put(`/service/${id}/reported`),
   transferPlan: (id, newUserId) => api.put(`/service/${id}/transfer`, { newUserId }),
+  extendAutoClose: (id, newAutoCloseDate) => api.put(`/service/${id}/extend-auto-close`, { newAutoCloseDate }),
 };
 
 export const customerService = {
@@ -67,6 +69,7 @@ export const customerService = {
   getCustomer: (id) => api.get(`/customers/${id}`),
   updateCustomer: (id, data) => api.put(`/customers/${id}`, data),
   addContact: (id, data) => api.post(`/customers/${id}/contacts`, data),
+  addNote: (id, data) => api.post(`/customers/${id}/notes`, data),
 };
 
 export const psfService = {
