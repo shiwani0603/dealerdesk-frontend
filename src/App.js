@@ -14,6 +14,7 @@ import AdvancedSearch from './pages/AdvancedSearch';
 import SettingsPage from './pages/SettingsPage';
 import AdminPanel from './pages/AdminPanel';
 import ServiceIntervalMaster from './pages/ServiceIntervalMaster';
+import ReportsPage from './pages/ReportsPage';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -116,8 +117,17 @@ const AppRoutes = () => {
       <Route
         path="/reports/daily-calls"
         element={
-          <ProtectedRoute allowedRoles={['manager', 'team_leader', 'super_admin']}>
+          <ProtectedRoute allowedRoles={['manager', 'team_leader', 'super_admin', 'super_manager']}>
             <DailyCallReport />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute allowedRoles={['manager', 'team_leader', 'super_admin', 'super_manager']}>
+            <ReportsPage />
           </ProtectedRoute>
         }
       />

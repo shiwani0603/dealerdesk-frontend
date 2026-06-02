@@ -82,9 +82,9 @@ const Navbar = ({ onSearchClick }) => {
           )}
 
           {(canViewTeam || isTL) && (
-            <NavBtn label="📊 Daily Report" active={isActive('/reports/daily-calls')}
+            <NavBtn label="📊 Reports" active={isActive('/reports') || isActive('/reports/daily-calls')}
               activeClass="bg-amber-100 text-amber-700"
-              onClick={() => navigate('/reports/daily-calls')} />
+              onClick={() => navigate('/reports')} />
           )}
 
           {(canViewTeam || isTL) && (

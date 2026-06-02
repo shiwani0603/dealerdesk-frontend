@@ -97,6 +97,14 @@ export const reportService = {
     api.get(`/dashboard/reports/lost-business?fromDate=${fromDate}&toDate=${toDate}`),
   getAutoClosed: () => api.get('/dashboard/reports/auto-closed'),
   getPsfSummary: () => api.get('/dashboard/reports/psf-summary'),
+  getLyVsTy: (period) => api.get(`/dashboard/reports/ly-vs-ty?period=${period}`),
+  getOwnSaleRetention: (fromDate, toDate) =>
+    api.get(`/dashboard/reports/own-sale-retention?fromDate=${fromDate}&toDate=${toDate}`),
+  getAutoCloseSummary: (fromDate, toDate) =>
+    api.get(`/dashboard/reports/auto-close-summary?fromDate=${fromDate}&toDate=${toDate}`),
+  getJobCardFraud: () => api.get('/dashboard/reports/job-card-fraud'),
+  getPerformance: (fromDate, toDate) =>
+    api.get(`/dashboard/reports/telecaller-performance?fromDate=${fromDate}&toDate=${toDate}`),
 };
 
 export const userService = {
