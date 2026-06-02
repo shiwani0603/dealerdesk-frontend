@@ -88,6 +88,12 @@ const Navbar = ({ onSearchClick }) => {
           )}
 
           {(canViewTeam || isTL) && (
+            <NavBtn label="🎯 Campaigns" active={isActive('/campaigns')}
+              activeClass="bg-indigo-100 text-indigo-700"
+              onClick={() => navigate('/campaigns')} />
+          )}
+
+          {(canViewTeam || isTL) && (
             <NavBtn label="🔎 Plan Filter" active={isActive('/search/advanced')}
               onClick={() => navigate('/search/advanced')} />
           )}

@@ -15,6 +15,7 @@ import SettingsPage from './pages/SettingsPage';
 import AdminPanel from './pages/AdminPanel';
 import ServiceIntervalMaster from './pages/ServiceIntervalMaster';
 import ReportsPage from './pages/ReportsPage';
+import CampaignsPage from './pages/CampaignsPage';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -128,6 +129,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={['manager', 'team_leader', 'super_admin', 'super_manager']}>
             <ReportsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/campaigns"
+        element={
+          <ProtectedRoute allowedRoles={['manager', 'team_leader', 'super_admin', 'super_manager']}>
+            <CampaignsPage />
           </ProtectedRoute>
         }
       />

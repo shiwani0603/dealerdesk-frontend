@@ -134,6 +134,17 @@ export const serviceIntervalService = {
   lookup: (params) => api.get('/service-intervals/lookup', { params }),
 };
 
+export const campaignService = {
+  list: () => api.get('/campaigns'),
+  create: (data) => api.post('/campaigns', data),
+  update: (id, data) => api.put(`/campaigns/${id}`, data),
+  get: (id) => api.get(`/campaigns/${id}`),
+  tagPlan: (id, planId, planType) => api.post(`/campaigns/${id}/tags`, { planId, planType }),
+  removeTag: (id, tagId) => api.delete(`/campaigns/${id}/tags/${tagId}`),
+  uploadChassis: (id, formData) => api.post(`/campaigns/${id}/upload-chassis`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  getReport: (id) => api.get(`/campaigns/${id}/report`),
+};
+
 export const dealershipService = {
   getAll: () => api.get('/dealerships'),
   get: (id) => api.get(`/dealerships/${id}`),
