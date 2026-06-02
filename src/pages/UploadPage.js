@@ -44,6 +44,74 @@ const SYSTEM_FIELDS = {
   ],
 };
 
+const ServiceOverrideUpload = ({ dealershipId }) => {
+  const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState(null);
+  const fileRef = useRef(null);
+
+  const handleUpload = async () => {
+    if (!file) return;
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (dealershipId) formData.append('dealershipId', dealershipId);
+      const res = await api.post('/upload/service-override', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setResults(res.data.results);
+      toast.success(`Service override complete: ${res.data.results.updated} plans updated`);
+      setFile(null);
+      if (fileRef.current) fileRef.current.value = '';
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Upload failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-6 mt-6 border border-orange-100">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center text-xl">📅</div>
+        <div>
+          <h2 className="font-bold text-gray-900">Service Due Date Override</h2>
+          <p className="text-xs text-gray-500">Upload a 2-column file (chassis_number + actual_due_date) to correct service plan due dates</p>
+        </div>
+      </div>
+      <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 mb-4 text-xs text-orange-700">
+        <strong>File format:</strong> Column 1 = <code>chassis_number</code>, Column 2 = <code>actual_due_date</code> (e.g. 15/06/2026)
+      </div>
+      <div className="flex gap-3 items-center">
+        <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv"
+          onChange={e => setFile(e.target.files[0])}
+          className="flex-1 text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-100 file:text-orange-700 hover:file:bg-orange-200" />
+        <button onClick={handleUpload} disabled={!file || loading}
+          className="px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50">
+          {loading ? 'Processing...' : 'Upload Override'}
+        </button>
+      </div>
+      {results && (
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          <div className="bg-green-50 rounded-xl p-3 text-center">
+            <p className="text-2xl font-bold text-green-700">{results.updated}</p>
+            <p className="text-xs text-green-600 mt-0.5">Updated</p>
+          </div>
+          <div className="bg-yellow-50 rounded-xl p-3 text-center">
+            <p className="text-2xl font-bold text-yellow-700">{results.notFound}</p>
+            <p className="text-xs text-yellow-600 mt-0.5">Not Found</p>
+          </div>
+          <div className="bg-red-50 rounded-xl p-3 text-center">
+            <p className="text-2xl font-bold text-red-700">{results.errors}</p>
+            <p className="text-xs text-red-600 mt-0.5">Errors</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const UploadPage = () => {
   const { user } = useAuth();
   const [showSearch, setShowSearch] = useState(false);
@@ -393,6 +461,9 @@ const UploadPage = () => {
           </div>
         )}
       </div>
+
+      {/* Service Due Date Override Upload */}
+      <ServiceOverrideUpload dealershipId={user?.dealershipId} />
 
       {showSearch && (
         <SearchModal onClose={() => setShowSearch(false)} onSelectCustomer={(customerId) => {

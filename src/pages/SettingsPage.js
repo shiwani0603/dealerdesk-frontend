@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { settingsService } from '../services/api';
+import { settingsService, userService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
@@ -65,7 +65,30 @@ const SettingsPage = () => {
   const [isSuperAdminWithoutDealer, setIsSuperAdminWithoutDealer] = useState(false);
 
   const isSuperManager = user?.role === 'super_manager';
-  const canEdit = isSuperManager || (user?.role === 'manager' && settings?.managerCanEditSettings !== false);
+  const isManager = user?.role === 'manager';
+  const isTL = user?.role === 'team_leader';
+  const canEdit = isSuperManager || (isManager && settings?.managerCanEditSettings !== false);
+  const [locations, setLocations] = useState([]);
+  const [myLocationId, setMyLocationId] = useState(user?.locationId || '');
+  const [savingLocation, setSavingLocation] = useState(false);
+
+  useEffect(() => {
+    if (isManager || isSuperManager || isTL) {
+      userService.listLocations().then(r => setLocations(r.data.locations || [])).catch(() => {});
+    }
+  }, [isManager, isSuperManager, isTL]);
+
+  const handleSaveLocation = async () => {
+    setSavingLocation(true);
+    try {
+      await userService.setMyLocation(myLocationId || null);
+      toast.success(myLocationId ? 'Location filter set — you now see only this location' : 'Location filter cleared — you see all locations');
+    } catch (err) {
+      toast.error('Failed to update location filter');
+    } finally {
+      setSavingLocation(false);
+    }
+  };
 
   useEffect(() => {
     settingsService.get()
@@ -319,7 +342,40 @@ const SettingsPage = () => {
             </Section>
           )}
 
-          {!canEdit && !isSuperManager && user?.role !== 'team_leader' && (
+          {/* My Location Filter — manager / super_manager / TL */}
+          {(isManager || isSuperManager || isTL) && locations.length > 1 && (
+            <Section title="My Location View" icon="📍">
+              <Field
+                label="Location Filter"
+                hint="Restrict your dashboard view to a single location. Choose 'All Locations' to see everything."
+              >
+                <div className="flex gap-2">
+                  <select
+                    value={myLocationId}
+                    onChange={e => setMyLocationId(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">All Locations</option>
+                    {locations.map(l => (
+                      <option key={l.id} value={l.id}>{l.name}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleSaveLocation}
+                    disabled={savingLocation}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50 transition-colors"
+                  >
+                    {savingLocation ? 'Saving…' : 'Apply'}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  {myLocationId ? `Currently filtering: ${locations.find(l => l.id === myLocationId)?.name || '—'}` : 'Currently showing: All locations'}
+                </p>
+              </Field>
+            </Section>
+          )}
+
+          {!canEdit && !isSuperManager && !isTL && (
             <p className="text-center text-xs text-gray-400 pb-2">
               Settings are managed by your admin.
             </p>

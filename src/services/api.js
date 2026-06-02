@@ -105,6 +105,7 @@ export const userService = {
   create: (data) => api.post('/users', data),
   update: (id, data) => api.put(`/users/${id}`, data),
   toggleActive: (id) => api.put(`/users/${id}/toggle-active`),
+  setMyLocation: (locationId) => api.put('/users/me/location', { locationId }),
 };
 
 export const notificationService = {
