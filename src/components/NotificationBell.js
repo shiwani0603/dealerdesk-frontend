@@ -8,6 +8,15 @@ const fd = (d) => {
   catch { return ''; }
 };
 
+const TYPE_CONFIG = {
+  cross_module:        { icon: '🔀', label: 'Cross-Module Note', color: 'text-blue-600',   bg: 'bg-blue-50' },
+  system_auto_close:   { icon: '🔒', label: 'Auto-Closed',       color: 'text-amber-600',  bg: 'bg-amber-50' },
+  system_deactivation: { icon: '👤', label: 'User Deactivated',  color: 'text-orange-600', bg: 'bg-orange-50' },
+  system_fraud:        { icon: '🚨', label: 'Fraud Attempt',     color: 'text-red-600',    bg: 'bg-red-50' },
+  campaign_missed:     { icon: '🎯', label: 'Target Missed',     color: 'text-purple-600', bg: 'bg-purple-50' },
+};
+const DEFAULT_TYPE = { icon: '🔔', label: 'Alert', color: 'text-gray-600', bg: 'bg-gray-50' };
+
 const NotificationBell = () => {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -22,11 +31,10 @@ const NotificationBell = () => {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 60000); // refresh every minute
+    const interval = setInterval(load, 60000);
     return () => clearInterval(interval);
   }, [load]);
 
-  // Close panel on outside click
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
@@ -53,7 +61,6 @@ const NotificationBell = () => {
 
   return (
     <div className="relative" ref={panelRef}>
-      {/* Bell button */}
       <button
         onClick={() => setOpen(o => !o)}
         className={`relative px-2.5 py-2 rounded-lg text-sm transition-colors ${
@@ -68,9 +75,8 @@ const NotificationBell = () => {
         )}
       </button>
 
-      {/* Dropdown panel */}
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-84 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden" style={{ width: '340px' }}>
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-gray-900">Alerts</span>
@@ -78,7 +84,12 @@ const NotificationBell = () => {
                 <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold">{count}</span>
               )}
             </div>
-            <span className="text-xs text-gray-400">PSF Not Satisfied</span>
+            {count > 0 && (
+              <button onClick={() => Promise.all(notifications.map(n => notificationService.resolve(n.id))).then(() => { setNotifications([]); toast.success('All cleared'); }).catch(() => {})}
+                className="text-xs text-gray-400 hover:text-gray-600">
+                Clear all
+              </button>
+            )}
           </div>
 
           <div className="max-h-96 overflow-y-auto divide-y divide-gray-50">
@@ -86,47 +97,50 @@ const NotificationBell = () => {
               <div className="px-4 py-8 text-center">
                 <p className="text-2xl mb-2">✅</p>
                 <p className="text-sm text-gray-500 font-medium">No unresolved alerts</p>
-                <p className="text-xs text-gray-400 mt-1">All PSF cases are resolved</p>
+                <p className="text-xs text-gray-400 mt-1">You're all caught up</p>
               </div>
             ) : (
-              notifications.map(n => (
-                <div key={n.id} className="px-4 py-3 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="text-xs font-bold text-red-600">😞 Not Satisfied</span>
-                        <span className="text-xs text-gray-400">{fd(n.createdAt)}</span>
+              notifications.map(n => {
+                const cfg = TYPE_CONFIG[n.noteType] || DEFAULT_TYPE;
+                return (
+                  <div key={n.id} className="px-4 py-3 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="text-sm">{cfg.icon}</span>
+                          <span className={`text-xs font-bold ${cfg.color}`}>{cfg.label}</span>
+                          <span className="text-xs text-gray-400 ml-auto">{fd(n.createdAt)}</span>
+                        </div>
+                        {n.customer && (
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {n.customer.name || n.customer.chassisNumber || 'Unknown'}
+                            {n.customer.registrationNumber && <span className="font-normal text-gray-400"> · {n.customer.registrationNumber}</span>}
+                          </p>
+                        )}
+                        <p className={`text-xs mt-1 rounded px-2 py-1 leading-snug ${cfg.bg} ${cfg.color}`}>
+                          {n.noteText}
+                        </p>
+                        {n.writtenBy && (
+                          <p className="text-xs text-gray-400 mt-1">by {n.writtenBy.name}</p>
+                        )}
                       </div>
-                      <p className="text-sm font-semibold text-gray-900 truncate">
-                        {n.customer?.name || 'Unknown Customer'}
-                      </p>
-                      <p className="text-xs text-gray-400 truncate">
-                        {n.customer?.make} {n.customer?.model}
-                        {n.customer?.registrationNumber && ` · ${n.customer.registrationNumber}`}
-                      </p>
-                      <p className="text-xs text-gray-600 mt-1 bg-red-50 rounded px-2 py-1 leading-snug">
-                        {n.noteText.replace('PSF Not Satisfied: ', '')}
-                      </p>
-                      {n.writtenBy && (
-                        <p className="text-xs text-gray-400 mt-1">by {n.writtenBy.name}</p>
-                      )}
+                      <button
+                        onClick={() => handleResolve(n.id)}
+                        disabled={resolving === n.id}
+                        className="flex-shrink-0 text-xs text-emerald-600 hover:text-emerald-700 font-semibold hover:bg-emerald-50 px-2 py-1 rounded transition-colors disabled:opacity-50 whitespace-nowrap"
+                      >
+                        {resolving === n.id ? '…' : '✓'}
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleResolve(n.id)}
-                      disabled={resolving === n.id}
-                      className="flex-shrink-0 text-xs text-emerald-600 hover:text-emerald-700 font-semibold hover:bg-emerald-50 px-2 py-1 rounded transition-colors disabled:opacity-50 whitespace-nowrap"
-                    >
-                      {resolving === n.id ? '…' : '✓ Done'}
-                    </button>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
           {count > 0 && (
-            <div className="px-4 py-2.5 border-t border-gray-100 text-center">
-              <p className="text-xs text-gray-400">Click "Done" to mark each alert as resolved</p>
+            <div className="px-4 py-2 border-t border-gray-100 text-center">
+              <p className="text-xs text-gray-400">Click ✓ to resolve each alert</p>
             </div>
           )}
         </div>
