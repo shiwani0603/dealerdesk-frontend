@@ -58,6 +58,12 @@ const Navbar = ({ onSearchClick }) => {
               onClick={() => navigate('/admin/service-intervals')} />
           )}
 
+          {isSuperAdmin && (
+            <NavBtn label="📊 Overview" path="/admin/overview"
+              active={isActive('/admin/overview')} activeClass="bg-gray-100 text-gray-700"
+              onClick={() => navigate('/admin/overview')} />
+          )}
+
           {/* ── Telecaller / TL / Manager: dealership links ── */}
           {!isSuperAdmin && (
             <NavBtn label="📋 Plans" path="/dashboard"

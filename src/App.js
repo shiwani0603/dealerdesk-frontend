@@ -16,6 +16,7 @@ import AdminPanel from './pages/AdminPanel';
 import ServiceIntervalMaster from './pages/ServiceIntervalMaster';
 import ReportsPage from './pages/ReportsPage';
 import CampaignsPage from './pages/CampaignsPage';
+import AdminOverview from './pages/AdminOverview';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -102,6 +103,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={['super_admin']}>
             <AdminPanel />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/overview"
+        element={
+          <ProtectedRoute allowedRoles={['super_admin']}>
+            <AdminOverview />
           </ProtectedRoute>
         }
       />

@@ -145,6 +145,14 @@ export const campaignService = {
   getReport: (id) => api.get(`/campaigns/${id}/report`),
 };
 
+export const adminService = {
+  getComparative: () => api.get('/admin/comparative'),
+  getBilling: () => api.get('/admin/billing'),
+  getFraudLog: (dealershipId) => api.get(`/admin/fraud-log${dealershipId ? `?dealershipId=${dealershipId}` : ''}`),
+  deleteData: (dealershipId, params) => api.delete(`/admin/dealerships/${dealershipId}/data`, { data: params }),
+  getAuditLog: (dealershipId) => api.get(`/admin/audit-log${dealershipId ? `?dealershipId=${dealershipId}` : ''}`),
+};
+
 export const dealershipService = {
   getAll: () => api.get('/dealerships'),
   get: (id) => api.get(`/dealerships/${id}`),
