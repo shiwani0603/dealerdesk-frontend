@@ -65,8 +65,8 @@ const BulkAssignModal = ({ count, module, users, onConfirm, onClose }) => {
         </div>
         <button onClick={() => selectedUser && onConfirm(selectedUser)}
           disabled={!selectedUser}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50">
-          Assign Plans
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          {selectedUser ? `Assign ${count} plan${count !== 1 ? 's' : ''} →` : 'Select a telecaller above'}
         </button>
       </div>
     </div>

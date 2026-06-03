@@ -192,7 +192,7 @@ const SettingsPage = () => {
                 Discard
               </button>
               <button onClick={handleSave} disabled={saving}
-                className="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-60 flex items-center gap-2">
+                className="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2">
                 {saving && <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                 {saving ? 'Saving…' : 'Save Changes'}
               </button>

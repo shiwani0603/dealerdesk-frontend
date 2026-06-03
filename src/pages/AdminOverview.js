@@ -5,10 +5,6 @@ import toast from 'react-hot-toast';
 
 const fmt = d => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }) : '—';
 
-const Pill = ({ label, color = 'bg-gray-100 text-gray-600' }) => (
-  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${color}`}>{label}</span>
-);
-
 // ── Comparative Dashboard ──────────────────────────────────────────────────────
 const ComparativeDashboard = () => {
   const [data, setData] = useState(null);

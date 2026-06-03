@@ -239,8 +239,9 @@ const LogCallModal = ({ plan, module, onClose, onSuccess }) => {
             </div>
 
             <button type="submit" disabled={loading || !form.callOutcome}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50">
-              {loading ? 'Saving...' : 'Save Follow-up'}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              {loading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+              {loading ? 'Saving…' : 'Save Follow-up'}
             </button>
           </form>
         </div>
@@ -408,8 +409,9 @@ const PsfLogModal = ({ plan, onClose, onSuccess }) => {
             )}
 
             <button type="submit" disabled={loading || !callOutcome}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50">
-              {loading ? 'Saving...' : 'Save PSF Log'}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              {loading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+              {loading ? 'Saving…' : 'Save PSF Log'}
             </button>
           </form>
         </div>

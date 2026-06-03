@@ -92,7 +92,8 @@ const CampaignModal = ({ existing, onClose, onSaved }) => {
           </div>
           <div className="flex gap-3 pt-2">
             <button onClick={handleSave} disabled={saving}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition-colors disabled:opacity-50">
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              {saving && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
               {saving ? 'Saving…' : existing ? 'Update Campaign' : 'Create Campaign'}
             </button>
             <button onClick={onClose} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl transition-colors">

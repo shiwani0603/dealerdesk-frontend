@@ -251,12 +251,19 @@ useEffect(() => {
               {customer.make} {customer.model} {customer.subModel && `• ${customer.subModel}`}
             </p>
           </div>
-          <button
-  onClick={() => onLogCall && onLogCall(customer?.insurancePlans?.[0] || customer?.servicePlans?.[0], planType)}
-  className="px-3 py-1.5 bg-white text-blue-600 font-medium text-sm rounded-lg hover:bg-blue-50 transition-colors mr-2"
->
-  📞 Log Call
-</button>
+          {onLogCall && (
+            <button
+              onClick={() => {
+                const plan = planType === 'service'
+                  ? customer?.servicePlans?.find(p => p.planStatus === 'open')
+                  : customer?.insurancePlans?.find(p => p.planStatus === 'open');
+                onLogCall(plan || customer?.insurancePlans?.[0] || customer?.servicePlans?.[0], planType || 'insurance');
+              }}
+              className="px-3 py-1.5 bg-white text-blue-600 font-medium text-sm rounded-lg hover:bg-blue-50 transition-colors mr-2"
+            >
+              📞 Log Call
+            </button>
+          )}
           <button
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-700 hover:bg-blue-800 transition-colors"

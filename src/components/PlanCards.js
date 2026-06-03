@@ -84,10 +84,10 @@ export const InsurancePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer
             {/* Customer - clickable */}
             <div className="col-span-3 min-w-0 cursor-pointer" onClick={() => onOpenDetail(plan, 'insurance')}>
               <div className="flex items-center gap-1.5">
-                <p className="text-sm font-semibold text-gray-900 truncate">{customer.name || 'Unknown'}</p>
-                {customer.hasIncompleteData && <span className="text-xs bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded flex-shrink-0">⚠️</span>}
+                <p className="text-sm font-semibold text-gray-900 truncate" title={customer.name || 'Unknown'}>{customer.name || 'Unknown'}</p>
+                {customer.hasIncompleteData && <span className="text-xs bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded flex-shrink-0" title="Incomplete data">⚠️</span>}
               </div>
-              <p className="text-xs text-gray-500 truncate">{customer.registrationNumber || customer.chassisNumber} • {customer.make} {customer.model}</p>
+              <p className="text-xs text-gray-500 truncate" title={`${customer.registrationNumber || customer.chassisNumber} • ${customer.make} ${customer.model}`}>{customer.registrationNumber || customer.chassisNumber} • {customer.make} {customer.model}</p>
             </div>
 
             {/* Contact */}
@@ -197,8 +197,8 @@ export const PsfPlanTable = ({ plans, onQuickLog }) => {
           <div key={plan.id} className={`grid grid-cols-12 gap-2 px-4 py-2.5 border-b border-gray-100 hover:bg-purple-50 transition-colors items-center ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
             {/* Customer */}
             <div className="col-span-3 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 truncate">{customer.name || 'Unknown'}</p>
-              <p className="text-xs text-gray-500 truncate">{customer.registrationNumber || customer.chassisNumber} • {customer.make} {customer.model}</p>
+              <p className="text-sm font-semibold text-gray-900 truncate" title={customer.name || 'Unknown'}>{customer.name || 'Unknown'}</p>
+              <p className="text-xs text-gray-500 truncate" title={`${customer.registrationNumber || customer.chassisNumber} • ${customer.make} ${customer.model}`}>{customer.registrationNumber || customer.chassisNumber} • {customer.make} {customer.model}</p>
             </div>
 
             {/* Contact */}
@@ -284,10 +284,10 @@ export const ServicePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer }
             {/* Customer */}
             <div className="col-span-3 min-w-0 cursor-pointer" onClick={() => onOpenDetail(plan, 'service')}>
               <div className="flex items-center gap-1.5">
-                <p className="text-sm font-semibold text-gray-900 truncate">{customer.name || 'Unknown'}</p>
-                {customer.hasIncompleteData && <span className="text-xs bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded flex-shrink-0">⚠️</span>}
+                <p className="text-sm font-semibold text-gray-900 truncate" title={customer.name || 'Unknown'}>{customer.name || 'Unknown'}</p>
+                {customer.hasIncompleteData && <span className="text-xs bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded flex-shrink-0" title="Incomplete data">⚠️</span>}
               </div>
-              <p className="text-xs text-gray-500 truncate">{customer.registrationNumber || customer.chassisNumber} • {customer.make} {customer.model}</p>
+              <p className="text-xs text-gray-500 truncate" title={`${customer.registrationNumber || customer.chassisNumber} • ${customer.make} ${customer.model}`}>{customer.registrationNumber || customer.chassisNumber} • {customer.make} {customer.model}</p>
             </div>
 
             {/* Contact */}
