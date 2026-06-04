@@ -74,6 +74,7 @@ const Navbar = ({ onSearchClick }) => {
           )}
           {(canViewTeam || isTL) && <NotificationBell />}
           {(canViewTeam || isTL) && <NavBtn label="⚙️ Settings" active={isActive('/settings')} activeClass="bg-gray-100 text-gray-700" onClick={() => nav('/settings')} />}
+          {!isSuperAdmin && <NavBtn label="🔑 Password" active={isActive('/change-password')} activeClass="bg-gray-100 text-gray-700" onClick={() => nav('/change-password')} />}
           <button onClick={logout} className="px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors ml-1 whitespace-nowrap">
             Logout
           </button>
@@ -108,6 +109,7 @@ const Navbar = ({ onSearchClick }) => {
           {canUpload && <MobileNavItem label="📤 Upload" active={isActive('/upload')} onClick={() => nav('/upload')} />}
           {!isSuperAdmin && <MobileNavItem label="🔍 Quick Find" active={false} onClick={() => { onSearchClick?.(); setMobileOpen(false); }} />}
           {(canViewTeam || isTL) && <MobileNavItem label="⚙️ Settings" active={isActive('/settings')} onClick={() => nav('/settings')} />}
+          {!isSuperAdmin && <MobileNavItem label="🔑 Change Password" active={isActive('/change-password')} onClick={() => nav('/change-password')} />}
           <button onClick={logout} className="w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors mt-1">
             🚪 Logout
           </button>

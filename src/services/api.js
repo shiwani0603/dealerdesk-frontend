@@ -35,6 +35,8 @@ export const authService = {
   superAdminLogin: (email, password) =>
     api.post('/auth/super-admin/login', { email, password }),
   getMe: () => api.get('/auth/me'),
+  changePassword: (currentPassword, newPassword) =>
+    api.put('/auth/change-password', { currentPassword, newPassword }),
 };
 
 export const dashboardService = {

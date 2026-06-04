@@ -17,6 +17,7 @@ import ServiceIntervalMaster from './pages/ServiceIntervalMaster';
 import ReportsPage from './pages/ReportsPage';
 import CampaignsPage from './pages/CampaignsPage';
 import AdminOverview from './pages/AdminOverview';
+import ChangePassword from './pages/ChangePassword';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -41,10 +42,16 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 const AppRoutes = () => {
   const { user } = useAuth();
 
+  // Intercept: force password change before anything else
+  if (user && user.mustChangePassword && window.location.pathname !== '/change-password') {
+    return <Routes><Route path="*" element={<Navigate to="/change-password" replace />} /></Routes>;
+  }
+
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
       <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/change-password" element={user ? <ChangePassword forced={user.mustChangePassword} /> : <Navigate to="/login" replace />} />
 
       <Route
         path="/dashboard"

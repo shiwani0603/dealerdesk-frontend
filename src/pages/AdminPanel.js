@@ -102,32 +102,53 @@ const CredentialField = ({ label, value }) => {
   );
 };
 
-const CredentialsModal = ({ name, username, password, onClose }) => (
-  <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-    <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">
-      <div className="text-center mb-5">
-        <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">✅</div>
-        <h2 className="text-lg font-bold text-gray-900">User Created</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Share these login credentials with <span className="font-semibold text-gray-700">{name}</span>
-        </p>
+const CredentialsModal = ({ name, username, password, onClose }) => {
+  const [showPassword, setShowPassword] = React.useState(false);
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+        <div className="text-center mb-5">
+          <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">✅</div>
+          <h2 className="text-lg font-bold text-gray-900">User Created</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            Share these login credentials with <span className="font-semibold text-gray-700">{name}</span>
+          </p>
+        </div>
+        <div className="space-y-3 mb-4">
+          <CredentialField label="Username / Login ID" value={username} />
+          <div className="bg-gray-50 rounded-xl px-4 py-3">
+            <p className="text-xs text-gray-400 font-medium mb-1">Temporary Password</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-mono font-bold text-gray-900 break-all">
+                {showPassword ? password : '•'.repeat(password.length)}
+              </p>
+              <div className="flex gap-1 flex-shrink-0">
+                <button onClick={() => setShowPassword(s => !s)}
+                  className="text-xs font-semibold px-2 py-1 rounded-lg text-gray-500 hover:bg-gray-200 transition-colors">
+                  {showPassword ? 'Hide' : 'Reveal'}
+                </button>
+                <CredentialField label="" value={password} />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4">
+          <p className="text-xs text-blue-700 font-semibold mb-1">🔒 Password policy</p>
+          <p className="text-xs text-blue-600">The user will be asked to set their own password on first login. After that, <strong>you cannot see or recover their password</strong>.</p>
+        </div>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5">
+          <p className="text-xs text-amber-700">
+            ⚠️ Copy the temporary password now — it won't be shown again.
+          </p>
+        </div>
+        <button onClick={onClose}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition-colors">
+          Done — Credentials Noted
+        </button>
       </div>
-      <div className="space-y-3 mb-4">
-        <CredentialField label="Username" value={username} />
-        <CredentialField label="Password" value={password} />
-      </div>
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5">
-        <p className="text-xs text-amber-700">
-          ⚠️ Save these credentials now — you won't be able to see the password again after closing this window.
-        </p>
-      </div>
-      <button onClick={onClose}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition-colors">
-        Done
-      </button>
     </div>
-  </div>
-);
+  );
+};
 
 // ─── Add / Edit User Modal ────────────────────────────────────────────────────
 
