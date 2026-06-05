@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { dealershipService } from '../services/api';
+import { dealershipService, userService } from '../services/api';
 import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import toast from 'react-hot-toast';
@@ -865,6 +865,18 @@ const DealershipCard = ({ d, onEdit, onAddLocation, onAddUser, onEditUser, users
     if (tab === 'users' && users === null) fetchUsers();
   };
 
+  const [resetResult, setResetResult] = useState(null);
+
+  const handleResetUserPassword = async (user) => {
+    if (!window.confirm(`Reset password for ${user.name}?\n\nA new temporary password will be generated and they must change it on next login.`)) return;
+    try {
+      const res = await userService.resetPassword(user.id);
+      setResetResult({ name: user.name, username: res.data.username, newPassword: res.data.newPassword });
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to reset password');
+    }
+  };
+
   const handleToggleUser = async (user) => {
     try {
       const res = await dealershipService.toggleUserActive(d.id, user.id);
@@ -1063,6 +1075,11 @@ const DealershipCard = ({ d, onEdit, onAddLocation, onAddUser, onEditUser, users
                           title="Edit user">
                           ✏️
                         </button>
+                        <button onClick={() => handleResetUserPassword(user)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:bg-amber-100 hover:text-amber-600 transition-colors text-xs"
+                          title="Reset password">
+                          🔑
+                        </button>
                         <button
                           onClick={() => handleToggleUser(user)}
                           className={`p-1.5 rounded-lg transition-colors text-xs font-medium ${
@@ -1090,6 +1107,15 @@ const DealershipCard = ({ d, onEdit, onAddLocation, onAddUser, onEditUser, users
             </div>
           )}
         </div>
+      )}
+
+      {resetResult && (
+        <CredentialsModal
+          name={resetResult.name}
+          username={resetResult.username}
+          password={resetResult.newPassword}
+          onClose={() => setResetResult(null)}
+        />
       )}
     </div>
   );

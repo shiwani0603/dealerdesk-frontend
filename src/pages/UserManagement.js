@@ -58,6 +58,60 @@ const DeactivationBlockModal = ({ userName, breakdown, onClose, onGoToFilter }) 
   );
 };
 
+// ─── Password Reset Modal ─────────────────────────────────────────────────────
+const PasswordResetModal = ({ result, onClose }) => {
+  const [copied, setCopied] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const copy = (val) => { navigator.clipboard.writeText(val).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+        <div className="text-center mb-5">
+          <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">🔑</div>
+          <h2 className="text-lg font-bold text-gray-900">Password Reset</h2>
+          <p className="text-sm text-gray-500 mt-1">{result.name}</p>
+        </div>
+        <div className="space-y-3 mb-4">
+          <div className="bg-gray-50 rounded-xl px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-400 font-medium">Username</p>
+              <p className="text-sm font-mono font-bold text-gray-900">{result.username}</p>
+            </div>
+            <button onClick={() => copy(result.username)} className="text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-lg font-semibold">
+              {copied ? '✓' : 'Copy'}
+            </button>
+          </div>
+          <div className="bg-amber-50 rounded-xl px-4 py-3">
+            <p className="text-xs text-gray-400 font-medium mb-1">New Temporary Password</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-mono font-bold text-gray-900 break-all">
+                {revealed ? result.newPassword : '•'.repeat(result.newPassword.length)}
+              </p>
+              <div className="flex gap-1 flex-shrink-0">
+                <button onClick={() => setRevealed(r => !r)} className="text-xs text-gray-500 hover:bg-gray-200 px-2 py-1 rounded-lg transition-colors">
+                  {revealed ? 'Hide' : 'Show'}
+                </button>
+                <button onClick={() => copy(result.newPassword)} className="text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded-lg font-semibold">
+                  Copy
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-5 text-xs text-blue-700 space-y-1">
+          <p className="font-semibold">ℹ️ What happens next</p>
+          <p>• The user must change this password on their next login</p>
+          <p>• Once they set their own password, you cannot see it</p>
+          <p>• This temporary password is shown only once</p>
+        </div>
+        <button onClick={onClose} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition-colors">
+          Done — Credentials Noted
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const ROLE_STYLES = {
   telecaller:  { label: 'Telecaller',  cls: 'bg-blue-100 text-blue-700' },
   team_leader: { label: 'Team Leader', cls: 'bg-purple-100 text-purple-700' },
@@ -459,6 +513,7 @@ const UserManagement = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [panel, setPanel] = useState({ open: false, editUser: null, v: 0 });
   const [deactivationBlock, setDeactivationBlock] = useState(null);
+  const [resetResult, setResetResult] = useState(null); // { name, username, newPassword }
 
   const [filterRole, setFilterRole] = useState('all');
   const [filterModule, setFilterModule] = useState('all');
@@ -501,6 +556,16 @@ const UserManagement = () => {
       } else {
         toast.error(err.response?.data?.error || 'Failed to update status');
       }
+    }
+  };
+
+  const handleResetPassword = async (user) => {
+    if (!window.confirm(`Reset password for ${user.name}?\n\nA new temporary password will be generated. They will be forced to change it on next login.`)) return;
+    try {
+      const res = await userService.resetPassword(user.id);
+      setResetResult({ name: res.data.message.split('.')[0], username: res.data.username, newPassword: res.data.newPassword });
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to reset password');
     }
   };
 
@@ -713,12 +778,22 @@ const UserManagement = () => {
                           </button>
                         </td>
                         <td className="px-4 py-3.5">
-                          <button
-                            onClick={() => openEdit(user)}
-                            className="text-gray-400 hover:text-blue-600 transition-colors p-1 rounded"
-                          >
-                            ✏️
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => openEdit(user)}
+                              className="text-gray-400 hover:text-blue-600 transition-colors p-1 rounded"
+                              title="Edit user"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => handleResetPassword(user)}
+                              className="text-gray-400 hover:text-amber-600 transition-colors p-1 rounded text-xs"
+                              title="Reset password"
+                            >
+                              🔑
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -757,6 +832,10 @@ const UserManagement = () => {
           onClose={() => setDeactivationBlock(null)}
           onGoToFilter={() => { setDeactivationBlock(null); navigate('/search/advanced'); }}
         />
+      )}
+
+      {resetResult && (
+        <PasswordResetModal result={resetResult} onClose={() => setResetResult(null)} />
       )}
     </div>
   );
