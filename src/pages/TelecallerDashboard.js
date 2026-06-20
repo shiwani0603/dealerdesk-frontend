@@ -426,6 +426,9 @@ const TelecallerDashboard = () => {
   const [insurancePlans, setInsurancePlans] = useState({ today: [], overdue: [], redAlert: [] });
   const [servicePlans, setServicePlans] = useState({ today: [], overdue: [], redAlert: [] });
   const [psfPlans, setPsfPlans] = useState([]);
+  const [lapsingSoonPlans, setLapsingSoonPlans] = useState({ insurance: [], service: [] });
+  const [lapsingSoonDays, setLapsingSoonDays] = useState(30);
+  const [lapsingSoonLoading, setLapsingSoonLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('today');
   const [activeModule, setActiveModule] = useState('insurance');
   const [catFilter, setCatFilter] = useState('ALL');
@@ -458,6 +461,21 @@ const TelecallerDashboard = () => {
 
   useEffect(() => { loadData(); }, []);
 
+  const loadLapsingSoon = async (days) => {
+    setLapsingSoonLoading(true);
+    try {
+      const [insRes, svcRes] = await Promise.all([
+        insuranceService.getLapsingSoon(days).catch(() => ({ data: { plans: [] } })),
+        serviceService.getLapsingSoon(days).catch(() => ({ data: { plans: [] } })),
+      ]);
+      setLapsingSoonPlans({ insurance: insRes.data.plans || [], service: svcRes.data.plans || [] });
+    } catch (err) {
+      toast.error('Failed to load lapsing soon plans');
+    } finally {
+      setLapsingSoonLoading(false);
+    }
+  };
+
   const handleOpenDetail = (plan, module) => {
     setSelectedCustomer({ customerId: plan?.customerId, planId: plan.id, planType: module, plan });
   };
@@ -471,8 +489,11 @@ const TelecallerDashboard = () => {
   };
 
   const currentPlans = activeModule === 'insurance' ? insurancePlans : servicePlans;
-  const rawPlans = activeTab === 'today' ? currentPlans.today :
-    activeTab === 'overdue' ? currentPlans.overdue : currentPlans.redAlert;
+  const rawPlans = activeTab === 'lapsingSoon'
+    ? (activeModule === 'insurance' ? lapsingSoonPlans.insurance : lapsingSoonPlans.service)
+    : activeTab === 'today' ? currentPlans.today
+    : activeTab === 'overdue' ? currentPlans.overdue
+    : currentPlans.redAlert;
   const displayPlans = catFilter === 'ALL' ? rawPlans : (rawPlans || []).filter(p => p?.renewalCategory === catFilter);
 
   if (loading) {
@@ -519,16 +540,45 @@ const TelecallerDashboard = () => {
         {/* Plan sub-tabs (only for insurance/service) */}
         {activeModule !== 'psf' && (
           <>
-            <div className="flex gap-2 mb-3">
-              {['today', 'overdue', 'redAlert'].map(tab => (
-                <button key={tab} onClick={() => { setActiveTab(tab); setCatFilter('ALL'); }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 hover:bg-gray-100 shadow-sm'}`}>
-                  {tab === 'today' ? `Today (${currentPlans.today?.length || 0})` :
-                   tab === 'overdue' ? `Overdue (${currentPlans.overdue?.length || 0})` :
-                   `Red Alert (${currentPlans.redAlert?.length || 0})`}
+            <div className="flex gap-2 mb-3 flex-wrap">
+              {[
+                { key: 'today',       label: `Today (${currentPlans.today?.length || 0})` },
+                { key: 'overdue',     label: `Overdue (${currentPlans.overdue?.length || 0})` },
+                { key: 'redAlert',    label: `Red Alert (${currentPlans.redAlert?.length || 0})` },
+                { key: 'lapsingSoon', label: '⏰ Lapsing Soon' },
+              ].map(({ key, label }) => (
+                <button key={key} onClick={() => {
+                  setActiveTab(key); setCatFilter('ALL');
+                  if (key === 'lapsingSoon') loadLapsingSoon(lapsingSoonDays);
+                }}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === key
+                      ? key === 'lapsingSoon' ? 'bg-orange-500 text-white' : 'bg-gray-900 text-white'
+                      : 'bg-white text-gray-500 hover:bg-gray-100 shadow-sm'
+                  }`}>
+                  {label}
                 </button>
               ))}
             </div>
+
+            {activeTab === 'lapsingSoon' && (
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs text-gray-500 font-medium">Show plans expiring within:</span>
+                {[15, 30].map(d => (
+                  <button key={d} onClick={() => {
+                    setLapsingSoonDays(d);
+                    loadLapsingSoon(d);
+                  }}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+                      lapsingSoonDays === d ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-500 border-gray-200 hover:border-orange-300'
+                    }`}>
+                    {d} days
+                  </button>
+                ))}
+                {lapsingSoonLoading && <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin ml-1" />}
+              </div>
+            )}
+
             <div className="flex gap-2 mb-4 flex-wrap">
               {[
                 { key: 'ALL',         label: 'All' },
@@ -557,11 +607,18 @@ const TelecallerDashboard = () => {
         <div className="space-y-3">
           {activeModule === 'psf' ? (
             <PsfPlanTable plans={psfPlans} onQuickLog={handleQuickLog} />
+          ) : lapsingSoonLoading && activeTab === 'lapsingSoon' ? (
+            <div className="bg-white rounded-xl p-10 text-center shadow-sm">
+              <div className="w-8 h-8 border-3 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-gray-400 text-sm">Loading lapsing soon plans…</p>
+            </div>
           ) : displayPlans?.length === 0 ? (
             <div className="bg-white rounded-xl p-10 text-center shadow-sm">
-              <p className="text-4xl mb-3">🎉</p>
-              <p className="text-gray-500 font-medium">No plans in this category</p>
-              <p className="text-gray-400 text-sm mt-1">Check other tabs or modules</p>
+              <p className="text-4xl mb-3">{activeTab === 'lapsingSoon' ? '✅' : '🎉'}</p>
+              <p className="text-gray-500 font-medium">
+                {activeTab === 'lapsingSoon' ? `No plans expiring in the next ${lapsingSoonDays} days` : 'No plans in this category'}
+              </p>
+              <p className="text-gray-400 text-sm mt-1">{activeTab === 'lapsingSoon' ? 'Try switching to 30 days' : 'Check other tabs or modules'}</p>
             </div>
           ) : activeModule === 'insurance' ? (
             <InsurancePlanTable plans={displayPlans} onOpenDetail={handleOpenDetail} onQuickLog={handleQuickLog} />
