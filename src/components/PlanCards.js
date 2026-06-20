@@ -1,5 +1,18 @@
 import React from 'react';
 
+const RENEWAL_CATEGORY_META = {
+  OWN_RENEWAL: { label: 'Own', color: 'bg-green-100 text-green-700' },
+  COMPETITOR:  { label: 'Competitor', color: 'bg-amber-100 text-amber-700' },
+  LAPSED:      { label: 'Lapsed', color: 'bg-red-100 text-red-700' },
+  NEW:         { label: 'New', color: 'bg-blue-100 text-blue-700' },
+};
+
+const RenewalCategoryBadge = ({ category }) => {
+  const meta = RENEWAL_CATEGORY_META[category];
+  if (!meta) return null;
+  return <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${meta.color}`}>{meta.label}</span>;
+};
+
 const formatDate = (d) => {
   if (!d) return '—';
   try { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' }); }
@@ -87,7 +100,10 @@ export const InsurancePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer
                 <p className="text-sm font-semibold text-gray-900 truncate" title={customer.name || 'Unknown'}>{customer.name || 'Unknown'}</p>
                 {customer.hasIncompleteData && <span className="text-xs bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded flex-shrink-0" title="Incomplete data">⚠️</span>}
               </div>
-              <p className="text-xs text-gray-500 truncate" title={`${customer.registrationNumber || customer.chassisNumber} • ${customer.make} ${customer.model}`}>{customer.registrationNumber || customer.chassisNumber} • {customer.make} {customer.model}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <p className="text-xs text-gray-500 truncate" title={`${customer.registrationNumber || customer.chassisNumber} • ${customer.make} ${customer.model}`}>{customer.registrationNumber || customer.chassisNumber} • {customer.make} {customer.model}</p>
+                {plan?.renewalCategory && <RenewalCategoryBadge category={plan.renewalCategory} />}
+              </div>
             </div>
 
             {/* Contact */}
@@ -287,7 +303,10 @@ export const ServicePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer }
                 <p className="text-sm font-semibold text-gray-900 truncate" title={customer.name || 'Unknown'}>{customer.name || 'Unknown'}</p>
                 {customer.hasIncompleteData && <span className="text-xs bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded flex-shrink-0" title="Incomplete data">⚠️</span>}
               </div>
-              <p className="text-xs text-gray-500 truncate" title={`${customer.registrationNumber || customer.chassisNumber} • ${customer.make} ${customer.model}`}>{customer.registrationNumber || customer.chassisNumber} • {customer.make} {customer.model}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <p className="text-xs text-gray-500 truncate" title={`${customer.registrationNumber || customer.chassisNumber} • ${customer.make} ${customer.model}`}>{customer.registrationNumber || customer.chassisNumber} • {customer.make} {customer.model}</p>
+                {plan?.renewalCategory && <RenewalCategoryBadge category={plan.renewalCategory} />}
+              </div>
             </div>
 
             {/* Contact */}

@@ -428,6 +428,7 @@ const TelecallerDashboard = () => {
   const [psfPlans, setPsfPlans] = useState([]);
   const [activeTab, setActiveTab] = useState('today');
   const [activeModule, setActiveModule] = useState('insurance');
+  const [catFilter, setCatFilter] = useState('ALL');
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [quickLogPlan, setQuickLogPlan] = useState(null);
   const [psfLogPlan, setPsfLogPlan] = useState(null);
@@ -470,8 +471,9 @@ const TelecallerDashboard = () => {
   };
 
   const currentPlans = activeModule === 'insurance' ? insurancePlans : servicePlans;
-  const displayPlans = activeTab === 'today' ? currentPlans.today :
+  const rawPlans = activeTab === 'today' ? currentPlans.today :
     activeTab === 'overdue' ? currentPlans.overdue : currentPlans.redAlert;
+  const displayPlans = catFilter === 'ALL' ? rawPlans : (rawPlans || []).filter(p => p?.renewalCategory === catFilter);
 
   if (loading) {
     return (
@@ -516,16 +518,39 @@ const TelecallerDashboard = () => {
 
         {/* Plan sub-tabs (only for insurance/service) */}
         {activeModule !== 'psf' && (
-          <div className="flex gap-2 mb-4">
-            {['today', 'overdue', 'redAlert'].map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 hover:bg-gray-100 shadow-sm'}`}>
-                {tab === 'today' ? `Today (${currentPlans.today?.length || 0})` :
-                 tab === 'overdue' ? `Overdue (${currentPlans.overdue?.length || 0})` :
-                 `Red Alert (${currentPlans.redAlert?.length || 0})`}
-              </button>
-            ))}
-          </div>
+          <>
+            <div className="flex gap-2 mb-3">
+              {['today', 'overdue', 'redAlert'].map(tab => (
+                <button key={tab} onClick={() => { setActiveTab(tab); setCatFilter('ALL'); }}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 hover:bg-gray-100 shadow-sm'}`}>
+                  {tab === 'today' ? `Today (${currentPlans.today?.length || 0})` :
+                   tab === 'overdue' ? `Overdue (${currentPlans.overdue?.length || 0})` :
+                   `Red Alert (${currentPlans.redAlert?.length || 0})`}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2 mb-4 flex-wrap">
+              {[
+                { key: 'ALL',         label: 'All' },
+                { key: 'OWN_RENEWAL', label: 'Own', color: 'bg-green-100 text-green-700 border-green-300' },
+                { key: 'COMPETITOR',  label: 'Competitor', color: 'bg-amber-100 text-amber-700 border-amber-300' },
+                { key: 'LAPSED',      label: 'Lapsed', color: 'bg-red-100 text-red-700 border-red-300' },
+                { key: 'NEW',         label: 'New', color: 'bg-blue-100 text-blue-700 border-blue-300' },
+              ].map(({ key, label, color }) => {
+                const count = key === 'ALL' ? (rawPlans?.length || 0) : (rawPlans || []).filter(p => p?.renewalCategory === key).length;
+                return (
+                  <button key={key} onClick={() => setCatFilter(key)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
+                      catFilter === key
+                        ? (color || 'bg-gray-900 text-white border-gray-900')
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                    }`}>
+                    {label} {count > 0 && <span className="opacity-70">({count})</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </>
         )}
 
         {/* Plans list */}

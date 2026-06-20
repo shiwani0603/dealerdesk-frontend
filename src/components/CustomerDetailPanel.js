@@ -66,6 +66,8 @@ const CustomerDetailPanel = ({ customerId, planId, planType, onClose, onLogCall 
   const [savingNote, setSavingNote] = useState(false);
   const [extendingAutoClose, setExtendingAutoClose] = useState(null); // 'insurance' | 'service'
   const [newAutoCloseDate, setNewAutoCloseDate] = useState('');
+  const [editingRenewalCat, setEditingRenewalCat] = useState(null); // 'insurance' | 'service'
+  const [savingRenewalCat, setSavingRenewalCat] = useState(false);
 
   const [editingCustomer, setEditingCustomer] = useState(false);
   const [custForm, setCustForm] = useState({});
@@ -198,6 +200,24 @@ useEffect(() => {
       loadCustomer();
     } catch (err) {
       toast.error('Failed to extend auto-close date');
+    }
+  };
+
+  const handleRenewalCategoryUpdate = async (planId, module, newCategory) => {
+    setSavingRenewalCat(true);
+    try {
+      if (module === 'insurance') {
+        await insuranceService.updateRenewalCategory(planId, newCategory);
+      } else {
+        await serviceService.updateRenewalCategory(planId, newCategory);
+      }
+      toast.success('Renewal category updated');
+      setEditingRenewalCat(null);
+      loadCustomer();
+    } catch (err) {
+      toast.error('Failed to update renewal category');
+    } finally {
+      setSavingRenewalCat(false);
     }
   };
 
@@ -524,6 +544,33 @@ useEffect(() => {
                       <button onClick={() => { setExtendingAutoClose('insurance'); setNewAutoCloseDate(''); }}
                         className="text-xs text-blue-600 hover:underline mb-2 flex-shrink-0">Extend</button>
                     </div>
+                    <div>
+                      <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Renewal Category</p>
+                      {editingRenewalCat === 'insurance' ? (
+                        <div className="flex flex-wrap gap-1">
+                          {['OWN_RENEWAL', 'COMPETITOR', 'LAPSED', 'NEW'].map(cat => (
+                            <button key={cat} disabled={savingRenewalCat}
+                              onClick={() => handleRenewalCategoryUpdate(openInsurancePlan.id, 'insurance', cat)}
+                              className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                                openInsurancePlan.renewalCategory === cat
+                                  ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:border-blue-400'
+                              }`}>{cat.replace('_', ' ')}</button>
+                          ))}
+                          <button onClick={() => setEditingRenewalCat(null)} className="text-xs text-gray-400 px-1">✕</button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                            openInsurancePlan.renewalCategory === 'OWN_RENEWAL' ? 'bg-green-100 text-green-700' :
+                            openInsurancePlan.renewalCategory === 'COMPETITOR'  ? 'bg-amber-100 text-amber-700' :
+                            openInsurancePlan.renewalCategory === 'LAPSED'      ? 'bg-red-100 text-red-700' :
+                            openInsurancePlan.renewalCategory === 'NEW'         ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-500'
+                          }`}>{openInsurancePlan.renewalCategory?.replace('_', ' ') || 'Not set'}</span>
+                          <button onClick={() => setEditingRenewalCat('insurance')} className="text-xs text-blue-600 hover:underline">Edit</button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   {extendingAutoClose === 'insurance' && (
                     <div className="mt-2 flex gap-2 items-center">
@@ -608,6 +655,33 @@ useEffect(() => {
                       <Field label="Auto-close" value={formatDate(openServicePlan?.autoCloseDate)} />
                       <button onClick={() => { setExtendingAutoClose('service'); setNewAutoCloseDate(''); }}
                         className="text-xs text-green-600 hover:underline mb-2 flex-shrink-0">Extend</button>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Renewal Category</p>
+                      {editingRenewalCat === 'service' ? (
+                        <div className="flex flex-wrap gap-1">
+                          {['OWN_RENEWAL', 'COMPETITOR', 'LAPSED', 'NEW'].map(cat => (
+                            <button key={cat} disabled={savingRenewalCat}
+                              onClick={() => handleRenewalCategoryUpdate(openServicePlan.id, 'service', cat)}
+                              className={`px-2 py-1 rounded text-xs font-medium transition-all ${
+                                openServicePlan.renewalCategory === cat
+                                  ? 'bg-green-600 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:border-green-400'
+                              }`}>{cat.replace('_', ' ')}</button>
+                          ))}
+                          <button onClick={() => setEditingRenewalCat(null)} className="text-xs text-gray-400 px-1">✕</button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                            openServicePlan.renewalCategory === 'OWN_RENEWAL' ? 'bg-green-100 text-green-700' :
+                            openServicePlan.renewalCategory === 'COMPETITOR'  ? 'bg-amber-100 text-amber-700' :
+                            openServicePlan.renewalCategory === 'LAPSED'      ? 'bg-red-100 text-red-700' :
+                            openServicePlan.renewalCategory === 'NEW'         ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-500'
+                          }`}>{openServicePlan.renewalCategory?.replace('_', ' ') || 'Not set'}</span>
+                          <button onClick={() => setEditingRenewalCat('service')} className="text-xs text-green-600 hover:underline">Edit</button>
+                        </div>
+                      )}
                     </div>
                   </div>
                   {extendingAutoClose === 'service' && (

@@ -54,6 +54,7 @@ export const insuranceService = {
   logCall: (id, data) => api.post(`/insurance/${id}/log`, data),
   transferPlan: (id, newUserId) => api.put(`/insurance/${id}/transfer`, { newUserId }),
   extendAutoClose: (id, newAutoCloseDate) => api.put(`/insurance/${id}/extend-auto-close`, { newAutoCloseDate }),
+  updateRenewalCategory: (id, renewalCategory) => api.patch(`/insurance/${id}/renewal-category`, { renewalCategory }),
 };
 
 export const serviceService = {
@@ -64,6 +65,7 @@ export const serviceService = {
   markReported: (id) => api.put(`/service/${id}/reported`),
   transferPlan: (id, newUserId) => api.put(`/service/${id}/transfer`, { newUserId }),
   extendAutoClose: (id, newAutoCloseDate) => api.put(`/service/${id}/extend-auto-close`, { newAutoCloseDate }),
+  updateRenewalCategory: (id, renewalCategory) => api.patch(`/service/${id}/renewal-category`, { renewalCategory }),
 };
 
 export const customerService = {
