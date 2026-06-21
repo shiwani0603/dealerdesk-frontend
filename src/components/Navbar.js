@@ -82,7 +82,7 @@ const Navbar = ({ onSearchClick }) => {
           {canManageUsers && <NavBtn label="👤 Users"      active={isActive('/users')} onClick={() => nav('/users')} />}
           {(canViewTeam || isTL) && <NavBtn label="📊 Reports"   active={isActive('/reports')} activeClass="bg-amber-100 text-amber-700" onClick={() => nav('/reports')} />}
           {(canViewTeam || isTL) && <NavBtn label="🎯 Campaigns" active={isActive('/campaigns')} activeClass="bg-indigo-100 text-indigo-700" onClick={() => nav('/campaigns')} />}
-          {(canViewTeam || isTL) && <NavBtn label="🔎 Filter"    active={isActive('/search/advanced')} onClick={() => nav('/search/advanced')} />}
+          {(canViewTeam || isTL) && <NavBtn label="🔎 Plan Search" active={isActive('/search/advanced')} onClick={() => nav('/search/advanced')} />}
           {canUpload     && <NavBtn label="📤 Upload"      active={isActive('/upload')} onClick={() => nav('/upload')} />}
           {!isSuperAdmin && (
             <button onClick={onSearchClick} className="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors whitespace-nowrap flex items-center gap-1">
@@ -181,7 +181,7 @@ const Navbar = ({ onSearchClick }) => {
             {canManageUsers && <MobileNavItem label="👤 Users"     active={isActive('/users')} onClick={() => nav('/users')} />}
             {(canViewTeam || isTL) && <MobileNavItem label="📊 Reports"   active={isActive('/reports')} onClick={() => nav('/reports')} />}
             {(canViewTeam || isTL) && <MobileNavItem label="🎯 Campaigns" active={isActive('/campaigns')} onClick={() => nav('/campaigns')} />}
-            {(canViewTeam || isTL) && <MobileNavItem label="🔎 Plan Filter" active={isActive('/search/advanced')} onClick={() => nav('/search/advanced')} />}
+            {(canViewTeam || isTL) && <MobileNavItem label="🔎 Plan Search" active={isActive('/search/advanced')} onClick={() => nav('/search/advanced')} />}
             {canUpload     && <MobileNavItem label="📤 Upload"     active={isActive('/upload')} onClick={() => nav('/upload')} />}
             {!isSuperAdmin && <MobileNavItem label="🔍 Quick Find" active={false} onClick={() => { onSearchClick?.(); setMobileOpen(false); }} />}
 
