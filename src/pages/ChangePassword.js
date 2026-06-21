@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const ChangePassword = ({ forced = false }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showCurrent, setShowCurrent] = useState(false);
@@ -44,8 +44,8 @@ const ChangePassword = ({ forced = false }) => {
       await authService.changePassword(form.currentPassword, form.newPassword);
       toast.success('Password changed successfully!');
       if (forced) {
-        // Re-login with the new password automatically isn't possible, so logout
-        setTimeout(() => { logout(); }, 1500);
+        updateUser({ mustChangePassword: false });
+        navigate('/dashboard', { replace: true });
       } else {
         navigate(-1);
       }
