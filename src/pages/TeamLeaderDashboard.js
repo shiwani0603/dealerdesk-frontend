@@ -88,6 +88,10 @@ const TeamLeaderDashboard = () => {
   const [psfPlans, setPsfPlans] = useState([]);
   const [activeSection, setActiveSection] = useState('overview');
   const [activeTab, setActiveTab] = useState('overdue');
+  const [catFilter, setCatFilter] = useState('ALL');
+  const [lapsingSoonPlans, setLapsingSoonPlans] = useState({ insurance: [], service: [] });
+  const [lapsingSoonDays, setLapsingSoonDays] = useState(30);
+  const [lapsingSoonLoading, setLapsingSoonLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [quickLogPlan, setQuickLogPlan] = useState(null);
   const [transferTarget, setTransferTarget] = useState(null);
@@ -117,10 +121,28 @@ const TeamLeaderDashboard = () => {
 
   useEffect(() => { loadData(); }, []);
 
+  const loadLapsingSoon = async (days) => {
+    setLapsingSoonLoading(true);
+    try {
+      const [insRes, svcRes] = await Promise.all([
+        insuranceService.getLapsingSoon(days).catch(() => ({ data: { plans: [] } })),
+        serviceService.getLapsingSoon(days).catch(() => ({ data: { plans: [] } })),
+      ]);
+      setLapsingSoonPlans({ insurance: insRes.data.plans || [], service: svcRes.data.plans || [] });
+    } catch {
+      toast.error('Failed to load lapsing soon plans');
+    } finally {
+      setLapsingSoonLoading(false);
+    }
+  };
+
   const currentPlans = activeSection === 'insurance' ? insurancePlans : servicePlans;
-  const displayPlans = activeTab === 'today' ? currentPlans.today
+  const rawPlans = activeTab === 'lapsingSoon'
+    ? (activeSection === 'insurance' ? lapsingSoonPlans.insurance : lapsingSoonPlans.service)
+    : activeTab === 'today' ? currentPlans.today
     : activeTab === 'overdue' ? currentPlans.overdue
     : currentPlans.redAlert;
+  const displayPlans = catFilter === 'ALL' ? rawPlans : (rawPlans || []).filter(p => p?.renewalCategory === catFilter);
 
   const totalInsToday = (insurancePlans.today?.length || 0);
   const totalInsOverdue = (insurancePlans.overdue?.length || 0);
@@ -268,21 +290,75 @@ const TeamLeaderDashboard = () => {
         {/* Insurance / Service plans */}
         {(activeSection === 'insurance' || activeSection === 'service') && (
           <>
-            <div className="flex gap-2 mb-4">
-              {['today', 'overdue', 'redAlert'].map(tab => (
-                <button key={tab} onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab ? 'bg-gray-900 text-white' : 'bg-white text-gray-500 hover:bg-gray-100 shadow-sm'}`}>
-                  {tab === 'today' ? `Today (${currentPlans.today?.length || 0})` :
-                   tab === 'overdue' ? `Overdue (${currentPlans.overdue?.length || 0})` :
-                   `Red Alert (${currentPlans.redAlert?.length || 0})`}
+            <div className="flex gap-2 mb-3 flex-wrap">
+              {[
+                { key: 'today',       label: `Today (${currentPlans.today?.length || 0})` },
+                { key: 'overdue',     label: `Overdue (${currentPlans.overdue?.length || 0})` },
+                { key: 'redAlert',    label: `Red Alert (${currentPlans.redAlert?.length || 0})` },
+                { key: 'lapsingSoon', label: '⏰ Lapsing Soon' },
+              ].map(({ key, label }) => (
+                <button key={key} onClick={() => {
+                  setActiveTab(key); setCatFilter('ALL');
+                  if (key === 'lapsingSoon') loadLapsingSoon(lapsingSoonDays);
+                }}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === key
+                      ? key === 'lapsingSoon' ? 'bg-orange-500 text-white' : 'bg-gray-900 text-white'
+                      : 'bg-white text-gray-500 hover:bg-gray-100 shadow-sm'
+                  }`}>
+                  {label}
                 </button>
               ))}
             </div>
 
-            {displayPlans?.length === 0 ? (
+            {activeTab === 'lapsingSoon' && (
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs text-gray-500 font-medium">Expiring within:</span>
+                {[15, 30].map(d => (
+                  <button key={d} onClick={() => { setLapsingSoonDays(d); loadLapsingSoon(d); }}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+                      lapsingSoonDays === d ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-500 border-gray-200 hover:border-orange-300'
+                    }`}>
+                    {d} days
+                  </button>
+                ))}
+                {lapsingSoonLoading && <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />}
+              </div>
+            )}
+
+            <div className="flex gap-2 mb-4 flex-wrap">
+              {[
+                { key: 'ALL',         label: 'All' },
+                { key: 'OWN_RENEWAL', label: 'Own',        color: 'bg-green-100 text-green-700 border-green-300' },
+                { key: 'COMPETITOR',  label: 'Competitor', color: 'bg-amber-100 text-amber-700 border-amber-300' },
+                { key: 'LAPSED',      label: 'Lapsed',     color: 'bg-red-100 text-red-700 border-red-300' },
+                { key: 'NEW',         label: 'New',        color: 'bg-blue-100 text-blue-700 border-blue-300' },
+              ].map(({ key, label, color }) => {
+                const count = key === 'ALL' ? (rawPlans?.length || 0) : (rawPlans || []).filter(p => p?.renewalCategory === key).length;
+                return (
+                  <button key={key} onClick={() => setCatFilter(key)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
+                      catFilter === key
+                        ? (color || 'bg-gray-900 text-white border-gray-900')
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                    }`}>
+                    {label} {count > 0 && <span className="opacity-70">({count})</span>}
+                  </button>
+                );
+              })}
+            </div>
+
+            {lapsingSoonLoading && activeTab === 'lapsingSoon' ? (
               <div className="bg-white rounded-xl p-10 text-center shadow-sm">
-                <p className="text-4xl mb-3">🎉</p>
-                <p className="text-gray-500 font-medium">No plans in this category</p>
+                <div className="w-8 h-8 border-3 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-gray-400 text-sm">Loading lapsing soon plans…</p>
+              </div>
+            ) : displayPlans?.length === 0 ? (
+              <div className="bg-white rounded-xl p-10 text-center shadow-sm">
+                <p className="text-4xl mb-3">{activeTab === 'lapsingSoon' ? '✅' : '🎉'}</p>
+                <p className="text-gray-500 font-medium">
+                  {activeTab === 'lapsingSoon' ? `No plans expiring in ${lapsingSoonDays} days` : 'No plans in this category'}
+                </p>
               </div>
             ) : activeSection === 'insurance' ? (
               <InsurancePlanTable
