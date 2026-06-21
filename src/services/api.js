@@ -56,6 +56,7 @@ export const insuranceService = {
   extendAutoClose: (id, newAutoCloseDate) => api.put(`/insurance/${id}/extend-auto-close`, { newAutoCloseDate }),
   updateRenewalCategory: (id, renewalCategory) => api.patch(`/insurance/${id}/renewal-category`, { renewalCategory }),
   getLapsingSoon: (days = 30) => api.get(`/insurance/lapsing-soon?days=${days}`),
+  getPipeline: () => api.get('/insurance/pipeline'),
 };
 
 export const serviceService = {
@@ -68,6 +69,7 @@ export const serviceService = {
   extendAutoClose: (id, newAutoCloseDate) => api.put(`/service/${id}/extend-auto-close`, { newAutoCloseDate }),
   updateRenewalCategory: (id, renewalCategory) => api.patch(`/service/${id}/renewal-category`, { renewalCategory }),
   getLapsingSoon: (days = 30) => api.get(`/service/lapsing-soon?days=${days}`),
+  getPipeline: () => api.get('/service/pipeline'),
 };
 
 export const customerService = {

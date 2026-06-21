@@ -92,6 +92,8 @@ const TeamLeaderDashboard = () => {
   const [lapsingSoonPlans, setLapsingSoonPlans] = useState({ insurance: [], service: [] });
   const [lapsingSoonDays, setLapsingSoonDays] = useState(30);
   const [lapsingSoonLoading, setLapsingSoonLoading] = useState(false);
+  const [pipelinePlans, setPipelinePlans] = useState({ insurance: [], service: [] });
+  const [pipelineLoading, setPipelineLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [quickLogPlan, setQuickLogPlan] = useState(null);
   const [transferTarget, setTransferTarget] = useState(null);
@@ -121,6 +123,21 @@ const TeamLeaderDashboard = () => {
 
   useEffect(() => { loadData(); }, []);
 
+  const loadPipeline = async () => {
+    setPipelineLoading(true);
+    try {
+      const [insRes, svcRes] = await Promise.all([
+        insuranceService.getPipeline().catch(() => ({ data: { plans: [] } })),
+        serviceService.getPipeline().catch(() => ({ data: { plans: [] } })),
+      ]);
+      setPipelinePlans({ insurance: insRes.data.plans || [], service: svcRes.data.plans || [] });
+    } catch {
+      toast.error('Failed to load pipeline');
+    } finally {
+      setPipelineLoading(false);
+    }
+  };
+
   const loadLapsingSoon = async (days) => {
     setLapsingSoonLoading(true);
     try {
@@ -139,6 +156,8 @@ const TeamLeaderDashboard = () => {
   const currentPlans = activeSection === 'insurance' ? insurancePlans : servicePlans;
   const rawPlans = activeTab === 'lapsingSoon'
     ? (activeSection === 'insurance' ? lapsingSoonPlans.insurance : lapsingSoonPlans.service)
+    : activeTab === 'pipeline'
+    ? (activeSection === 'insurance' ? pipelinePlans.insurance : pipelinePlans.service)
     : activeTab === 'today' ? currentPlans.today
     : activeTab === 'overdue' ? currentPlans.overdue
     : currentPlans.redAlert;
@@ -295,11 +314,13 @@ const TeamLeaderDashboard = () => {
                 { key: 'today',       label: `Today (${currentPlans.today?.length || 0})` },
                 { key: 'overdue',     label: `Overdue (${currentPlans.overdue?.length || 0})` },
                 { key: 'redAlert',    label: `Red Alert (${currentPlans.redAlert?.length || 0})` },
+                { key: 'pipeline',    label: '📦 Pipeline' },
                 { key: 'lapsingSoon', label: '⏰ Lapsing Soon' },
               ].map(({ key, label }) => (
                 <button key={key} onClick={() => {
                   setActiveTab(key); setCatFilter('ALL');
                   if (key === 'lapsingSoon') loadLapsingSoon(lapsingSoonDays);
+                  if (key === 'pipeline') loadPipeline();
                 }}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     activeTab === key
@@ -348,17 +369,20 @@ const TeamLeaderDashboard = () => {
               })}
             </div>
 
-            {lapsingSoonLoading && activeTab === 'lapsingSoon' ? (
+            {(lapsingSoonLoading && activeTab === 'lapsingSoon') || (pipelineLoading && activeTab === 'pipeline') ? (
               <div className="bg-white rounded-xl p-10 text-center shadow-sm">
-                <div className="w-8 h-8 border-3 border-orange-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                <p className="text-gray-400 text-sm">Loading lapsing soon plans…</p>
+                <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-gray-400 text-sm">Loading…</p>
               </div>
             ) : displayPlans?.length === 0 ? (
               <div className="bg-white rounded-xl p-10 text-center shadow-sm">
-                <p className="text-4xl mb-3">{activeTab === 'lapsingSoon' ? '✅' : '🎉'}</p>
+                <p className="text-4xl mb-3">{activeTab === 'lapsingSoon' ? '✅' : activeTab === 'pipeline' ? '📭' : '🎉'}</p>
                 <p className="text-gray-500 font-medium">
-                  {activeTab === 'lapsingSoon' ? `No plans expiring in ${lapsingSoonDays} days` : 'No plans in this category'}
+                  {activeTab === 'lapsingSoon' ? `No plans expiring in ${lapsingSoonDays} days` :
+                   activeTab === 'pipeline' ? 'No upcoming plans in the pipeline' :
+                   'No plans in this category'}
                 </p>
+                {activeTab === 'pipeline' && <p className="text-gray-400 text-sm mt-1">Plans will appear here once service/insurance data is uploaded</p>}
               </div>
             ) : activeSection === 'insurance' ? (
               <InsurancePlanTable
