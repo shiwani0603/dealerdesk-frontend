@@ -11,9 +11,23 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
     if (token && savedUser) {
-      setUser(JSON.parse(savedUser));
+      // Verify token with server and get fresh user state (avoids stale mustChangePassword)
+      authService.getMe()
+        .then(res => {
+          const fresh = { ...JSON.parse(savedUser), ...res.data };
+          localStorage.setItem('user', JSON.stringify(fresh));
+          setUser(fresh);
+        })
+        .catch(() => {
+          // Token expired or invalid — force re-login
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = async (username, password) => {
