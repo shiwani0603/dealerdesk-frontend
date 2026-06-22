@@ -112,6 +112,73 @@ const ServiceOverrideUpload = ({ dealershipId }) => {
   );
 };
 
+// ─── GENERATE MISSING PLANS ──────────────────────────────────────────────────
+const GeneratePlansCard = () => {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const handleGenerate = async () => {
+    setLoading(true);
+    setResult(null);
+    try {
+      const res = await api.post('/upload/backfill', {});
+      setResult(res.data);
+      toast.success(`Plans generated: ${res.data.servicePlansCreated} service, ${res.data.insurancePlansCreated} insurance`);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to generate plans');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 pb-8">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="font-bold text-gray-900 flex items-center gap-2">
+              <span className="text-xl">⚡</span> Generate Missing Plans
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Scans all existing customer data and creates follow-up plans for any customer
+              who has insurance records or a purchase date but no open plan yet.
+            </p>
+          </div>
+          <button onClick={handleGenerate} disabled={loading}
+            className="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2 whitespace-nowrap">
+            {loading
+              ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Generating…</>
+              : '⚡ Generate Now'}
+          </button>
+        </div>
+
+        {result && (
+          <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-green-50 rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold text-green-700">{result.servicePlansCreated}</p>
+              <p className="text-xs text-green-600 mt-0.5">Service Plans Created</p>
+            </div>
+            <div className="bg-blue-50 rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold text-blue-700">{result.insurancePlansCreated}</p>
+              <p className="text-xs text-blue-600 mt-0.5">Insurance Plans Created</p>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-3 text-center">
+              <p className="text-2xl font-bold text-gray-600">{result.skipped}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Already Had Plans</p>
+            </div>
+            {result.errors > 0 && (
+              <div className="bg-red-50 rounded-xl p-3 text-center">
+                <p className="text-2xl font-bold text-red-600">{result.errors}</p>
+                <p className="text-xs text-red-500 mt-0.5">Errors</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const UploadPage = () => {
   const { user } = useAuth();
   const [showSearch, setShowSearch] = useState(false);
@@ -464,6 +531,9 @@ const UploadPage = () => {
 
       {/* Service Due Date Override Upload */}
       <ServiceOverrideUpload dealershipId={user?.dealershipId} />
+
+      {/* Generate Missing Plans */}
+      <GeneratePlansCard />
 
       {showSearch && (
         <SearchModal onClose={() => setShowSearch(false)} onSelectCustomer={(customerId) => {
