@@ -561,6 +561,164 @@ const RENEWAL_CAT_META = {
   NEW:         { label: 'New',        color: 'bg-blue-100 text-blue-700' },
 };
 
+// ─── PIPELINE TAB ────────────────────────────────────────────────────────────
+const PipelineTab = ({ users }) => {
+  const [module, setModule] = useState('insurance');
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState(new Set());
+  const [assignModal, setAssignModal] = useState(false);
+
+  const load = useCallback(async (mod) => {
+    setLoading(true);
+    setSelected(new Set());
+    try {
+      const res = mod === 'insurance'
+        ? await insuranceService.getPipeline()
+        : await serviceService.getPipeline();
+      setPlans(res.data?.plans || []);
+    } catch {
+      toast.error('Failed to load pipeline');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(module); }, [load, module]);
+
+  const toggleAll = () => {
+    if (selected.size === plans.length) setSelected(new Set());
+    else setSelected(new Set(plans.map(p => p.id)));
+  };
+
+  const toggle = (id) => {
+    const next = new Set(selected);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setSelected(next);
+  };
+
+  const handleAssign = async (userId) => {
+    try {
+      await Promise.all([...selected].map(id =>
+        module === 'insurance'
+          ? insuranceService.transferPlan(id, userId)
+          : serviceService.transferPlan(id, userId)
+      ));
+      toast.success(`${selected.size} plan${selected.size !== 1 ? 's' : ''} assigned`);
+      setAssignModal(false);
+      load(module);
+    } catch {
+      toast.error('Some assignments failed');
+    }
+  };
+
+  const catCounts = plans.reduce((acc, p) => {
+    const k = p.renewalCategory || 'UNSET';
+    acc[k] = (acc[k] || 0) + 1;
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex bg-gray-100 p-0.5 rounded-lg gap-0.5">
+          {['insurance', 'service'].map(m => (
+            <button key={m} onClick={() => setModule(m)}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${module === m ? (m === 'insurance' ? 'bg-blue-600 text-white' : 'bg-green-600 text-white') : 'text-gray-500'}`}>
+              {m === 'insurance' ? '🛡️ Insurance' : '🔧 Service'}
+            </button>
+          ))}
+        </div>
+        {selected.size > 0 && (
+          <button onClick={() => setAssignModal(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-lg flex items-center gap-2">
+            👤 Assign {selected.size} selected
+          </button>
+        )}
+      </div>
+
+      {/* Category pills */}
+      {plans.length > 0 && (
+        <div className="flex gap-2 flex-wrap">
+          <span className="text-xs font-medium text-gray-500 self-center">Pipeline:</span>
+          {Object.entries(RENEWAL_CAT_META).map(([key, meta]) => catCounts[key] > 0 && (
+            <span key={key} className={`text-xs px-2.5 py-1 rounded-full font-medium ${meta.color}`}>
+              {meta.label}: {catCounts[key]}
+            </span>
+          ))}
+          <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-blue-50 text-blue-700">
+            Total: {plans.length}
+          </span>
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="py-20 flex justify-center"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
+        ) : plans.length === 0 ? (
+          <div className="py-20 text-center">
+            <p className="text-4xl mb-3">📭</p>
+            <p className="text-gray-500 font-medium">No upcoming plans in the pipeline</p>
+            <p className="text-gray-400 text-sm mt-1">Plans appear here once follow-up window is in the future</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-4 py-3 w-10">
+                    <input type="checkbox" checked={selected.size === plans.length && plans.length > 0}
+                      onChange={toggleAll} className="rounded border-gray-300 text-blue-600 cursor-pointer" />
+                  </th>
+                  {['Customer', 'Vehicle', 'Telecaller', module === 'insurance' ? 'Expiry' : 'Due Date', 'Follow-up Starts', 'Category'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {plans.map((plan, i) => {
+                  const c = plan.customer || {};
+                  const r = plan.latestRecord || {};
+                  const expiryDate = module === 'insurance' ? r.policyExpiryDate : plan.calculatedNextDueDate;
+                  const catMeta = RENEWAL_CAT_META[plan.renewalCategory];
+                  return (
+                    <tr key={plan.id} className={`${selected.has(plan.id) ? 'bg-blue-50' : i % 2 === 1 ? 'bg-gray-50/40' : 'bg-white'} hover:bg-blue-50 transition-colors`}>
+                      <td className="px-4 py-3">
+                        <input type="checkbox" checked={selected.has(plan.id)} onChange={() => toggle(plan.id)}
+                          className="rounded border-gray-300 text-blue-600 cursor-pointer" />
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-gray-900">{c.name || '—'}</p>
+                        <p className="text-xs text-gray-400">{c.registrationNumber || c.chassisNumber}</p>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 text-xs">{c.make} {c.model}</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {plan.assignedTo?.name || <span className="text-amber-600 text-xs font-medium">Unassigned</span>}
+                      </td>
+                      <td className="px-4 py-3 text-gray-700 whitespace-nowrap text-xs">{formatDate(expiryDate)}</td>
+                      <td className="px-4 py-3 text-blue-600 whitespace-nowrap text-xs font-medium">{formatDate(plan.nextFollowupDate)}</td>
+                      <td className="px-4 py-3">
+                        {catMeta
+                          ? <span className={`text-xs px-2 py-0.5 rounded font-medium ${catMeta.color}`}>{catMeta.label}</span>
+                          : <span className="text-xs text-gray-400">—</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {assignModal && (
+        <BulkAssignModal count={selected.size} module={module} users={users}
+          onConfirm={handleAssign} onClose={() => setAssignModal(false)} />
+      )}
+    </div>
+  );
+};
+
 const LapsingSoonTab = () => {
   const [module, setModule] = useState('insurance');
   const [days, setDays] = useState(30);
@@ -805,6 +963,7 @@ const ManagerDashboard = () => {
 
   const tabs = [
     { id: 'overview',     label: '📊 Overview' },
+    { id: 'pipeline',     label: '📦 Pipeline' },
     { id: 'lapsingSoon',  label: '⏰ Lapsing Soon' },
     { id: 'unassigned',   label: '📥 Unassigned' },
     { id: 'psf',          label: '😊 PSF' },
@@ -1009,6 +1168,9 @@ const ManagerDashboard = () => {
             )}
           </>
         )}
+
+        {/* ── PIPELINE ── */}
+        {activeTab === 'pipeline' && <PipelineTab users={users} />}
 
         {/* ── LAPSING SOON ── */}
         {activeTab === 'lapsingSoon' && <LapsingSoonTab />}

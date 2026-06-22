@@ -258,7 +258,7 @@ const AdvancedSearch = () => {
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="mb-5">
-          <h1 className="text-xl font-bold text-gray-900">Plan Filter</h1>
+          <h1 className="text-xl font-bold text-gray-900">Plan Search</h1>
           <p className="text-sm text-gray-500">Search and filter plans by multiple criteria — select results to assign</p>
         </div>
 
@@ -303,6 +303,15 @@ const AdvancedSearch = () => {
                   </select>
                 </FField>
               )}
+              <FField label="Renewal Category">
+                <select value={f.renewalCategory || ''} onChange={e => set('renewalCategory', e.target.value)} className={sel}>
+                  <option value="">All Categories</option>
+                  <option value="OWN_RENEWAL">✅ Own Renewal</option>
+                  <option value="COMPETITOR">🔄 Competitor</option>
+                  <option value="LAPSED">⚠️ Lapsed</option>
+                  <option value="NEW">🆕 New</option>
+                </select>
+              </FField>
               <FField label="Follow-up Date From">
                 <input type="date" value={f.followupFrom || ''} onChange={e => set('followupFrom', e.target.value)} className={inp} />
               </FField>
