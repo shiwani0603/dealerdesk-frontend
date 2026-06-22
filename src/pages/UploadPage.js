@@ -117,13 +117,16 @@ const GeneratePlansCard = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (reset = false) => {
     setLoading(true);
     setResult(null);
     try {
-      const res = await api.post('/upload/backfill', {});
+      const res = await api.post('/upload/backfill', { reset });
       setResult(res.data);
-      toast.success(`Plans generated: ${res.data.servicePlansCreated} service, ${res.data.insurancePlansCreated} insurance`);
+      const msg = reset
+        ? `Reset & regenerated: ${res.data.servicePlansCreated} service, ${res.data.insurancePlansCreated} insurance plans`
+        : `Plans generated: ${res.data.servicePlansCreated} service, ${res.data.insurancePlansCreated} insurance`;
+      toast.success(msg);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to generate plans');
     } finally {
@@ -134,22 +137,27 @@ const GeneratePlansCard = () => {
   return (
     <div className="max-w-3xl mx-auto px-4 pb-8">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h2 className="font-bold text-gray-900 flex items-center gap-2">
               <span className="text-xl">⚡</span> Generate Missing Plans
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Scans all existing customer data and creates follow-up plans for any customer
-              who has insurance records or a purchase date but no open plan yet.
+              Creates service &amp; insurance follow-up plans from existing customer data.
+              Use <strong>Reset &amp; Regenerate</strong> to fix plans with incorrect dates.
             </p>
           </div>
-          <button onClick={handleGenerate} disabled={loading}
-            className="flex-shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2 whitespace-nowrap">
-            {loading
-              ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Generating…</>
-              : '⚡ Generate Now'}
-          </button>
+          <div className="flex gap-2 flex-shrink-0">
+            <button onClick={() => handleGenerate(false)} disabled={loading}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2 text-sm whitespace-nowrap">
+              {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : '⚡'}
+              Generate
+            </button>
+            <button onClick={() => handleGenerate(true)} disabled={loading}
+              className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 py-2.5 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2 text-sm whitespace-nowrap">
+              🔄 Reset &amp; Regenerate
+            </button>
+          </div>
         </div>
 
         {result && (

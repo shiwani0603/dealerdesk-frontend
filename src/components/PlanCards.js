@@ -280,20 +280,22 @@ export const ServicePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer }
       <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
         <div className="col-span-3">Customer</div>
         <div className="col-span-2">Contact</div>
-        <div className="col-span-2">Service Due</div>
-        <div className="col-span-2">Last Action</div>
-        <div className="col-span-1 text-center">Due Date</div>
+        <div className="col-span-2">Next Service Due</div>
+        <div className="col-span-2">Last Service</div>
+        <div className="col-span-1">Last Action</div>
         <div className="col-span-1 text-center">Follow-up</div>
         <div className="col-span-1 text-center">Action</div>
       </div>
       {plans.filter(p => p !== undefined && p !== null).map((plan, i) => {
         const customer = plan?.customer || {};
-        const lastLog = (plan?.followUpLogs || [])[0];
+        const record   = plan?.latestRecord || {};
+        const lastLog  = (plan?.followUpLogs || [])[0];
         const attemptCount = plan?._count?.followUpLogs || 0;
-        const isOverdue = plan?.nextFollowupDate && new Date(plan.nextFollowupDate) < new Date();
+        const isOverdue  = plan?.nextFollowupDate && new Date(plan.nextFollowupDate) < new Date();
         const isRedAlert = plan?.autoCloseDate && new Date(plan.autoCloseDate) <= new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
         const contacts = customer.contacts || [];
         const primaryMobile = contacts.find(c => c.contactType === 'mobile' && c.isPrimary)?.value || contacts.find(c => c.contactType === 'mobile')?.value;
+        const basisLabel = plan?.dueDateSource === 'estimated' ? '📅 Estimated' : '📅 Time based';
 
         return (
           <div key={plan.id} className={`grid grid-cols-12 gap-2 px-4 py-2.5 border-b border-gray-100 hover:bg-green-50 transition-colors items-center ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${isRedAlert ? 'border-l-4 border-l-red-400' : isOverdue ? 'border-l-4 border-l-orange-400' : ''}`}>
@@ -304,7 +306,7 @@ export const ServicePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer }
                 {customer.hasIncompleteData && <span className="text-xs bg-yellow-100 text-yellow-700 px-1 py-0.5 rounded flex-shrink-0" title="Incomplete data">⚠️</span>}
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <p className="text-xs text-gray-500 truncate" title={`${customer.registrationNumber || customer.chassisNumber} • ${customer.make} ${customer.model}`}>{customer.registrationNumber || customer.chassisNumber} • {customer.make} {customer.model}</p>
+                <p className="text-xs text-gray-500 truncate">{customer.registrationNumber || customer.chassisNumber} • {customer.make} {customer.model}</p>
                 {plan?.renewalCategory && <RenewalCategoryBadge category={plan.renewalCategory} />}
               </div>
             </div>
@@ -319,25 +321,33 @@ export const ServicePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer }
               ) : <span className="text-xs text-gray-400">—</span>}
             </div>
 
-            {/* Service type */}
+            {/* Next service due — type + date + basis */}
             <div className="col-span-2 cursor-pointer" onClick={() => onOpenDetail(plan, 'service')}>
               <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded font-medium">🔧 {plan?.currentServiceDue || 'Service'}</span>
+              <p className={`text-xs mt-0.5 font-medium ${isOverdue ? 'text-red-600' : 'text-green-700'}`}>{formatDate(plan?.calculatedNextDueDate)}</p>
+              <p className="text-xs text-gray-400">{basisLabel}</p>
               {plan?.appointmentDate && <p className="text-xs text-blue-600 mt-0.5">📅 {formatDate(plan.appointmentDate)} {plan?.appointmentType === 'pickup' ? '🚗' : '🏃'}</p>}
             </div>
 
+            {/* Last service — date, type, mileage */}
+            <div className="col-span-2 cursor-pointer" onClick={() => onOpenDetail(plan, 'service')}>
+              {record.serviceDate ? (
+                <>
+                  <p className="text-xs font-medium text-gray-700">{formatDate(record.serviceDate)}</p>
+                  {record.serviceType && <p className="text-xs text-gray-500 truncate">{record.serviceType}</p>}
+                  {record.mileageAtService && <p className="text-xs text-gray-400">{Number(record.mileageAtService).toLocaleString('en-IN')} km</p>}
+                </>
+              ) : <p className="text-xs text-gray-400 italic">No record</p>}
+            </div>
+
             {/* Last action */}
-            <div className="col-span-2 min-w-0 cursor-pointer" onClick={() => onOpenDetail(plan, 'service')}>
+            <div className="col-span-1 min-w-0 cursor-pointer" onClick={() => onOpenDetail(plan, 'service')}>
               {lastLog ? (
                 <>
                   <p className="text-xs text-gray-700 truncate">{outcomeLabel[lastLog.callOutcome] || lastLog.callOutcome}</p>
                   <p className="text-xs text-gray-400">{formatDate(lastLog.loggedAt)}</p>
                 </>
-              ) : <p className="text-xs text-gray-400 italic">No calls yet</p>}
-            </div>
-
-            {/* Due date */}
-            <div className="col-span-1 text-center cursor-pointer" onClick={() => onOpenDetail(plan, 'service')}>
-              <span className={`text-xs font-medium ${isOverdue ? 'text-red-600' : 'text-green-700'}`}>{formatDate(plan?.calculatedNextDueDate)}</span>
+              ) : <p className="text-xs text-gray-400 italic">No calls</p>}
             </div>
 
             {/* Follow-up */}
