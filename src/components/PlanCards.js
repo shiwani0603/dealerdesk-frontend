@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 15;
 
 const Pagination = ({ total, page, onPage }) => {
   const pages = Math.ceil(total / PAGE_SIZE);
