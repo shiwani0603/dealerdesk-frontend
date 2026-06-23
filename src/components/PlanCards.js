@@ -1,4 +1,41 @@
-import React from 'react';
+import React, { useState } from 'react';
+
+const PAGE_SIZE = 50;
+
+const Pagination = ({ total, page, onPage }) => {
+  const pages = Math.ceil(total / PAGE_SIZE);
+  if (pages <= 1) return null;
+  const from = (page - 1) * PAGE_SIZE + 1;
+  const to   = Math.min(page * PAGE_SIZE, total);
+  return (
+    <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50 text-sm">
+      <span className="text-gray-500 text-xs">{from}–{to} of {total} plans</span>
+      <div className="flex items-center gap-1">
+        <button onClick={() => onPage(1)} disabled={page === 1}
+          className="px-2 py-1 rounded text-xs text-gray-500 hover:bg-gray-200 disabled:opacity-30">«</button>
+        <button onClick={() => onPage(page - 1)} disabled={page === 1}
+          className="px-2 py-1 rounded text-xs text-gray-500 hover:bg-gray-200 disabled:opacity-30">‹ Prev</button>
+        {Array.from({ length: Math.min(pages, 5) }, (_, i) => {
+          let p;
+          if (pages <= 5) p = i + 1;
+          else if (page <= 3) p = i + 1;
+          else if (page >= pages - 2) p = pages - 4 + i;
+          else p = page - 2 + i;
+          return (
+            <button key={p} onClick={() => onPage(p)}
+              className={`px-2.5 py-1 rounded text-xs font-medium ${p === page ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-200'}`}>
+              {p}
+            </button>
+          );
+        })}
+        <button onClick={() => onPage(page + 1)} disabled={page === pages}
+          className="px-2 py-1 rounded text-xs text-gray-500 hover:bg-gray-200 disabled:opacity-30">Next ›</button>
+        <button onClick={() => onPage(pages)} disabled={page === pages}
+          className="px-2 py-1 rounded text-xs text-gray-500 hover:bg-gray-200 disabled:opacity-30">»</button>
+      </div>
+    </div>
+  );
+};
 
 const RENEWAL_CATEGORY_META = {
   OWN_RENEWAL: { label: 'Own', color: 'bg-green-100 text-green-700' },
@@ -33,7 +70,10 @@ const outcomeLabel = {
 };
 
 export const InsurancePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer }) => {
-  if (!plans || plans.length === 0) {
+  const [page, setPage] = useState(1);
+  const allPlans = React.useMemo(() => (plans || []).filter(p => p != null), [plans]);
+  React.useEffect(() => { setPage(1); }, [plans]);
+  if (allPlans.length === 0) {
     return (
       <div className="bg-white rounded-xl p-10 text-center shadow-sm">
         <p className="text-4xl mb-3">🎉</p>
@@ -41,6 +81,7 @@ export const InsurancePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer
       </div>
     );
   }
+  const pagePlans = allPlans.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -53,7 +94,7 @@ export const InsurancePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer
         <div className="col-span-1 text-center">Follow-up</div>
         <div className="col-span-1 text-center">Action</div>
       </div>
-      {plans.filter(p => p !== undefined && p !== null).map((plan, i) => {
+      {pagePlans.map((plan, i) => {
         const customer = plan?.customer || {};
         const record = plan?.latestRecord || {};
         const lastLog = (plan?.followUpLogs || [])[0];
@@ -174,6 +215,7 @@ export const InsurancePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer
           </div>
         );
       })}
+      <Pagination total={allPlans.length} page={page} onPage={setPage} />
     </div>
   );
 };
@@ -267,7 +309,10 @@ export const PsfPlanTable = ({ plans, onQuickLog }) => {
 };
 
 export const ServicePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer }) => {
-  if (!plans || plans.length === 0) {
+  const [page, setPage] = useState(1);
+  const allPlans = React.useMemo(() => (plans || []).filter(p => p != null), [plans]);
+  React.useEffect(() => { setPage(1); }, [plans]);
+  if (allPlans.length === 0) {
     return (
       <div className="bg-white rounded-xl p-10 text-center shadow-sm">
         <p className="text-4xl mb-3">🎉</p>
@@ -275,6 +320,7 @@ export const ServicePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer }
       </div>
     );
   }
+  const pagePlans = allPlans.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden">
       <div className="grid grid-cols-12 gap-2 px-4 py-2 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -286,7 +332,7 @@ export const ServicePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer }
         <div className="col-span-1 text-center">Follow-up</div>
         <div className="col-span-1 text-center">Action</div>
       </div>
-      {plans.filter(p => p !== undefined && p !== null).map((plan, i) => {
+      {pagePlans.map((plan, i) => {
         const customer = plan?.customer || {};
         const record   = plan?.latestRecord || {};
         const lastLog  = (plan?.followUpLogs || [])[0];
@@ -295,7 +341,11 @@ export const ServicePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer }
         const isRedAlert = plan?.autoCloseDate && new Date(plan.autoCloseDate) <= new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
         const contacts = customer.contacts || [];
         const primaryMobile = contacts.find(c => c.contactType === 'mobile' && c.isPrimary)?.value || contacts.find(c => c.contactType === 'mobile')?.value;
-        const basisLabel = plan?.dueDateSource === 'estimated' ? '📅 Estimated' : '📅 Time based';
+        const basisLabel = plan?.dueDateSource === 'estimated'
+          ? '⚠️ No interval rule'
+          : plan?.dueDateSource === 'manual'
+          ? '✏️ Manual'
+          : '📅 Time based';
 
         return (
           <div key={plan.id} className={`grid grid-cols-12 gap-2 px-4 py-2.5 border-b border-gray-100 hover:bg-green-50 transition-colors items-center ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} ${isRedAlert ? 'border-l-4 border-l-red-400' : isOverdue ? 'border-l-4 border-l-orange-400' : ''}`}>
@@ -376,6 +426,7 @@ export const ServicePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer }
           </div>
         );
       })}
+      <Pagination total={allPlans.length} page={page} onPage={setPage} />
     </div>
   );
 };

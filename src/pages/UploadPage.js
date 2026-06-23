@@ -330,6 +330,9 @@ const UploadPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Navbar onSearchClick={() => setShowSearch(true)} />
 
+      {/* Generate Missing Plans — prominent at top */}
+      <GeneratePlansCard />
+
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="flex items-center gap-3 mb-6">
           <h1 className="text-xl font-bold text-gray-900">📤 Upload Data</h1>
@@ -539,9 +542,6 @@ const UploadPage = () => {
 
       {/* Service Due Date Override Upload */}
       <ServiceOverrideUpload dealershipId={user?.dealershipId} />
-
-      {/* Generate Missing Plans */}
-      <GeneratePlansCard />
 
       {showSearch && (
         <SearchModal onClose={() => setShowSearch(false)} onSelectCustomer={(customerId) => {
