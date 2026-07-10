@@ -230,6 +230,8 @@ const buildEmptyForm = () => ({
   moduleRights: 'both',
   teamLeaderId: '',
   uploadRights: false,
+  managedLocationIds: [],
+  allowedMakes: [],
 });
 
 const buildEditForm = (u) => ({
@@ -244,11 +246,13 @@ const buildEditForm = (u) => ({
   moduleRights: u.moduleRights || 'both',
   teamLeaderId: u.teamLeaderId || '',
   uploadRights: u.uploadRights || false,
+  managedLocationIds: u.managedLocationIds || [],
+  allowedMakes: u.allowedMakes || [],
 });
 
 // ─── Slide-in panel ──────────────────────────────────────────────────────────
 
-const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSuperManager, onClose, onSaved }) => {
+const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSuperManager, dealershipMakes, onClose, onSaved }) => {
   const isEdit = !!editUser;
 
   // Lazy initializer runs once on mount — key={panelKey} guarantees fresh mount each open
@@ -304,13 +308,41 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
   const currentRole = isEdit ? editUser.role : form.role;
   const isFieldRole = ['telecaller', 'team_leader', 'manager', 'service_adviser'].includes(currentRole);
   const isTelecaller = currentRole === 'telecaller';
+  const isManagerRole = ['manager', 'super_manager'].includes(currentRole);
 
-  // Filter team leaders by module compatibility
+  // Filter team leaders by module AND location compatibility
   const compatibleTLs = teamLeaders.filter((tl) => {
-    if (form.moduleRights === 'both') return true;
-    if (!tl.moduleRights || tl.moduleRights === 'both') return true;
-    return tl.moduleRights === form.moduleRights;
+    const moduleOk = form.moduleRights === 'both' ||
+      !tl.moduleRights || tl.moduleRights === 'both' || tl.moduleRights === form.moduleRights;
+    if (!moduleOk) return false;
+    // TL must be at the same location as the telecaller
+    if (form.locationId && tl.locationId && tl.locationId !== form.locationId) return false;
+    return true;
   });
+
+  const toggleManagedLocation = (locId) => {
+    setForm(f => {
+      const current = f.managedLocationIds || [];
+      return {
+        ...f,
+        managedLocationIds: current.includes(locId)
+          ? current.filter(id => id !== locId)
+          : [...current, locId],
+      };
+    });
+  };
+
+  const toggleAllowedMake = (make) => {
+    setForm(f => {
+      const current = f.allowedMakes || [];
+      return {
+        ...f,
+        allowedMakes: current.includes(make)
+          ? current.filter(m => m !== make)
+          : [...current, make],
+      };
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -331,6 +363,8 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
           moduleRights: form.moduleRights,
           teamLeaderId: form.teamLeaderId || null,
           uploadRights: form.uploadRights,
+          managedLocationIds: isManagerRole ? (form.managedLocationIds || []) : [],
+          allowedMakes: form.allowedMakes || [],
         };
         if (form.password) payload.password = form.password;
         const res = await userService.update(editUser.id, payload);
@@ -348,6 +382,8 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
           moduleRights: form.moduleRights,
           teamLeaderId: form.teamLeaderId || null,
           uploadRights: form.uploadRights,
+          managedLocationIds: isManagerRole ? (form.managedLocationIds || []) : [],
+          allowedMakes: form.allowedMakes || [],
         });
         toast.success('User created');
         onSaved(res.data.user, 'create');
@@ -463,7 +499,9 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
 
           {/* Location */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {isManagerRole ? 'Primary Location *' : 'Location *'}
+            </label>
             <select
               value={form.locationId}
               onChange={(e) => set('locationId', e.target.value)}
@@ -477,6 +515,32 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
               ))}
             </select>
           </div>
+
+          {/* Managed Locations — manager / super_manager with multiple locations */}
+          {isManagerRole && locations.length > 1 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Managed Locations{' '}
+                <span className="text-gray-400 font-normal text-xs">(all if none selected)</span>
+              </label>
+              <div className="space-y-1.5 bg-gray-50 rounded-lg p-3">
+                {locations.map((loc) => (
+                  <label key={loc.id} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={(form.managedLocationIds || []).includes(loc.id)}
+                      onChange={() => toggleManagedLocation(loc.id)}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600"
+                    />
+                    <span className="text-sm text-gray-700">{loc.name}{loc.city ? ` — ${loc.city}` : ''}</span>
+                  </label>
+                ))}
+              </div>
+              {(form.managedLocationIds || []).length === 0 && (
+                <p className="text-xs text-gray-400 mt-1">No restriction — can see all locations</p>
+              )}
+            </div>
+          )}
 
           {/* Module Rights — telecaller & team leader */}
           {isFieldRole && (
@@ -549,6 +613,38 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
             </div>
           )}
 
+          {/* Make Rights */}
+          {dealershipMakes && dealershipMakes.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Make Access{' '}
+                <span className="text-gray-400 font-normal text-xs">(all makes if none selected)</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {dealershipMakes.map(make => {
+                  const selected = (form.allowedMakes || []).includes(make);
+                  return (
+                    <button
+                      key={make}
+                      type="button"
+                      onClick={() => toggleAllowedMake(make)}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+                        selected
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+                      }`}
+                    >
+                      {make}
+                    </button>
+                  );
+                })}
+              </div>
+              {(form.allowedMakes || []).length === 0 && (
+                <p className="text-xs text-gray-400 mt-1">No restriction — user can see all makes</p>
+              )}
+            </div>
+          )}
+
           {/* Contact info */}
           <div className="border-t border-gray-100 pt-3">
             <p className="text-xs text-gray-400 mb-3 uppercase tracking-wide font-medium">Contact Info (optional)</p>
@@ -608,6 +704,7 @@ const UserManagement = () => {
   const [filterModule, setFilterModule] = useState('all');
   const [filterActive, setFilterActive] = useState('active');
   const [canCreateUsers, setCanCreateUsers] = useState(false);
+  const [dealershipMakes, setDealershipMakes] = useState([]);
 
   const teamLeaders = users.filter((u) => u.role === 'team_leader' && u.isActive);
 
@@ -623,8 +720,8 @@ const UserManagement = () => {
       ]);
       setUsers(usersRes.data.users);
       setLocations(locsRes.data.locations);
-      // super_manager always can create; manager only if dealership allows
       setCanCreateUsers(isSuperManager || (settingsRes?.data?.settings?.managerCanCreateUsers ?? false));
+      setDealershipMakes(Array.isArray(settingsRes?.data?.settings?.allowedMakes) ? settingsRes.data.settings.allowedMakes : []);
     } catch {
       toast.error('Failed to load users');
     } finally {
@@ -897,6 +994,7 @@ const UserManagement = () => {
           teamLeaders={teamLeaders}
           existingUsernames={users.map((u) => u.username).filter(Boolean)}
           isSuperManager={isSuperManager}
+          dealershipMakes={dealershipMakes}
           onClose={() => setPanel((p) => ({ ...p, open: false, editUser: null }))}
           onSaved={handleSaved}
         />

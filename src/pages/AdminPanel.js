@@ -165,9 +165,11 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
     showPassword: false,
     role: existingUser?.role || 'telecaller',
     locationId: existingUser?.locationId || (dealership.locations?.[0]?.id || ''),
+    managedLocationIds: existingUser?.managedLocationIds || [],
     teamLeaderId: existingUser?.teamLeaderId || '',
     moduleRights: existingUser?.moduleRights || 'both',
     uploadRights: existingUser?.uploadRights || false,
+    allowedMakes: existingUser?.allowedMakes || [],
   }));
   const [saving, setSaving] = useState(false);
 
@@ -175,6 +177,7 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
 
   const needsModuleRights = ['telecaller', 'team_leader', 'service_adviser', 'manager'].includes(form.role);
   const needsTeamLeader  = ['telecaller', 'service_adviser'].includes(form.role);
+  const isManagerRole    = ['manager', 'super_manager'].includes(form.role);
   // super_manager is dealership admin — no module restriction, no team leader
 
   const existingUsernames = (dealershipUsers || [])
@@ -182,12 +185,43 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
     .map(u => u.username).filter(Boolean);
   const usernameTaken = !!form.username && existingUsernames.includes(form.username);
 
+  const dealershipMakes = Array.isArray(dealership.allowedMakes) ? dealership.allowedMakes : [];
+
   const allTeamLeaders = (dealershipUsers || []).filter(u => u.role === 'team_leader' && u.isActive);
   const teamLeaders = allTeamLeaders.filter(u => {
-    if (!needsModuleRights || form.moduleRights === 'both') return true;
-    return !u.moduleRights || u.moduleRights === 'both' || u.moduleRights === form.moduleRights;
+    // Module filter
+    const moduleOk = !needsModuleRights || form.moduleRights === 'both' ||
+      !u.moduleRights || u.moduleRights === 'both' || u.moduleRights === form.moduleRights;
+    if (!moduleOk) return false;
+    // Location filter — TL must be at the same location as the telecaller
+    if (form.locationId && u.locationId && u.locationId !== form.locationId) return false;
+    return true;
   });
   const hiddenTLCount = allTeamLeaders.length - teamLeaders.length;
+
+  const toggleManagedLocation = (locId) => {
+    setForm(f => {
+      const current = f.managedLocationIds || [];
+      return {
+        ...f,
+        managedLocationIds: current.includes(locId)
+          ? current.filter(id => id !== locId)
+          : [...current, locId],
+      };
+    });
+  };
+
+  const toggleAllowedMake = (make) => {
+    setForm(f => {
+      const current = f.allowedMakes || [];
+      return {
+        ...f,
+        allowedMakes: current.includes(make)
+          ? current.filter(m => m !== make)
+          : [...current, make],
+      };
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -209,6 +243,8 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
         teamLeaderId: needsTeamLeader ? (form.teamLeaderId || null) : null,
         moduleRights: needsModuleRights ? form.moduleRights : null,
         uploadRights: form.uploadRights,
+        managedLocationIds: isManagerRole ? (form.managedLocationIds || []) : [],
+        allowedMakes: form.allowedMakes || [],
       };
 
       if (!isEdit) {
@@ -333,7 +369,9 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
 
           {/* Location */}
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Location *</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              {isManagerRole ? 'Primary Location *' : 'Location *'}
+            </label>
             {dealership.locations?.length === 0
               ? <p className="text-xs text-red-500">No locations — add a location to this dealership first.</p>
               : (
@@ -347,6 +385,31 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
               )
             }
           </div>
+
+          {/* Managed Locations (manager / super_manager only) */}
+          {isManagerRole && dealership.locations?.length > 1 && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Managed Locations <span className="text-gray-400 font-normal">(all locations if none selected)</span>
+              </label>
+              <div className="space-y-1.5">
+                {dealership.locations?.map(loc => (
+                  <label key={loc.id} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={(form.managedLocationIds || []).includes(loc.id)}
+                      onChange={() => toggleManagedLocation(loc.id)}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600"
+                    />
+                    <span className="text-sm text-gray-700">{loc.name}{loc.city ? ` — ${loc.city}` : ''}</span>
+                  </label>
+                ))}
+              </div>
+              {(form.managedLocationIds || []).length === 0 && (
+                <p className="text-xs text-gray-400 mt-1">No restriction — manager can see all locations</p>
+              )}
+            </div>
+          )}
 
           {/* Module Rights */}
           {needsModuleRights && (
@@ -410,6 +473,37 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
               <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.uploadRights ? 'translate-x-5' : 'translate-x-0.5'}`} />
             </button>
           </div>
+
+          {/* Make Rights */}
+          {dealershipMakes.length > 0 && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Make Access <span className="text-gray-400 font-normal">(all makes if none selected)</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {dealershipMakes.map(make => {
+                  const selected = (form.allowedMakes || []).includes(make);
+                  return (
+                    <button
+                      key={make}
+                      type="button"
+                      onClick={() => toggleAllowedMake(make)}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all ${
+                        selected
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+                      }`}
+                    >
+                      {make}
+                    </button>
+                  );
+                })}
+              </div>
+              {(form.allowedMakes || []).length === 0 && (
+                <p className="text-xs text-gray-400 mt-1">No restriction — user can see all makes</p>
+              )}
+            </div>
+          )}
 
           <button type="submit" disabled={saving || (!isEdit && !form.locationId)}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
@@ -830,7 +924,7 @@ const DealershipSettingsTab = ({ dealership }) => {
 
 // ─── Dealership Card ──────────────────────────────────────────────────────────
 
-const DealershipCard = ({ d, onEdit, onAddLocation, onAddUser, onEditUser, usersRefreshKey }) => {
+const DealershipCard = ({ d, number, onEdit, onAddLocation, onAddUser, onEditUser, usersRefreshKey }) => {
   const [expanded, setExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState('locations');
   const [users, setUsers] = useState(null);
@@ -902,7 +996,7 @@ const DealershipCard = ({ d, onEdit, onAddLocation, onAddUser, onEditUser, users
       <div className="px-5 py-4 flex items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 font-bold text-lg ${d.isActive ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
-            {d.name.charAt(0).toUpperCase()}
+            {number ? `#${number}` : d.name.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -1239,10 +1333,11 @@ const AdminPanel = () => {
                 <p className="text-gray-500 font-medium">No dealerships found</p>
               </div>
             )
-            : filtered.map(d => (
+            : filtered.map((d, idx) => (
               <DealershipCard
                 key={d.id}
                 d={d}
+                number={idx + 1}
                 onEdit={setDealershipModal}
                 onAddLocation={setLocationModal}
                 onAddUser={handleAddUser}

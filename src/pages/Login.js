@@ -90,11 +90,6 @@ const Login = () => {
         <p className="text-center text-xs text-gray-400 mt-6">
           DealerDesk CRM v1.0 — Secure Login
         </p>
-        <p className="text-center mt-3">
-          <a href="/admin/login" className="text-xs text-gray-400 hover:text-gray-600 underline">
-            Admin Login
-          </a>
-        </p>
       </div>
     </div>
   );

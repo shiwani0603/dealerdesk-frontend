@@ -421,7 +421,11 @@ const PsfLogModal = ({ plan, onClose, onSuccess }) => {
 };
 
 const TelecallerDashboard = () => {
-  useAuth();
+  const { user } = useAuth();
+  const showInsurance = !user?.moduleRights || user?.moduleRights === 'insurance' || user?.moduleRights === 'both';
+  const showService   = !user?.moduleRights || user?.moduleRights === 'service'   || user?.moduleRights === 'both';
+  const showPsf       = showInsurance || showService; // PSF visible when any module is available
+
   const [stats, setStats] = useState(null);
   const [insurancePlans, setInsurancePlans] = useState({ today: [], overdue: [], redAlert: [] });
   const [servicePlans, setServicePlans] = useState({ today: [], overdue: [], redAlert: [] });
@@ -430,7 +434,9 @@ const TelecallerDashboard = () => {
   const [lapsingSoonDays, setLapsingSoonDays] = useState(30);
   const [lapsingSoonLoading, setLapsingSoonLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('today');
-  const [activeModule, setActiveModule] = useState('insurance');
+  const [activeModule, setActiveModule] = useState(
+    user?.moduleRights === 'service' ? 'service' : 'insurance'
+  );
   const [catFilter, setCatFilter] = useState('ALL');
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [quickLogPlan, setQuickLogPlan] = useState(null);
@@ -523,18 +529,24 @@ const TelecallerDashboard = () => {
 
         {/* Module tabs */}
         <div className="flex bg-white rounded-xl shadow-sm p-1 mb-4">
-          <button onClick={() => setActiveModule('insurance')}
-            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeModule === 'insurance' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
-            🛡️ Insurance ({(insurancePlans.today?.length || 0) + (insurancePlans.overdue?.length || 0)})
-          </button>
-          <button onClick={() => setActiveModule('service')}
-            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeModule === 'service' ? 'bg-green-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
-            🔧 Service ({(servicePlans.today?.length || 0) + (servicePlans.overdue?.length || 0)})
-          </button>
-          <button onClick={() => setActiveModule('psf')}
-            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeModule === 'psf' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
-            ⭐ PSF ({psfPlans.length})
-          </button>
+          {showInsurance && (
+            <button onClick={() => setActiveModule('insurance')}
+              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeModule === 'insurance' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
+              🛡️ Insurance ({(insurancePlans.today?.length || 0) + (insurancePlans.overdue?.length || 0)})
+            </button>
+          )}
+          {showService && (
+            <button onClick={() => setActiveModule('service')}
+              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeModule === 'service' ? 'bg-green-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
+              🔧 Service ({(servicePlans.today?.length || 0) + (servicePlans.overdue?.length || 0)})
+            </button>
+          )}
+          {showPsf && (
+            <button onClick={() => setActiveModule('psf')}
+              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeModule === 'psf' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
+              ⭐ PSF ({psfPlans.length})
+            </button>
+          )}
         </div>
 
         {/* Plan sub-tabs (only for insurance/service) */}
