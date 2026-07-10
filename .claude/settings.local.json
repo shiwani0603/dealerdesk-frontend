@@ -3,7 +3,14 @@
     "allow": [
       "PowerShell(Get-ChildItem \"c:\\\\dealerdesk\\\\backend\\\\src\" -Recurse | Where-Object { $_.Extension -match '\\\\.\\(js|ts\\)$' } | Select-Object FullName)",
       "PowerShell(head -50)",
-      "Bash(node -e \"const bcrypt = require\\('bcryptjs'\\); bcrypt.hash\\('Admin@2026', 12\\).then\\(h => console.log\\(h\\)\\);\")"
+      "Bash(node -e \"const bcrypt = require\\('bcryptjs'\\); bcrypt.hash\\('Admin@2026', 12\\).then\\(h => console.log\\(h\\)\\);\")",
+      "PowerShell(cd c:\\\\dealerdesk\\\\frontend; $env:CI=\"false\"; npm run build 2>&1 | Select-Object -Last 10)",
+      "PowerShell(cd c:\\\\dealerdesk\\\\frontend; $env:CI=\"true\"; npm run build 2>&1 | Select-Object -Last 20)",
+      "PowerShell(cd c:\\\\dealerdesk\\\\frontend; $env:CI=\"true\"; npm run build 2>&1 | Select-Object -Last 15)",
+      "WebFetch(domain:beeaargroup.infoman-ecrm.com)"
+    ],
+    "additionalDirectories": [
+      "c:\\dealerdesk\\backend\\prisma"
     ]
   }
 }

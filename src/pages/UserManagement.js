@@ -58,6 +58,94 @@ const DeactivationBlockModal = ({ userName, breakdown, onClose, onGoToFilter }) 
   );
 };
 
+// ─── Set Password Modal ───────────────────────────────────────────────────────
+const SetPasswordModal = ({ targetUser, onClose, onSaved }) => {
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [forceChange, setForceChange] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const generate = () => { setPassword(suggestPassword(targetUser.name)); setShowPassword(true); };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!password) { toast.error('Enter a password'); return; }
+    if (password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
+    setSaving(true);
+    try {
+      await userService.update(targetUser.id, { password, mustChangePassword: forceChange });
+      onSaved({ name: targetUser.name, username: targetUser.username, newPassword: password });
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to set password');
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">Set Password</h2>
+            <p className="text-sm text-gray-500">{targetUser.name}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+        </div>
+
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-xs text-amber-700">
+          <p className="font-semibold mb-1">ℹ️ Note</p>
+          <p>Existing password cannot be viewed — it is stored encrypted. You can set a new one below.</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-medium text-gray-700">New Password</label>
+              <button type="button" onClick={generate} className="text-xs text-blue-600 hover:underline">Generate</button>
+            </div>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full px-3 py-2.5 pr-14 border border-gray-300 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Type or generate a password"
+                autoFocus
+              />
+              <button type="button" onClick={() => setShowPassword(s => !s)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600">
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-gray-700">Force password change</p>
+              <p className="text-xs text-gray-400 mt-0.5">User must change this on next login</p>
+            </div>
+            <button type="button" onClick={() => setForceChange(f => !f)}
+              className={`relative w-11 h-6 rounded-full transition-colors ${forceChange ? 'bg-blue-600' : 'bg-gray-300'}`}>
+              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${forceChange ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose}
+              className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200">
+              Cancel
+            </button>
+            <button type="submit" disabled={saving || !password}
+              className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-50">
+              {saving ? 'Saving…' : 'Set Password'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // ─── Password Reset Modal ─────────────────────────────────────────────────────
 const PasswordResetModal = ({ result, onClose }) => {
   const [copied, setCopied] = useState(false);
@@ -513,7 +601,8 @@ const UserManagement = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [panel, setPanel] = useState({ open: false, editUser: null, v: 0 });
   const [deactivationBlock, setDeactivationBlock] = useState(null);
-  const [resetResult, setResetResult] = useState(null); // { name, username, newPassword }
+  const [resetResult, setResetResult] = useState(null);     // { name, username, newPassword }
+  const [setPasswordTarget, setSetPasswordTarget] = useState(null); // user to set password for
 
   const [filterRole, setFilterRole] = useState('all');
   const [filterModule, setFilterModule] = useState('all');
@@ -559,14 +648,9 @@ const UserManagement = () => {
     }
   };
 
-  const handleResetPassword = async (user) => {
-    if (!window.confirm(`Reset password for ${user.name}?\n\nA new temporary password will be generated. They will be forced to change it on next login.`)) return;
-    try {
-      const res = await userService.resetPassword(user.id);
-      setResetResult({ name: res.data.message.split('.')[0], username: res.data.username, newPassword: res.data.newPassword });
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to reset password');
-    }
+  const handleSetPasswordSaved = (result) => {
+    setSetPasswordTarget(null);
+    setResetResult(result);
   };
 
   const handleSaved = (savedUser, mode) => {
@@ -787,9 +871,9 @@ const UserManagement = () => {
                               ✏️
                             </button>
                             <button
-                              onClick={() => handleResetPassword(user)}
+                              onClick={() => setSetPasswordTarget(user)}
                               className="text-gray-400 hover:text-amber-600 transition-colors p-1 rounded text-xs"
-                              title="Reset password"
+                              title="Set password"
                             >
                               🔑
                             </button>
@@ -831,6 +915,14 @@ const UserManagement = () => {
           breakdown={deactivationBlock.breakdown}
           onClose={() => setDeactivationBlock(null)}
           onGoToFilter={() => { setDeactivationBlock(null); navigate('/search/advanced'); }}
+        />
+      )}
+
+      {setPasswordTarget && (
+        <SetPasswordModal
+          targetUser={setPasswordTarget}
+          onClose={() => setSetPasswordTarget(null)}
+          onSaved={handleSetPasswordSaved}
         />
       )}
 
