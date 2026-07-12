@@ -217,8 +217,11 @@ const UploadPage = () => {
     const loadMappings = async () => {
       try {
         const res = await api.get(`/upload/mappings?dealershipId=${dealershipId}`);
+        const loadedMakes = res.data.allowedMakes || [];
         setPortals(res.data.portals || []);
-        setAllowedMakes(res.data.allowedMakes || []);
+        setAllowedMakes(loadedMakes);
+        // Auto-select make if only one is available
+        if (loadedMakes.length === 1) setMake(loadedMakes[0]);
       } catch (err) {
         console.error('Failed to load mappings');
       }
@@ -369,26 +372,19 @@ const UploadPage = () => {
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Portal / Source Name *</label>
-                <select
-                  value={portalName}
-                  onChange={e => setPortalName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                >
-                  <option value="">Select portal...</option>
-                  {portals.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Make *</label>
                 {allowedMakes.length === 0 ? (
                   <div className="w-full px-3 py-2 border border-amber-300 bg-amber-50 rounded-lg text-sm text-amber-700">
                     No makes configured — contact your admin
                   </div>
+                ) : allowedMakes.length === 1 ? (
+                  <div className="w-full px-3 py-2 border border-green-300 bg-green-50 rounded-lg text-sm text-green-700 font-medium">
+                    {MAKE_LABEL_MAP[allowedMakes[0]] || allowedMakes[0]}
+                  </div>
                 ) : (
                   <select
                     value={make}
-                    onChange={e => setMake(e.target.value)}
+                    onChange={e => { setMake(e.target.value); setPortalName(''); }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                   >
                     <option value="">Select make...</option>
@@ -397,6 +393,24 @@ const UploadPage = () => {
                     ))}
                   </select>
                 )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Portal / Source Name *</label>
+                {(() => {
+                  const filteredPortals = make
+                    ? portals.filter(p => p.makes && p.makes.map(pm => pm.toLowerCase()).includes(make.toLowerCase()))
+                    : portals;
+                  return (
+                    <select
+                      value={portalName}
+                      onChange={e => setPortalName(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="">{make ? 'Select portal...' : 'Select make first...'}</option>
+                      {filteredPortals.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                    </select>
+                  );
+                })()}
               </div>
             </div>
 

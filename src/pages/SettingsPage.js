@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { settingsService, userService } from '../services/api';
+import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import toast from 'react-hot-toast';
+
+const MAKE_LABELS = {
+  tata: 'Tata', maruti: 'Maruti Suzuki', hyundai: 'Hyundai', honda: 'Honda',
+  toyota: 'Toyota', mahindra: 'Mahindra', kia: 'Kia', mg: 'MG',
+  renault: 'Renault', nissan: 'Nissan', volkswagen: 'Volkswagen', skoda: 'Skoda',
+  jeep: 'Jeep', ford: 'Ford', mercedes: 'Mercedes-Benz', bmw: 'BMW', audi: 'Audi',
+  volvo: 'Volvo', isuzu: 'Isuzu', force: 'Force',
+};
 
 const Field = ({ label, hint, children }) => (
   <div>
@@ -71,12 +80,42 @@ const SettingsPage = () => {
   const [locations, setLocations] = useState([]);
   const [myLocationId, setMyLocationId] = useState(user?.locationId || '');
   const [savingLocation, setSavingLocation] = useState(false);
+  const [templates, setTemplates] = useState([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     if (isManager || isSuperManager || isTL) {
       userService.listLocations().then(r => setLocations(r.data.locations || [])).catch(() => {});
     }
   }, [isManager, isSuperManager, isTL]);
+
+  useEffect(() => {
+    if ((isManager || isSuperManager) && user?.dealershipId) {
+      setLoadingTemplates(true);
+      api.get(`/upload/mappings?dealershipId=${user.dealershipId}`)
+        .then(r => {
+          // Only show dealership-specific templates (not global ones)
+          const dealershipTemplates = (r.data.mappings || []).filter(t => t.dealershipId !== null);
+          setTemplates(dealershipTemplates);
+        })
+        .catch(() => {})
+        .finally(() => setLoadingTemplates(false));
+    }
+  }, [isManager, isSuperManager, user?.dealershipId]);
+
+  const handleDeleteTemplate = async (id) => {
+    setDeletingId(id);
+    try {
+      await api.delete(`/upload/mappings/${id}`);
+      setTemplates(prev => prev.filter(t => t.id !== id));
+      toast.success('Template deleted');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to delete template');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleSaveLocation = async () => {
     setSavingLocation(true);
@@ -372,6 +411,46 @@ const SettingsPage = () => {
                   {myLocationId ? `Currently filtering: ${locations.find(l => l.id === myLocationId)?.name || '—'}` : 'Currently showing: All locations'}
                 </p>
               </Field>
+            </Section>
+          )}
+
+          {/* Upload Templates — manager/super_manager only */}
+          {(isManager || isSuperManager) && (
+            <Section title="Upload Templates" icon="🗂️">
+              <p className="text-xs text-gray-400 -mt-1">
+                Saved column mappings per portal and make. Delete ones that are outdated or incorrect.
+              </p>
+              {loadingTemplates ? (
+                <div className="flex justify-center py-4">
+                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : templates.length === 0 ? (
+                <p className="text-sm text-gray-400 italic">
+                  No templates saved yet. Upload a file and save its column mapping to create one.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {templates.map(t => (
+                    <div key={t.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-800">{t.portalName}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {MAKE_LABELS[t.make] || t.make}
+                          <span className="mx-1.5 text-gray-300">·</span>
+                          <span className="capitalize">{t.module}</span>
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteTemplate(t.id)}
+                        disabled={deletingId === t.id}
+                        className="text-xs text-red-500 hover:text-red-700 font-medium disabled:opacity-50 px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                      >
+                        {deletingId === t.id ? 'Deleting…' : 'Delete'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Section>
           )}
 
