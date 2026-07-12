@@ -7,9 +7,9 @@ import SearchModal from '../components/SearchModal';
 import CustomerDetailPanel from '../components/CustomerDetailPanel';
 
 const REQUIRED_FIELDS = {
-  insurance: ['chassis_number', 'registration_number', 'customer_name', 'mobile', 'policy_expiry_date'],
-  service: ['chassis_number', 'registration_number', 'customer_name', 'mobile', 'service_date'],
-  sales: ['chassis_number', 'registration_number', 'customer_name', 'mobile', 'vehicle_purchase_date'],
+  insurance: ['chassis_number', 'customer_name', 'mobile', 'policy_expiry_date', 'vehicle_purchase_date', 'outlet_name'],
+  service:   ['chassis_number', 'customer_name', 'mobile', 'job_card_number', 'service_date', 'service_type', 'mileage_at_service', 'vehicle_purchase_date', 'outlet_name'],
+  sales:     ['chassis_number', 'customer_name', 'mobile', 'vehicle_purchase_date', 'outlet_name'],
 };
 
 const MAKE_LABEL_MAP = {
