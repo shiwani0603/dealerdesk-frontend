@@ -74,9 +74,10 @@ const Navbar = ({ onSearchClick }) => {
         {/* Main nav links */}
         <div className="hidden md:flex items-center gap-0.5 flex-1 overflow-x-auto">
           {isSuperAdmin && <>
-            <NavBtn label="🏢 Dealerships" active={isActive('/admin') && !isActive('/admin/service-intervals') && !isActive('/admin/overview')} activeClass="bg-gray-100 text-gray-700" onClick={() => nav('/admin')} />
-            <NavBtn label="🔧 Intervals"   active={isActive('/admin/service-intervals')} activeClass="bg-gray-100 text-gray-700" onClick={() => nav('/admin/service-intervals')} />
-            <NavBtn label="📊 Overview"    active={isActive('/admin/overview')} activeClass="bg-gray-100 text-gray-700" onClick={() => nav('/admin/overview')} />
+            <NavBtn label="🏢 Dealerships"  active={isActive('/admin') && !isActive('/admin/service-intervals') && !isActive('/admin/overview') && !isActive('/admin/upload-setup')} activeClass="bg-gray-100 text-gray-700" onClick={() => nav('/admin')} />
+            <NavBtn label="🔧 Intervals"    active={isActive('/admin/service-intervals')} activeClass="bg-gray-100 text-gray-700" onClick={() => nav('/admin/service-intervals')} />
+            <NavBtn label="📊 Overview"     active={isActive('/admin/overview')} activeClass="bg-gray-100 text-gray-700" onClick={() => nav('/admin/overview')} />
+            <NavBtn label="📤 Upload Setup" active={isActive('/admin/upload-setup')} activeClass="bg-gray-100 text-gray-700" onClick={() => nav('/admin/upload-setup')} />
           </>}
 
           {!isSuperAdmin && <NavBtn label="📋 Plans"       active={isActive('/dashboard')} onClick={() => nav('/dashboard')} />}
@@ -180,9 +181,10 @@ const Navbar = ({ onSearchClick }) => {
 
           <div className="space-y-0.5">
             {isSuperAdmin && <>
-              <MobileNavItem label="🏢 Dealerships"     active={isActive('/admin') && !isActive('/admin/service-intervals') && !isActive('/admin/overview')} onClick={() => nav('/admin')} />
+              <MobileNavItem label="🏢 Dealerships"      active={isActive('/admin') && !isActive('/admin/service-intervals') && !isActive('/admin/overview') && !isActive('/admin/upload-setup')} onClick={() => nav('/admin')} />
               <MobileNavItem label="🔧 Service Intervals" active={isActive('/admin/service-intervals')} onClick={() => nav('/admin/service-intervals')} />
-              <MobileNavItem label="📊 Admin Overview"  active={isActive('/admin/overview')} onClick={() => nav('/admin/overview')} />
+              <MobileNavItem label="📊 Admin Overview"   active={isActive('/admin/overview')} onClick={() => nav('/admin/overview')} />
+              <MobileNavItem label="📤 Upload Setup"     active={isActive('/admin/upload-setup')} onClick={() => nav('/admin/upload-setup')} />
             </>}
             {!isSuperAdmin && <MobileNavItem label="📋 Plans"      active={isActive('/dashboard')} onClick={() => nav('/dashboard')} />}
             {isTL          && <MobileNavItem label="👥 Team"       active={isActive('/team-leader')} onClick={() => nav('/team-leader')} />}

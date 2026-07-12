@@ -17,6 +17,7 @@ import ServiceIntervalMaster from './pages/ServiceIntervalMaster';
 import ReportsPage from './pages/ReportsPage';
 import CampaignsPage from './pages/CampaignsPage';
 import AdminOverview from './pages/AdminOverview';
+import AdminUploadSetupPage from './pages/AdminUploadSetupPage';
 import ChangePassword from './pages/ChangePassword';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -138,6 +139,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={['super_admin']}>
             <ServiceIntervalMaster />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/upload-setup"
+        element={
+          <ProtectedRoute allowedRoles={['super_admin']}>
+            <AdminUploadSetupPage />
           </ProtectedRoute>
         }
       />

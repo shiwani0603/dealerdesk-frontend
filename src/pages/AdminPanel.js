@@ -528,6 +528,7 @@ const DealershipModal = ({ existing, onClose, onSaved }) => {
       tyre_policy: false, presale: false, vas: false,
     },
     allowedMakes: Array.isArray(existing?.allowedMakes) ? existing.allowedMakes : [],
+    allowCustomUploadFormat: existing?.allowCustomUploadFormat ?? true,
     isActive: existing?.isActive ?? true,
   });
   const [saving, setSaving] = useState(false);
@@ -556,6 +557,7 @@ const DealershipModal = ({ existing, onClose, onSaved }) => {
           workshopCode: form.dealershipCode || null,
           modulesEnabled: form.modulesEnabled,
           allowedMakes: form.allowedMakes,
+          allowCustomUploadFormat: form.allowCustomUploadFormat,
           isActive: form.isActive,
         });
       } else {
@@ -633,6 +635,17 @@ const DealershipModal = ({ existing, onClose, onSaved }) => {
             {form.allowedMakes.length === 0 && (
               <p className="text-xs text-amber-600 mt-1.5">⚠️ No makes selected — all uploads will be blocked.</p>
             )}
+          </div>
+
+          <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+            <div>
+              <p className="text-sm font-semibold text-gray-700">Allow Custom Upload Format</p>
+              <p className="text-xs text-gray-400">Let this dealership save their own column mappings. If off, they use global admin templates.</p>
+            </div>
+            <button type="button" onClick={() => set('allowCustomUploadFormat', !form.allowCustomUploadFormat)}
+              className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ml-3 ${form.allowCustomUploadFormat ? 'bg-green-500' : 'bg-gray-300'}`}>
+              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.allowCustomUploadFormat ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
           </div>
 
           {isEdit && (

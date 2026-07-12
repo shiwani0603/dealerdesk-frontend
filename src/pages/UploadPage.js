@@ -6,6 +6,12 @@ import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import CustomerDetailPanel from '../components/CustomerDetailPanel';
 
+const REQUIRED_FIELDS = {
+  insurance: ['chassis_number', 'registration_number', 'customer_name', 'mobile', 'policy_expiry_date'],
+  service: ['chassis_number', 'registration_number', 'customer_name', 'mobile', 'service_date'],
+  sales: ['chassis_number', 'registration_number', 'customer_name', 'mobile', 'vehicle_purchase_date'],
+};
+
 const MAKE_LABEL_MAP = {
   tata: 'Tata', maruti: 'Maruti Suzuki', hyundai: 'Hyundai', honda: 'Honda',
   toyota: 'Toyota', mahindra: 'Mahindra', kia: 'Kia', mg: 'MG',
@@ -200,6 +206,7 @@ const UploadPage = () => {
   const [step, setStep] = useState(1);
   const [portals, setPortals] = useState([]);
   const [allowedMakes, setAllowedMakes] = useState([]);
+  const [allowCustomUploadFormat, setAllowCustomUploadFormat] = useState(true);
 
   const [headers, setHeaders] = useState([]);
   const [sampleRows, setSampleRows] = useState([]);
@@ -220,6 +227,7 @@ const UploadPage = () => {
         const loadedMakes = res.data.allowedMakes || [];
         setPortals(res.data.portals || []);
         setAllowedMakes(loadedMakes);
+        setAllowCustomUploadFormat(res.data.allowCustomUploadFormat ?? true);
         // Auto-select make if only one is available
         if (loadedMakes.length === 1) setMake(loadedMakes[0]);
       } catch (err) {
@@ -457,7 +465,10 @@ const UploadPage = () => {
               </div>
             </div>
 
-            <p className="text-sm text-gray-500 mb-4">Match each Excel column to the correct system field. Leave blank to skip.</p>
+            <div className="flex items-center gap-4 mb-4">
+              <p className="text-sm text-gray-500">Match each Excel column to the correct system field. Leave blank to skip.</p>
+              <span className="text-xs text-red-500 font-medium whitespace-nowrap flex-shrink-0">* = required field</span>
+            </div>
 
             <div className="border border-gray-200 rounded-xl overflow-hidden mb-4">
               <div className="grid grid-cols-2 gap-4 px-4 py-2 bg-gray-50 border-b text-xs font-semibold text-gray-500 uppercase">
@@ -488,9 +499,10 @@ const UploadPage = () => {
                       <option value="">-- Skip --</option>
                       {systemFields.map(field => {
   const alreadyMapped = Object.values(mapping).includes(field) && mapping[header] !== field;
+  const isRequired = (REQUIRED_FIELDS[module] || []).includes(field);
   return (
     <option key={field} value={field} disabled={alreadyMapped} style={alreadyMapped ? {color:'#ccc'} : {}}>
-      {field}{alreadyMapped ? ' ✓' : ''}
+      {isRequired ? '* ' : ''}{field}{alreadyMapped ? ' ✓' : ''}
     </option>
   );
 })}
@@ -502,7 +514,24 @@ const UploadPage = () => {
 
             <div className="flex gap-3">
               <button onClick={() => setStep(1)} className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200">← Back</button>
-              <button onClick={handleSaveMapping} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200">💾 Save Mapping</button>
+              {/* Super admin saves as global; dealer users save as local only if allowed */}
+              {user?.role === 'super_admin' ? (
+                <button
+                  onClick={async () => {
+                    try {
+                      await api.post('/upload/save-mapping', { module, portalName, make, dealershipId, mappingJson: mapping, aiSuggested: false, isGlobal: true });
+                      toast.success('Saved as global template!');
+                    } catch { toast.error('Failed to save'); }
+                  }}
+                  className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-xl text-sm font-medium hover:bg-indigo-200"
+                >
+                  🌐 Save as Global Template
+                </button>
+              ) : allowCustomUploadFormat ? (
+                <button onClick={handleSaveMapping} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200">💾 Save Mapping</button>
+              ) : (
+                <span className="px-4 py-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl flex items-center">🔒 Custom mappings locked by admin</span>
+              )}
               <button onClick={handleImport} disabled={importing || Object.keys(mapping).length === 0}
                 className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition-colors disabled:opacity-50">
                 {importing ? 'Importing...' : `Import ${totalRows} Records →`}
