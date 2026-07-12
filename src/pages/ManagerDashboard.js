@@ -74,8 +74,10 @@ const BulkAssignModal = ({ count, module, users, onConfirm, onClose }) => {
 };
 
 // ─── UNASSIGNED PLANS TAB ────────────────────────────────────────────────────
-const UnassignedTab = ({ users }) => {
-  const [module, setModule] = useState('insurance');
+const UnassignedTab = ({ users, moduleRights }) => {
+  const showInsurance = !moduleRights || moduleRights === 'insurance' || moduleRights === 'both';
+  const showService   = !moduleRights || moduleRights === 'service'   || moduleRights === 'both';
+  const [module, setModule] = useState(moduleRights === 'service' ? 'service' : 'insurance');
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState(new Set());
@@ -136,14 +138,18 @@ const UnassignedTab = ({ users }) => {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div className="flex bg-gray-100 p-0.5 rounded-lg gap-0.5">
-          <button onClick={() => setModule('insurance')}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${module === 'insurance' ? 'bg-blue-600 text-white' : 'text-gray-500'}`}>
-            🛡️ Insurance {module === 'insurance' && `(${plans.length})`}
-          </button>
-          <button onClick={() => setModule('service')}
-            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${module === 'service' ? 'bg-green-600 text-white' : 'text-gray-500'}`}>
-            🔧 Service {module === 'service' && `(${plans.length})`}
-          </button>
+          {showInsurance && (
+            <button onClick={() => setModule('insurance')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${module === 'insurance' ? 'bg-blue-600 text-white' : 'text-gray-500'}`}>
+              🛡️ Insurance {module === 'insurance' && `(${plans.length})`}
+            </button>
+          )}
+          {showService && (
+            <button onClick={() => setModule('service')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${module === 'service' ? 'bg-green-600 text-white' : 'text-gray-500'}`}>
+              🔧 Service {module === 'service' && `(${plans.length})`}
+            </button>
+          )}
         </div>
         {selected.size > 0 && (
           <button onClick={() => setAssignModal(true)}
@@ -397,7 +403,7 @@ const PsfSummaryTab = () => {
 };
 
 // ─── REPORTS TAB ─────────────────────────────────────────────────────────────
-const ReportsTab = () => {
+const ReportsTab = ({ moduleRights }) => {
   const today = new Date();
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
@@ -407,7 +413,9 @@ const ReportsTab = () => {
   const [autoData, setAutoData] = useState(null);
   const [loadingLost, setLoadingLost] = useState(false);
   const [loadingAuto, setLoadingAuto] = useState(true);
-  const [reportModule, setReportModule] = useState('insurance');
+  const showInsurance = !moduleRights || moduleRights === 'insurance' || moduleRights === 'both';
+  const showService   = !moduleRights || moduleRights === 'service'   || moduleRights === 'both';
+  const [reportModule, setReportModule] = useState(moduleRights === 'service' ? 'service' : 'insurance');
 
   useEffect(() => {
     reportService.getAutoClosed().then(res => {
@@ -441,14 +449,18 @@ const ReportsTab = () => {
     <div className="space-y-6">
       {/* Module toggle */}
       <div className="flex bg-gray-100 p-0.5 rounded-lg w-fit gap-0.5">
-        <button onClick={() => setReportModule('insurance')}
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${reportModule === 'insurance' ? 'bg-blue-600 text-white' : 'text-gray-500'}`}>
-          🛡️ Insurance
-        </button>
-        <button onClick={() => setReportModule('service')}
-          className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${reportModule === 'service' ? 'bg-green-600 text-white' : 'text-gray-500'}`}>
-          🔧 Service
-        </button>
+        {showInsurance && (
+          <button onClick={() => setReportModule('insurance')}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${reportModule === 'insurance' ? 'bg-blue-600 text-white' : 'text-gray-500'}`}>
+            🛡️ Insurance
+          </button>
+        )}
+        {showService && (
+          <button onClick={() => setReportModule('service')}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${reportModule === 'service' ? 'bg-green-600 text-white' : 'text-gray-500'}`}>
+            🔧 Service
+          </button>
+        )}
       </div>
 
       {/* Lost Business Report */}
@@ -562,8 +574,10 @@ const RENEWAL_CAT_META = {
 };
 
 // ─── PIPELINE TAB ────────────────────────────────────────────────────────────
-const PipelineTab = ({ users }) => {
-  const [module, setModule] = useState('insurance');
+const PipelineTab = ({ users, moduleRights }) => {
+  const showInsurance = !moduleRights || moduleRights === 'insurance' || moduleRights === 'both';
+  const showService   = !moduleRights || moduleRights === 'service'   || moduleRights === 'both';
+  const [module, setModule] = useState(moduleRights === 'service' ? 'service' : 'insurance');
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState(new Set());
@@ -622,12 +636,18 @@ const PipelineTab = ({ users }) => {
     <div className="space-y-5">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex bg-gray-100 p-0.5 rounded-lg gap-0.5">
-          {['insurance', 'service'].map(m => (
-            <button key={m} onClick={() => setModule(m)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${module === m ? (m === 'insurance' ? 'bg-blue-600 text-white' : 'bg-green-600 text-white') : 'text-gray-500'}`}>
-              {m === 'insurance' ? '🛡️ Insurance' : '🔧 Service'}
+          {showInsurance && (
+            <button onClick={() => setModule('insurance')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${module === 'insurance' ? 'bg-blue-600 text-white' : 'text-gray-500'}`}>
+              🛡️ Insurance
             </button>
-          ))}
+          )}
+          {showService && (
+            <button onClick={() => setModule('service')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${module === 'service' ? 'bg-green-600 text-white' : 'text-gray-500'}`}>
+              🔧 Service
+            </button>
+          )}
         </div>
         {selected.size > 0 && (
           <button onClick={() => setAssignModal(true)}
@@ -719,8 +739,10 @@ const PipelineTab = ({ users }) => {
   );
 };
 
-const LapsingSoonTab = () => {
-  const [module, setModule] = useState('insurance');
+const LapsingSoonTab = ({ moduleRights }) => {
+  const showInsurance = !moduleRights || moduleRights === 'insurance' || moduleRights === 'both';
+  const showService   = !moduleRights || moduleRights === 'service'   || moduleRights === 'both';
+  const [module, setModule] = useState(moduleRights === 'service' ? 'service' : 'insurance');
   const [days, setDays] = useState(30);
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -752,12 +774,18 @@ const LapsingSoonTab = () => {
       {/* Controls */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex bg-gray-100 p-0.5 rounded-lg gap-0.5">
-          {['insurance', 'service'].map(m => (
-            <button key={m} onClick={() => setModule(m)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${module === m ? (m === 'insurance' ? 'bg-blue-600 text-white' : 'bg-green-600 text-white') : 'text-gray-500'}`}>
-              {m === 'insurance' ? '🛡️ Insurance' : '🔧 Service'}
+          {showInsurance && (
+            <button onClick={() => setModule('insurance')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${module === 'insurance' ? 'bg-blue-600 text-white' : 'text-gray-500'}`}>
+              🛡️ Insurance
             </button>
-          ))}
+          )}
+          {showService && (
+            <button onClick={() => setModule('service')}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${module === 'service' ? 'bg-green-600 text-white' : 'text-gray-500'}`}>
+              🔧 Service
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500">Expiring within:</span>
@@ -858,7 +886,10 @@ const LapsingSoonTab = () => {
 
 // ─── MANAGER DASHBOARD ───────────────────────────────────────────────────────
 const ManagerDashboard = () => {
-  useAuth();
+  const { user } = useAuth();
+  const moduleRights = user?.moduleRights || null;
+  const showInsurance = !moduleRights || moduleRights === 'insurance' || moduleRights === 'both';
+  const showService   = !moduleRights || moduleRights === 'service'   || moduleRights === 'both';
   const today = new Date();
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
@@ -874,7 +905,7 @@ const ManagerDashboard = () => {
 
   const [fromDate, setFromDate] = useState(monthStart.toISOString().split('T')[0]);
   const [toDate, setToDate] = useState(today.toISOString().split('T')[0]);
-  const [perfModule, setPerfModule] = useState('insurance');
+  const [perfModule, setPerfModule] = useState(moduleRights === 'service' ? 'service' : 'insurance');
   const [sortBy, setSortBy] = useState('totalCalls');
   const [sortDir, setSortDir] = useState('desc');
 
@@ -1080,14 +1111,18 @@ const ManagerDashboard = () => {
                 </div>
               </div>
               <div className="px-5 pt-4 pb-0 flex gap-2">
-                <button onClick={() => { setPerfModule('insurance'); setSortBy('totalCalls'); }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${perfModule === 'insurance' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                  🛡️ Insurance
-                </button>
-                <button onClick={() => { setPerfModule('service'); setSortBy('totalCalls'); }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${perfModule === 'service' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
-                  🔧 Service
-                </button>
+                {showInsurance && (
+                  <button onClick={() => { setPerfModule('insurance'); setSortBy('totalCalls'); }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${perfModule === 'insurance' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                    🛡️ Insurance
+                  </button>
+                )}
+                {showService && (
+                  <button onClick={() => { setPerfModule('service'); setSortBy('totalCalls'); }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${perfModule === 'service' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                    🔧 Service
+                  </button>
+                )}
               </div>
               {loadingPerf ? (
                 <div className="p-10 text-center"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div></div>
@@ -1170,19 +1205,19 @@ const ManagerDashboard = () => {
         )}
 
         {/* ── PIPELINE ── */}
-        {activeTab === 'pipeline' && <PipelineTab users={users} />}
+        {activeTab === 'pipeline' && <PipelineTab users={users} moduleRights={moduleRights} />}
 
         {/* ── LAPSING SOON ── */}
-        {activeTab === 'lapsingSoon' && <LapsingSoonTab />}
+        {activeTab === 'lapsingSoon' && <LapsingSoonTab moduleRights={moduleRights} />}
 
         {/* ── UNASSIGNED PLANS ── */}
-        {activeTab === 'unassigned' && <UnassignedTab users={users} />}
+        {activeTab === 'unassigned' && <UnassignedTab users={users} moduleRights={moduleRights} />}
 
         {/* ── PSF SUMMARY ── */}
         {activeTab === 'psf' && <PsfSummaryTab />}
 
         {/* ── REPORTS ── */}
-        {activeTab === 'reports' && <ReportsTab />}
+        {activeTab === 'reports' && <ReportsTab moduleRights={moduleRights} />}
       </div>
 
       {showSearch && (

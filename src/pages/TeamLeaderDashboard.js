@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { dashboardService, insuranceService, serviceService, psfService } from '../services/api';
 import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
@@ -82,6 +83,10 @@ const TransferModal = ({ plan, module, telecallers, onClose, onSuccess }) => {
 };
 
 const TeamLeaderDashboard = () => {
+  const { user } = useAuth();
+  const showInsurance = !user?.moduleRights || user?.moduleRights === 'insurance' || user?.moduleRights === 'both';
+  const showService   = !user?.moduleRights || user?.moduleRights === 'service'   || user?.moduleRights === 'both';
+
   const [teamStats, setTeamStats] = useState(null);
   const [insurancePlans, setInsurancePlans] = useState({ today: [], overdue: [], redAlert: [] });
   const [servicePlans, setServicePlans] = useState({ today: [], overdue: [], redAlert: [] });
@@ -206,14 +211,18 @@ const TeamLeaderDashboard = () => {
             className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeSection === 'overview' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
             👥 Team Overview
           </button>
-          <button onClick={() => setActiveSection('insurance')}
-            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeSection === 'insurance' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
-            🛡️ Insurance ({totalInsToday + totalInsOverdue})
-          </button>
-          <button onClick={() => setActiveSection('service')}
-            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeSection === 'service' ? 'bg-green-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
-            🔧 Service ({totalSvcToday + totalSvcOverdue})
-          </button>
+          {showInsurance && (
+            <button onClick={() => setActiveSection('insurance')}
+              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeSection === 'insurance' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
+              🛡️ Insurance ({totalInsToday + totalInsOverdue})
+            </button>
+          )}
+          {showService && (
+            <button onClick={() => setActiveSection('service')}
+              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeSection === 'service' ? 'bg-green-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
+              🔧 Service ({totalSvcToday + totalSvcOverdue})
+            </button>
+          )}
           <button onClick={() => setActiveSection('psf')}
             className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeSection === 'psf' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
             ⭐ PSF ({psfPlans.length})
