@@ -424,7 +424,7 @@ const TelecallerDashboard = () => {
   const { user } = useAuth();
   const showInsurance = !user?.moduleRights || user?.moduleRights === 'insurance' || user?.moduleRights === 'both';
   const showService   = !user?.moduleRights || user?.moduleRights === 'service'   || user?.moduleRights === 'both';
-  const showPsf       = showInsurance || showService; // PSF visible when any module is available
+  const showPsf       = !user?.moduleRights || user?.moduleRights === 'both';
 
   const [stats, setStats] = useState(null);
   const [insurancePlans, setInsurancePlans] = useState({ today: [], overdue: [], redAlert: [] });

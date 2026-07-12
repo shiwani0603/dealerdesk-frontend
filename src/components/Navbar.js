@@ -63,10 +63,10 @@ const Navbar = ({ onSearchClick }) => {
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
             <span className="text-white text-sm font-bold">D</span>
           </div>
-          <div className="hidden lg:block">
+          <div className="hidden sm:block">
             <p className="font-bold text-gray-900 text-sm leading-tight">DealerDesk CRM</p>
             {!isSuperAdmin && user?.dealershipName && (
-              <p className="text-xs text-blue-600 font-medium leading-tight truncate max-w-[160px]">{user.dealershipName}</p>
+              <p className="text-xs text-blue-600 font-medium leading-tight truncate max-w-[180px]">{user.dealershipName}</p>
             )}
           </div>
         </div>
@@ -107,7 +107,7 @@ const Navbar = ({ onSearchClick }) => {
               <div className="w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-xs font-bold">{initials}</span>
               </div>
-              <div className="hidden lg:block text-left">
+              <div className="hidden md:block text-left">
                 <p className="text-xs font-semibold text-gray-800 leading-tight">{user?.name || user?.email}</p>
                 <p className="text-xs text-gray-400 leading-tight">{roleLabel}</p>
               </div>

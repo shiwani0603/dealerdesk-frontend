@@ -86,6 +86,7 @@ const TeamLeaderDashboard = () => {
   const { user } = useAuth();
   const showInsurance = !user?.moduleRights || user?.moduleRights === 'insurance' || user?.moduleRights === 'both';
   const showService   = !user?.moduleRights || user?.moduleRights === 'service'   || user?.moduleRights === 'both';
+  const showPsf       = !user?.moduleRights || user?.moduleRights === 'both';
 
   const [teamStats, setTeamStats] = useState(null);
   const [insurancePlans, setInsurancePlans] = useState({ today: [], overdue: [], redAlert: [] });
@@ -223,10 +224,12 @@ const TeamLeaderDashboard = () => {
               🔧 Service ({totalSvcToday + totalSvcOverdue})
             </button>
           )}
-          <button onClick={() => setActiveSection('psf')}
-            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeSection === 'psf' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
-            ⭐ PSF ({psfPlans.length})
-          </button>
+          {showPsf && (
+            <button onClick={() => setActiveSection('psf')}
+              className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeSection === 'psf' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
+              ⭐ PSF ({psfPlans.length})
+            </button>
+          )}
         </div>
 
         {/* Team Overview */}
