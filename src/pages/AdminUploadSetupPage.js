@@ -363,8 +363,11 @@ const AdminUploadModal = ({ editTemplate, defaultModule, onClose, onSaved }) => 
 
 // ─── Template Card ────────────────────────────────────────────────────────────
 const TemplateCard = ({ template, onDelete, onEdit }) => {
+  const [expanded, setExpanded] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const colCount = Object.keys(template.mappingJson || {}).length;
+
+  const mappingEntries = Object.entries(template.mappingJson || {});
+  const colCount = mappingEntries.length;
 
   const handleDelete = async () => {
     if (!window.confirm(`Delete template "${template.portalName}" (${MAKE_LABELS[template.make] || template.make})?`)) return;
@@ -379,31 +382,79 @@ const TemplateCard = ({ template, onDelete, onEdit }) => {
     }
   };
 
+  const required = REQUIRED_FIELDS[template.module] || [];
+  const mappedFields = new Set(Object.values(template.mappingJson || {}));
+  const missingRequired = required.filter(f => !mappedFields.has(f));
+
   return (
-    <div className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3.5 hover:border-gray-300 transition-colors">
-      <div>
-        <p className="text-sm font-semibold text-gray-900">{template.portalName}</p>
-        <p className="text-xs text-gray-500 mt-0.5">
-          {MAKE_LABELS[template.make] || template.make}
-          <span className="mx-1.5 text-gray-300">·</span>
-          {colCount} columns mapped
-        </p>
-      </div>
-      <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+    <div className={`bg-white border rounded-xl overflow-hidden transition-colors ${expanded ? 'border-blue-200' : 'border-gray-200 hover:border-gray-300'}`}>
+      {/* Header row */}
+      <div className="flex items-center justify-between px-4 py-3.5">
         <button
-          onClick={() => onEdit(template)}
-          className="px-3 py-1.5 text-xs text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg font-medium transition-colors"
+          className="flex items-center gap-3 min-w-0 text-left flex-1"
+          onClick={() => setExpanded(e => !e)}
         >
-          ✏️ Edit / Update
+          <span className="text-gray-400 text-xs flex-shrink-0">{expanded ? '▾' : '▸'}</span>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-gray-900">{template.portalName}</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {MAKE_LABELS[template.make] || template.make}
+              <span className="mx-1.5 text-gray-300">·</span>
+              {colCount} columns mapped
+              {missingRequired.length > 0 && (
+                <span className="ml-2 text-amber-500">⚠ {missingRequired.length} required missing</span>
+              )}
+            </p>
+          </div>
         </button>
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          className="px-2 py-1.5 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg font-medium disabled:opacity-50 transition-colors"
-        >
-          {deleting ? '…' : 'Delete'}
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+          <button
+            onClick={() => onEdit(template)}
+            className="px-3 py-1.5 text-xs text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg font-medium transition-colors"
+          >
+            ✏️ Update
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="px-2 py-1.5 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg font-medium disabled:opacity-50 transition-colors"
+          >
+            {deleting ? '…' : 'Delete'}
+          </button>
+        </div>
       </div>
+
+      {/* Expandable mapping view */}
+      {expanded && (
+        <div className="border-t border-gray-100 bg-gray-50 px-4 pb-4 pt-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Current Column Mapping</p>
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <div className="grid grid-cols-2 gap-4 px-3 py-2 bg-white border-b text-xs font-semibold text-gray-400 uppercase">
+              <div>Excel Column</div>
+              <div>System Field</div>
+            </div>
+            <div className="divide-y divide-gray-100 max-h-60 overflow-y-auto">
+              {mappingEntries.map(([excelCol, sysField]) => {
+                const isReq = required.includes(sysField);
+                return (
+                  <div key={excelCol} className="grid grid-cols-2 gap-4 px-3 py-1.5 items-center bg-white">
+                    <p className="text-xs text-gray-700 truncate">{excelCol}</p>
+                    <p className={`text-xs font-medium truncate ${isReq ? 'text-red-600' : 'text-green-700'}`}>
+                      {isReq ? '* ' : ''}{sysField}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {missingRequired.length > 0 && (
+            <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              <span className="font-semibold">Required fields not mapped: </span>
+              {missingRequired.join(', ')}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
