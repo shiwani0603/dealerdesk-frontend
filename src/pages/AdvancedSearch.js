@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { searchService, userService, insuranceService, serviceService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import CustomerDetailPanel from '../components/CustomerDetailPanel';
 import SearchModal from '../components/SearchModal';
@@ -157,7 +158,13 @@ const BulkAssignModal = ({ count, module, users, onConfirm, onClose, progressing
 
 // ─────────────────────────────────────────────────────────────────────────────
 const AdvancedSearch = () => {
-  const [activeModule, setActiveModule] = useState('insurance');
+  const { user } = useAuth();
+  const showInsurance = !user?.moduleRights || user?.moduleRights === 'insurance' || user?.moduleRights === 'both';
+  const showService   = !user?.moduleRights || user?.moduleRights === 'service'   || user?.moduleRights === 'both';
+
+  const [activeModule, setActiveModule] = useState(
+    user?.moduleRights === 'service' ? 'service' : 'insurance'
+  );
   const [filters, setFilters] = useState({});
   const [users, setUsers] = useState([]);
   const [locations, setLocations] = useState([]);
@@ -263,16 +270,22 @@ const AdvancedSearch = () => {
         </div>
 
         {/* Module tabs */}
-        <div className="flex bg-white rounded-xl shadow-sm p-1 mb-5 w-fit gap-1">
-          <button onClick={() => { setActiveModule('insurance'); setResults(null); }}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeModule === 'insurance' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
-            🛡️ Insurance Plans
-          </button>
-          <button onClick={() => { setActiveModule('service'); setResults(null); }}
-            className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeModule === 'service' ? 'bg-green-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
-            🔧 Service Plans
-          </button>
-        </div>
+        {(showInsurance || showService) && (
+          <div className="flex bg-white rounded-xl shadow-sm p-1 mb-5 w-fit gap-1">
+            {showInsurance && (
+              <button onClick={() => { setActiveModule('insurance'); setResults(null); }}
+                className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeModule === 'insurance' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
+                🛡️ Insurance Plans
+              </button>
+            )}
+            {showService && (
+              <button onClick={() => { setActiveModule('service'); setResults(null); }}
+                className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${activeModule === 'service' ? 'bg-green-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
+                🔧 Service Plans
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Filter panel */}
         <div className="space-y-3 mb-5" onKeyDown={handleKeyDown}>
