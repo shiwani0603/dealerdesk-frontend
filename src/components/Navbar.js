@@ -65,6 +65,9 @@ const Navbar = ({ onSearchClick }) => {
           </div>
           <div className="hidden lg:block">
             <p className="font-bold text-gray-900 text-sm leading-tight">DealerDesk CRM</p>
+            {!isSuperAdmin && user?.dealershipName && (
+              <p className="text-xs text-blue-600 font-medium leading-tight truncate max-w-[160px]">{user.dealershipName}</p>
+            )}
           </div>
         </div>
 
@@ -117,6 +120,9 @@ const Navbar = ({ onSearchClick }) => {
                 <div className="px-4 py-2.5 border-b border-gray-100">
                   <p className="text-sm font-semibold text-gray-900">{user?.name || user?.email}</p>
                   <p className="text-xs text-gray-400">{roleLabel}</p>
+                  {!isSuperAdmin && user?.dealershipName && (
+                    <p className="text-xs text-blue-600 font-medium mt-0.5">{user.dealershipName}</p>
+                  )}
                 </div>
 
                 {(canViewTeam || isTL) && (
@@ -166,6 +172,9 @@ const Navbar = ({ onSearchClick }) => {
             <div>
               <p className="text-sm font-semibold text-gray-900">{user?.name || user?.email}</p>
               <p className="text-xs text-gray-400">{roleLabel}</p>
+              {!isSuperAdmin && user?.dealershipName && (
+                <p className="text-xs text-blue-600 font-medium">{user.dealershipName}</p>
+              )}
             </div>
           </div>
 
