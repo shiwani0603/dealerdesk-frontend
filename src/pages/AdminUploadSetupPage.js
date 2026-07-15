@@ -21,7 +21,8 @@ const MAKE_LABELS = Object.fromEntries(MAKE_LIST.map(m => [m.value, m.label]));
 const SYSTEM_FIELDS = {
   insurance: [
     'chassis_number', 'registration_number', 'engine_number', 'customer_name',
-    'mobile', 'email', 'make', 'model', 'sub_model', 'fuel_type',
+    'mobile', 'mobile2', 'mobile3', 'email', 'customer_address',
+    'make', 'model', 'sub_model', 'fuel_type', 'vehicle_color',
     'vehicle_purchase_date', 'manufacturing_year',
     'policy_number', 'policy_category', 'policy_type', 'is_fresh_policy',
     'policy_expiry_date', 'od_expiry_date', 'tp_expiry_date',
@@ -32,7 +33,8 @@ const SYSTEM_FIELDS = {
   ],
   service: [
     'chassis_number', 'registration_number', 'engine_number', 'customer_name',
-    'mobile', 'email', 'make', 'model', 'sub_model', 'fuel_type',
+    'mobile', 'mobile2', 'mobile3', 'email', 'customer_address',
+    'make', 'model', 'sub_model', 'fuel_type', 'vehicle_color',
     'vehicle_purchase_date', 'manufacturing_year',
     'service_type', 'service_date', 'mileage_at_service', 'job_card_number',
     'total_invoice_amount', 'labour_amount', 'parts_amount',
@@ -42,10 +44,12 @@ const SYSTEM_FIELDS = {
   ],
   sales: [
     'chassis_number', 'registration_number', 'engine_number', 'customer_name',
-    'mobile', 'email', 'make', 'model', 'model_head', 'sub_model',
-    'fuel_type', 'transmission_type', 'charger_type',
+    'mobile', 'mobile2', 'mobile3', 'email', 'customer_address',
+    'make', 'model', 'model_head', 'sub_model', 'fuel_type', 'vehicle_color',
+    'transmission_type', 'charger_type',
     'vehicle_purchase_date', 'manufacturing_year',
-    'sales_consultant_name', 'sold_by_location', 'outlet_name', 'location_name',
+    'sales_consultant_name', 'dealer_name', 'invoice_number',
+    'sold_by_location', 'outlet_name', 'location_name',
   ],
 };
 

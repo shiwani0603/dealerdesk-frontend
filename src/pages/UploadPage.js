@@ -23,18 +23,20 @@ const MAKE_LABEL_MAP = {
 const SYSTEM_FIELDS = {
   insurance: [
     'chassis_number', 'registration_number', 'engine_number', 'customer_name',
-    'mobile', 'email', 'make', 'model', 'model_head', 'sub_model', 'fuel_type',
+    'mobile', 'mobile2', 'mobile3', 'email', 'customer_address',
+    'make', 'model', 'model_head', 'sub_model', 'fuel_type', 'vehicle_color',
     'vehicle_purchase_date', 'manufacturing_year',
     'customer_pan', 'customer_aadhaar', 'customer_dob', 'customer_state',
     'policy_number', 'policy_category', 'policy_type', 'policy_expiry_date',
-    'policy_inception_date','policy_issue_date', 'od_expiry_date', 'tp_expiry_date',
+    'policy_inception_date', 'policy_issue_date', 'od_expiry_date', 'tp_expiry_date',
     'od_percentage', 'od_premium', 'tp_premium', 'idv_value', 'ncb_percentage',
     'gross_premium', 'net_premium', 'gst_amount', 'insurer_name', 'payment_mode',
     'financer_name', 'outlet_name', 'location_name',
   ],
   service: [
     'chassis_number', 'registration_number', 'engine_number', 'customer_name',
-    'mobile', 'email', 'make', 'model', 'model_head', 'sub_model', 'fuel_type',
+    'mobile', 'mobile2', 'mobile3', 'email', 'customer_address',
+    'make', 'model', 'model_head', 'sub_model', 'fuel_type', 'vehicle_color',
     'vehicle_purchase_date', 'manufacturing_year',
     'customer_pan', 'customer_dob', 'customer_state',
     'service_type', 'service_date', 'mileage_at_service', 'job_card_number',
@@ -42,11 +44,12 @@ const SYSTEM_FIELDS = {
     'service_adviser_name', 'outlet_name', 'location_name',
   ],
   sales: [
-    'chassis_number', 'registration_number', 'customer_name', 'mobile',
-    'make', 'model', 'model_head', 'sub_model', 'fuel_type',
+    'chassis_number', 'registration_number', 'engine_number', 'customer_name',
+    'mobile', 'mobile2', 'mobile3', 'email', 'customer_address',
+    'make', 'model', 'model_head', 'sub_model', 'fuel_type', 'vehicle_color',
     'vehicle_purchase_date', 'manufacturing_year',
     'customer_pan', 'customer_dob', 'customer_state',
-    'sales_consultant_name', 'outlet_name', 'location_name',
+    'sales_consultant_name', 'dealer_name', 'invoice_number', 'outlet_name', 'location_name',
   ],
 };
 
