@@ -176,7 +176,9 @@ const AdvancedSearch = () => {
   const [assignModal, setAssignModal] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const [assignProgress, setAssignProgress] = useState({ current: 0, total: 0 });
+  const [page, setPage] = useState(1);
   const resultsRef = useRef(null);
+  const PAGE_SIZE = 20;
 
   useEffect(() => {
     userService.list().then(r => setUsers(r.data?.users || [])).catch(() => {});
@@ -188,11 +190,13 @@ const AdvancedSearch = () => {
 
   const telecallers = users.filter(u => u.role === 'telecaller');
 
-  const handleSearch = async () => {
+  const handleSearch = async (pageOverride = 1) => {
+    const currentPage = pageOverride;
+    setPage(currentPage);
     setLoading(true);
     setCheckedIds(new Set());
     try {
-      const res = await searchService.searchPlans({ ...filters, module: activeModule });
+      const res = await searchService.searchPlans({ ...filters, module: activeModule, page: currentPage, pageSize: PAGE_SIZE });
       setResults(res.data);
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     } catch (err) {
@@ -206,6 +210,7 @@ const AdvancedSearch = () => {
     setFilters({});
     setResults(null);
     setCheckedIds(new Set());
+    setPage(1);
   };
 
   const handleKeyDown = (e) => { if (e.key === 'Enter') handleSearch(); };
@@ -253,7 +258,7 @@ const AdvancedSearch = () => {
       toast.success(`${ids.length} plan${ids.length !== 1 ? 's' : ''} assigned successfully`);
     }
     try {
-      const res = await searchService.searchPlans({ ...filters, module: activeModule });
+      const res = await searchService.searchPlans({ ...filters, module: activeModule, page, pageSize: PAGE_SIZE });
       setResults(res.data);
     } catch {}
   };
@@ -465,7 +470,6 @@ const AdvancedSearch = () => {
           {results && (
             <span className="text-sm text-gray-500 ml-1">
               Found <span className="font-bold text-gray-900">{results.total}</span> plan{results.total !== 1 ? 's' : ''}
-              {results.total === 200 && <span className="text-orange-500"> (max 200 shown)</span>}
               {checkedIds.size > 0 && <span className="ml-2 text-blue-600 font-medium">· {checkedIds.size} selected</span>}
             </span>
           )}
@@ -604,6 +608,31 @@ const AdvancedSearch = () => {
                     </tbody>
                   </table>
                 </div>
+                {/* Pagination */}
+                {results.total > PAGE_SIZE && (
+                  <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-100 rounded-b-xl">
+                    <p className="text-sm text-gray-500">
+                      Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, results.total)} of {results.total}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        disabled={page === 1 || loading}
+                        onClick={() => handleSearch(page - 1)}
+                        className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+                        ← Prev
+                      </button>
+                      <span className="text-sm text-gray-600 px-1">
+                        Page {page} of {Math.ceil(results.total / PAGE_SIZE)}
+                      </span>
+                      <button
+                        disabled={page >= Math.ceil(results.total / PAGE_SIZE) || loading}
+                        onClick={() => handleSearch(page + 1)}
+                        className="px-3 py-1.5 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+                        Next →
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

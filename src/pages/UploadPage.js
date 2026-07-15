@@ -332,7 +332,8 @@ const UploadPage = () => {
     setMapping({});
     setResults(null);
     setPortalName('');
-    setMake('');
+    // If only one make is allowed it's shown as a static label — restore it so the Next button stays enabled
+    setMake(allowedMakes.length === 1 ? allowedMakes[0] : '');
   };
 
   const systemFields = SYSTEM_FIELDS[module] || [];
