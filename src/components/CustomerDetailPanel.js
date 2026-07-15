@@ -519,6 +519,8 @@ useEffect(() => {
                     <Field label="Purchase Date" value={formatDate(customer.vehiclePurchaseDate)} />
                     {customer.salesConsultantName && <Field label="Sales Consultant" value={customer.salesConsultantName} />}
                     {customer.chargerType && <Field label="Charger Type" value={customer.chargerType} />}
+                    {customer.dealerName && <Field label="Dealer Name" value={customer.dealerName} />}
+                    {customer.invoiceNumber && <Field label="Invoice Number" value={customer.invoiceNumber} />}
                     {customer.soldByOwnDealership && (
                       <div className="col-span-2 mt-1 bg-blue-50 rounded-lg p-2">
                         <p className="text-xs text-blue-600 font-medium">✓ Sold by this dealership</p>

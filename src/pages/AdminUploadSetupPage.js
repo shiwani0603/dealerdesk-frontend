@@ -22,6 +22,7 @@ const SYSTEM_FIELDS = {
   insurance: [
     'chassis_number', 'registration_number', 'engine_number', 'customer_name',
     'mobile', 'mobile2', 'mobile3', 'email', 'customer_address',
+    'customer_city', 'customer_state', 'customer_pan', 'customer_dob',
     'make', 'model', 'sub_model', 'fuel_type', 'vehicle_color',
     'vehicle_purchase_date', 'manufacturing_year',
     'policy_number', 'policy_category', 'policy_type', 'is_fresh_policy',
@@ -34,6 +35,7 @@ const SYSTEM_FIELDS = {
   service: [
     'chassis_number', 'registration_number', 'engine_number', 'customer_name',
     'mobile', 'mobile2', 'mobile3', 'email', 'customer_address',
+    'customer_city', 'customer_state', 'customer_pan', 'customer_dob',
     'make', 'model', 'sub_model', 'fuel_type', 'vehicle_color',
     'vehicle_purchase_date', 'manufacturing_year',
     'service_type', 'service_date', 'mileage_at_service', 'job_card_number',
@@ -45,6 +47,7 @@ const SYSTEM_FIELDS = {
   sales: [
     'chassis_number', 'registration_number', 'engine_number', 'customer_name',
     'mobile', 'mobile2', 'mobile3', 'email', 'customer_address',
+    'customer_city', 'customer_state', 'customer_pan', 'customer_dob',
     'make', 'model', 'model_head', 'sub_model', 'fuel_type', 'vehicle_color',
     'transmission_type', 'charger_type',
     'vehicle_purchase_date', 'manufacturing_year',

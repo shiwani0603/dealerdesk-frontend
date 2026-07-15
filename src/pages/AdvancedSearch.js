@@ -27,6 +27,19 @@ const OUTCOMES = [
 
 const POLICY_CATEGORIES = ['Comprehensive', 'Third Party', 'Own Damage', 'Bundled'];
 const FUEL_TYPES = ['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid'];
+const MAKE_LIST = [
+  { value: 'tata', label: 'Tata' }, { value: 'maruti', label: 'Maruti Suzuki' },
+  { value: 'hyundai', label: 'Hyundai' }, { value: 'honda', label: 'Honda' },
+  { value: 'toyota', label: 'Toyota' }, { value: 'mahindra', label: 'Mahindra' },
+  { value: 'kia', label: 'Kia' }, { value: 'mg', label: 'MG' },
+  { value: 'renault', label: 'Renault' }, { value: 'nissan', label: 'Nissan' },
+  { value: 'volkswagen', label: 'Volkswagen' }, { value: 'skoda', label: 'Skoda' },
+  { value: 'jeep', label: 'Jeep' }, { value: 'ford', label: 'Ford' },
+  { value: 'mercedes', label: 'Mercedes-Benz' }, { value: 'bmw', label: 'BMW' },
+  { value: 'audi', label: 'Audi' }, { value: 'volvo', label: 'Volvo' },
+  { value: 'isuzu', label: 'Isuzu' }, { value: 'force', label: 'Force' },
+];
+const MAKE_LABELS = Object.fromEntries(MAKE_LIST.map(m => [m.value, m.label]));
 
 // ── Collapsible Section ───────────────────────────────────────────────────────
 const FilterSection = ({ title, icon, defaultOpen = false, children }) => {
@@ -389,16 +402,28 @@ const AdvancedSearch = () => {
             </FilterSection>
           )}
 
-          {/* Vehicle */}
+          {/* Vehicle & Customer */}
           <FilterSection title="Vehicle & Customer" icon="🚗">
             <FRow>
               <FField label="Make">
-                <input type="text" value={f.make || ''} onChange={e => set('make', e.target.value)}
-                  placeholder="e.g. Maruti, Honda..." className={inp} />
+                {(user?.allowedMakes?.length > 0)
+                  ? <select value={f.make || ''} onChange={e => set('make', e.target.value)} className={sel}>
+                      <option value="">All Makes</option>
+                      {user.allowedMakes.map(m => <option key={m} value={m}>{MAKE_LABELS[m] || m}</option>)}
+                    </select>
+                  : <select value={f.make || ''} onChange={e => set('make', e.target.value)} className={sel}>
+                      <option value="">All Makes</option>
+                      {MAKE_LIST.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                    </select>
+                }
               </FField>
               <FField label="Model">
                 <input type="text" value={f.model || ''} onChange={e => set('model', e.target.value)}
                   placeholder="e.g. Swift, City..." className={inp} />
+              </FField>
+              <FField label="Chassis No.">
+                <input type="text" value={f.chassisNumber || ''} onChange={e => set('chassisNumber', e.target.value)}
+                  placeholder="e.g. MA3EWDE1..." className={inp} />
               </FField>
               <FField label="Registration No.">
                 <input type="text" value={f.registrationNumber || ''} onChange={e => set('registrationNumber', e.target.value)}
@@ -425,6 +450,26 @@ const AdvancedSearch = () => {
                 <input type="date" value={f.purchaseDateTo || ''} onChange={e => set('purchaseDateTo', e.target.value)} className={inp} />
               </FField>
             </FRow>
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Customer</p>
+              <FRow>
+                <FField label="Customer Name">
+                  <input type="text" value={f.customerName || ''} onChange={e => set('customerName', e.target.value)}
+                    placeholder="Name contains..." className={inp} />
+                </FField>
+                <FField label="Mobile No.">
+                  <input type="text" value={f.mobile || ''} onChange={e => set('mobile', e.target.value)}
+                    placeholder="e.g. 9876543210" className={inp} />
+                </FField>
+                <FField label="City">
+                  <input type="text" value={f.city || ''} onChange={e => set('city', e.target.value)}
+                    placeholder="e.g. Mumbai" className={inp} />
+                </FField>
+                <FField label="Date of Birth">
+                  <input type="date" value={f.dob || ''} onChange={e => set('dob', e.target.value)} className={inp} />
+                </FField>
+              </FRow>
+            </div>
           </FilterSection>
 
           {/* Last Call */}
