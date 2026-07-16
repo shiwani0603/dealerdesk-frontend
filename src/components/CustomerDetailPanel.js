@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { customerService, insuranceService, serviceService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const MAKE_LABELS = {
   tata: 'Tata', maruti: 'Maruti Suzuki', hyundai: 'Hyundai', honda: 'Honda',
@@ -9,7 +10,6 @@ const MAKE_LABELS = {
   jeep: 'Jeep', ford: 'Ford', mercedes: 'Mercedes-Benz', bmw: 'BMW',
   audi: 'Audi', volvo: 'Volvo', isuzu: 'Isuzu', force: 'Force',
 };
-import toast from 'react-hot-toast';
 
 const Section = ({ title, children, defaultOpen = true }) => {
   const [open, setOpen] = useState(defaultOpen);
