@@ -203,10 +203,10 @@ const AdvancedSearch = () => {
     searchService.getOptions(make || '').then(r => setFilterOptions(r.data || { models: [], insurers: [] })).catch(() => {});
   }, []);
 
-  useEffect(() => { loadOptions(f.make); }, [f.make, loadOptions]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const set = (key, val) => setFilters(f => ({ ...f, [key]: val }));
+  const set = (key, val) => setFilters(prev => ({ ...prev, [key]: val }));
   const f = filters;
+
+  useEffect(() => { loadOptions(f.make); }, [f.make, loadOptions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const telecallers = users.filter(u => u.role === 'telecaller');
 
