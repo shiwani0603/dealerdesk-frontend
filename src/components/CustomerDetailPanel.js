@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { customerService, insuranceService, serviceService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+
+const MAKE_LABELS = {
+  tata: 'Tata', maruti: 'Maruti Suzuki', hyundai: 'Hyundai', honda: 'Honda',
+  toyota: 'Toyota', mahindra: 'Mahindra', kia: 'Kia', mg: 'MG',
+  renault: 'Renault', nissan: 'Nissan', volkswagen: 'Volkswagen', skoda: 'Skoda',
+  jeep: 'Jeep', ford: 'Ford', mercedes: 'Mercedes-Benz', bmw: 'BMW',
+  audi: 'Audi', volvo: 'Volvo', isuzu: 'Isuzu', force: 'Force',
+};
 import toast from 'react-hot-toast';
 
 const Section = ({ title, children, defaultOpen = true }) => {
@@ -479,7 +487,7 @@ useEffect(() => {
               <div className="px-4 py-3">
                 {/* Always show non-editable identifiers */}
                 <div className="grid grid-cols-2 gap-x-4 mb-3 pb-3 border-b border-gray-100">
-                  <Field label="Make" value={customer.make} highlight />
+                  <Field label="Make" value={MAKE_LABELS[customer.make?.toLowerCase()] || customer.make} highlight />
                   <Field label="Model" value={customer.model} highlight />
                   <Field label="Sub Model" value={customer.subModel} />
                   <Field label="Chassis No" value={customer.chassisNumber} />
