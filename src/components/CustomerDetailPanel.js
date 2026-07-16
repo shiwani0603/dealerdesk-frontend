@@ -406,7 +406,9 @@ useEffect(() => {
                         <Field label="Age" value={customer.age} />
                         <Field label="PAN Number" value={customer.panNumber} />
                         <Field label="City" value={customer.city} />
+                        <Field label="State" value={customer.state} />
                         <Field label="Pincode" value={customer.pincode} />
+                        {customer.source && <Field label="Data Source" value={customer.source} />}
                       </div>
                       <Field label="Address" value={customer.address} />
                     </div>
@@ -587,38 +589,51 @@ useEffect(() => {
                 </div>
               )}
 
-              {customer.insuranceRecords?.length > 0 ? (
-                <Section title={`Policy Details (${customer.insuranceRecords.length})`}>
-                  <div className="overflow-x-auto -mx-4">
-                    <table className="w-full text-xs" style={{ minWidth: '520px' }}>
-                      <thead>
-                        <tr className="bg-gray-100 text-gray-600 font-semibold">
-                          <td className="px-3 py-2 w-8">S No</td>
-                          <td className="px-3 py-2">Policy No.</td>
-                          <td className="px-3 py-2">Insurance Company</td>
-                          <td className="px-3 py-2 whitespace-nowrap">Issue Date</td>
-                          <td className="px-3 py-2 whitespace-nowrap">OD Expiry</td>
-                          <td className="px-3 py-2 whitespace-nowrap">TP Expiry</td>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {customer.insuranceRecords.map((rec, i) => (
-                          <tr key={i} className={`border-t border-gray-100 ${i % 2 === 1 ? 'bg-gray-50' : 'bg-white'}`}>
-                            <td className="px-3 py-2 text-gray-400 font-medium">{i + 1}</td>
-                            <td className="px-3 py-2 font-mono text-gray-700 text-xs break-all">{rec.policyNumber || '—'}</td>
-                            <td className="px-3 py-2 text-gray-800">{rec.insurerName || '—'}</td>
-                            <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{formatDate(rec.policyInceptionDate)}</td>
-                            <td className={`px-3 py-2 whitespace-nowrap font-medium ${i === 0 ? 'text-orange-600' : 'text-gray-600'}`}>
-                              {formatDate(rec.odExpiryDate || rec.policyExpiryDate)}
-                            </td>
-                            <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{formatDate(rec.tpExpiryDate)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </Section>
-              ) : (
+              {customer.insuranceRecords?.length > 0 ? (() => {
+                const realPolicies = customer.insuranceRecords.filter(r => r.policyNumber || r.insurerName);
+                const autoPlan = customer.insuranceRecords.find(r => !r.policyNumber && !r.insurerName && r.isFreshPolicy);
+                return (
+                  <>
+                    {autoPlan && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3 text-xs text-amber-700">
+                        🚗 Auto-estimated plan from sales upload — Est. expiry: <strong>{formatDate(autoPlan.policyExpiryDate)}</strong>. Upload an actual policy to replace this.
+                      </div>
+                    )}
+                    {realPolicies.length > 0 && (
+                      <Section title={`Policy Details (${realPolicies.length})`}>
+                        <div className="overflow-x-auto -mx-4">
+                          <table className="w-full text-xs" style={{ minWidth: '520px' }}>
+                            <thead>
+                              <tr className="bg-gray-100 text-gray-600 font-semibold">
+                                <td className="px-3 py-2 w-8">S No</td>
+                                <td className="px-3 py-2">Policy No.</td>
+                                <td className="px-3 py-2">Insurance Company</td>
+                                <td className="px-3 py-2 whitespace-nowrap">Issue Date</td>
+                                <td className="px-3 py-2 whitespace-nowrap">OD Expiry</td>
+                                <td className="px-3 py-2 whitespace-nowrap">TP Expiry</td>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {realPolicies.map((rec, i) => (
+                                <tr key={i} className={`border-t border-gray-100 ${i % 2 === 1 ? 'bg-gray-50' : 'bg-white'}`}>
+                                  <td className="px-3 py-2 text-gray-400 font-medium">{i + 1}</td>
+                                  <td className="px-3 py-2 font-mono text-gray-700 text-xs break-all">{rec.policyNumber}</td>
+                                  <td className="px-3 py-2 text-gray-800">{rec.insurerName || '—'}</td>
+                                  <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{formatDate(rec.policyInceptionDate)}</td>
+                                  <td className={`px-3 py-2 whitespace-nowrap font-medium ${i === 0 ? 'text-orange-600' : 'text-gray-600'}`}>
+                                    {formatDate(rec.odExpiryDate || rec.policyExpiryDate)}
+                                  </td>
+                                  <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{formatDate(rec.tpExpiryDate)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </Section>
+                    )}
+                  </>
+                );
+              })() : (
                 <div className="text-center py-8 text-gray-400">
                   <p className="text-3xl mb-2">🛡️</p>
                   <p className="text-sm">No insurance records found</p>

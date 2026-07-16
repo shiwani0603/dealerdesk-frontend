@@ -305,6 +305,13 @@ const UploadPage = () => {
       toast.error('Please map at least one column before importing');
       return;
     }
+    const mappedFields = Object.values(mapping);
+    const required = REQUIRED_FIELDS[module] || [];
+    const missing = required.filter(f => !mappedFields.includes(f));
+    if (missing.length > 0) {
+      toast.error(`Required fields not mapped: ${missing.join(', ')}`, { duration: 6000 });
+      return;
+    }
     setImporting(true);
     try {
       const formData = new FormData();

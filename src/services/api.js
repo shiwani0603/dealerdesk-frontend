@@ -91,6 +91,10 @@ export const searchService = {
     Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== '' && v !== null) q.set(k, v); });
     return api.get(`/search/plans?${q}`);
   },
+  getOptions: (make) => {
+    const q = make ? `?make=${encodeURIComponent(make)}` : '';
+    return api.get(`/search/plans/options${q}`);
+  },
 };
 
 export const reportService = {

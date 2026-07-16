@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { searchService, userService, insuranceService, serviceService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
@@ -190,6 +190,7 @@ const AdvancedSearch = () => {
   const [assigning, setAssigning] = useState(false);
   const [assignProgress, setAssignProgress] = useState({ current: 0, total: 0 });
   const [page, setPage] = useState(1);
+  const [filterOptions, setFilterOptions] = useState({ models: [], insurers: [] });
   const resultsRef = useRef(null);
   const PAGE_SIZE = 20;
 
@@ -197,6 +198,12 @@ const AdvancedSearch = () => {
     userService.list().then(r => setUsers(r.data?.users || [])).catch(() => {});
     userService.listLocations().then(r => setLocations(r.data?.locations || [])).catch(() => {});
   }, []);
+
+  const loadOptions = useCallback((make) => {
+    searchService.getOptions(make || '').then(r => setFilterOptions(r.data || { models: [], insurers: [] })).catch(() => {});
+  }, []);
+
+  useEffect(() => { loadOptions(f.make); }, [f.make, loadOptions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (key, val) => setFilters(f => ({ ...f, [key]: val }));
   const f = filters;
@@ -363,8 +370,14 @@ const AdvancedSearch = () => {
                   </select>
                 </FField>
                 <FField label="Insurer Name">
-                  <input type="text" value={f.insurerName || ''} onChange={e => set('insurerName', e.target.value)}
-                    placeholder="e.g. HDFC, Bajaj..." className={inp} />
+                  {filterOptions.insurers.length > 0
+                    ? <select value={f.insurerName || ''} onChange={e => set('insurerName', e.target.value)} className={sel}>
+                        <option value="">All Insurers</option>
+                        {filterOptions.insurers.map(ins => <option key={ins} value={ins}>{ins}</option>)}
+                      </select>
+                    : <input type="text" value={f.insurerName || ''} onChange={e => set('insurerName', e.target.value)}
+                        placeholder="e.g. HDFC, Bajaj..." className={inp} />
+                  }
                 </FField>
                 <FField label="Renewal Type">
                   <select value={f.renewalType || ''} onChange={e => set('renewalType', e.target.value)} className={sel}>
@@ -418,8 +431,14 @@ const AdvancedSearch = () => {
                 }
               </FField>
               <FField label="Model">
-                <input type="text" value={f.model || ''} onChange={e => set('model', e.target.value)}
-                  placeholder="e.g. Swift, City..." className={inp} />
+                {filterOptions.models.length > 0
+                  ? <select value={f.model || ''} onChange={e => set('model', e.target.value)} className={sel}>
+                      <option value="">All Models</option>
+                      {filterOptions.models.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  : <input type="text" value={f.model || ''} onChange={e => set('model', e.target.value)}
+                      placeholder="e.g. Swift, City..." className={inp} />
+                }
               </FField>
               <FField label="Chassis No.">
                 <input type="text" value={f.chassisNumber || ''} onChange={e => set('chassisNumber', e.target.value)}
@@ -465,8 +484,20 @@ const AdvancedSearch = () => {
                   <input type="text" value={f.city || ''} onChange={e => set('city', e.target.value)}
                     placeholder="e.g. Mumbai" className={inp} />
                 </FField>
+                <FField label="State">
+                  <input type="text" value={f.state || ''} onChange={e => set('state', e.target.value)}
+                    placeholder="e.g. Maharashtra" className={inp} />
+                </FField>
                 <FField label="Date of Birth">
                   <input type="date" value={f.dob || ''} onChange={e => set('dob', e.target.value)} className={inp} />
+                </FField>
+                <FField label="Data Source">
+                  <select value={f.source || ''} onChange={e => set('source', e.target.value)} className={sel}>
+                    <option value="">All Sources</option>
+                    <option value="insurance">Insurance Upload</option>
+                    <option value="service">Service Upload</option>
+                    <option value="sales">Sales Upload</option>
+                  </select>
                 </FField>
               </FRow>
             </div>
