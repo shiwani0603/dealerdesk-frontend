@@ -416,9 +416,11 @@ const UploadPage = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Portal / Source Name *</label>
                 {(() => {
-                  const filteredPortals = make
-                    ? portals.filter(p => p.makes && p.makes.map(pm => pm.toLowerCase()).includes(make.toLowerCase()))
-                    : portals;
+                  const filteredPortals = portals.filter(p => {
+                    const matchesMake = !make || (p.makes && p.makes.map(pm => pm.toLowerCase()).includes(make.toLowerCase()));
+                    const matchesModule = !p.modules || p.modules.length === 0 || p.modules.includes(module);
+                    return matchesMake && matchesModule;
+                  });
                   return (
                     <select
                       value={portalName}
@@ -487,7 +489,7 @@ const UploadPage = () => {
                 <div>System Field</div>
               </div>
               <div className="max-h-96 overflow-y-auto">
-                {headers.map(header => (
+                {(allowCustomUploadFormat ? headers : headers.filter(h => mapping[h])).map(header => (
                   <div key={header} className="grid grid-cols-2 gap-4 px-4 py-2 border-b border-gray-100 items-center">
                     <div>
                       <p className="text-sm font-medium text-gray-800">{header}</p>
@@ -495,29 +497,35 @@ const UploadPage = () => {
                         <p className="text-xs text-gray-400 truncate">e.g. {String(sampleRows[0][headers.indexOf(header)]).substring(0, 30)}</p>
                       )}
                     </div>
-                    <select
-                      value={mapping[header] || ''}
-                      onChange={e => {
-                        const newMapping = { ...mapping };
-                        if (e.target.value) newMapping[header] = e.target.value;
-                        else delete newMapping[header];
-                        setMapping(newMapping);
-                      }}
-                      className={`w-full px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none ${
-                        mapping[header] ? 'border-green-400 bg-green-50' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">-- Skip --</option>
-                      {systemFields.map(field => {
-  const alreadyMapped = Object.values(mapping).includes(field) && mapping[header] !== field;
-  const isRequired = (REQUIRED_FIELDS[module] || []).includes(field);
-  return (
-    <option key={field} value={field} disabled={alreadyMapped} style={alreadyMapped ? {color:'#ccc'} : {}}>
-      {isRequired ? '* ' : ''}{field}{alreadyMapped ? ' ✓' : ''}
-    </option>
-  );
-})}
-                    </select>
+                    {allowCustomUploadFormat ? (
+                      <select
+                        value={mapping[header] || ''}
+                        onChange={e => {
+                          const newMapping = { ...mapping };
+                          if (e.target.value) newMapping[header] = e.target.value;
+                          else delete newMapping[header];
+                          setMapping(newMapping);
+                        }}
+                        className={`w-full px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none ${
+                          mapping[header] ? 'border-green-400 bg-green-50' : 'border-gray-300'
+                        }`}
+                      >
+                        <option value="">-- Skip --</option>
+                        {systemFields.map(field => {
+                          const alreadyMapped = Object.values(mapping).includes(field) && mapping[header] !== field;
+                          const isRequired = (REQUIRED_FIELDS[module] || []).includes(field);
+                          return (
+                            <option key={field} value={field} disabled={alreadyMapped} style={alreadyMapped ? {color:'#ccc'} : {}}>
+                              {isRequired ? '* ' : ''}{field}{alreadyMapped ? ' ✓' : ''}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    ) : (
+                      <span className="px-3 py-1.5 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg font-medium">
+                        {mapping[header]}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>

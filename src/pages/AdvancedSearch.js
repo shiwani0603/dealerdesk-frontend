@@ -415,8 +415,8 @@ const AdvancedSearch = () => {
             </FilterSection>
           )}
 
-          {/* Vehicle & Customer */}
-          <FilterSection title="Vehicle & Customer" icon="🚗">
+          {/* Vehicle */}
+          <FilterSection title="Vehicle" icon="🚗">
             <FRow>
               <FField label="Make">
                 {(user?.allowedMakes?.length > 0)
@@ -469,38 +469,39 @@ const AdvancedSearch = () => {
                 <input type="date" value={f.purchaseDateTo || ''} onChange={e => set('purchaseDateTo', e.target.value)} className={inp} />
               </FField>
             </FRow>
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Customer</p>
-              <FRow>
-                <FField label="Customer Name">
-                  <input type="text" value={f.customerName || ''} onChange={e => set('customerName', e.target.value)}
-                    placeholder="Name contains..." className={inp} />
-                </FField>
-                <FField label="Mobile No.">
-                  <input type="text" value={f.mobile || ''} onChange={e => set('mobile', e.target.value)}
-                    placeholder="e.g. 9876543210" className={inp} />
-                </FField>
-                <FField label="City">
-                  <input type="text" value={f.city || ''} onChange={e => set('city', e.target.value)}
-                    placeholder="e.g. Mumbai" className={inp} />
-                </FField>
-                <FField label="State">
-                  <input type="text" value={f.state || ''} onChange={e => set('state', e.target.value)}
-                    placeholder="e.g. Maharashtra" className={inp} />
-                </FField>
-                <FField label="Date of Birth">
-                  <input type="date" value={f.dob || ''} onChange={e => set('dob', e.target.value)} className={inp} />
-                </FField>
-                <FField label="Data Source">
-                  <select value={f.source || ''} onChange={e => set('source', e.target.value)} className={sel}>
-                    <option value="">All Sources</option>
-                    <option value="insurance">Insurance Upload</option>
-                    <option value="service">Service Upload</option>
-                    <option value="sales">Sales Upload</option>
-                  </select>
-                </FField>
-              </FRow>
-            </div>
+          </FilterSection>
+
+          {/* Customer */}
+          <FilterSection title="Customer" icon="👤">
+            <FRow>
+              <FField label="Customer Name">
+                <input type="text" value={f.customerName || ''} onChange={e => set('customerName', e.target.value)}
+                  placeholder="Name contains..." className={inp} />
+              </FField>
+              <FField label="Mobile No.">
+                <input type="text" value={f.mobile || ''} onChange={e => set('mobile', e.target.value)}
+                  placeholder="e.g. 9876543210" className={inp} />
+              </FField>
+              <FField label="City">
+                <input type="text" value={f.city || ''} onChange={e => set('city', e.target.value)}
+                  placeholder="e.g. Mumbai" className={inp} />
+              </FField>
+              <FField label="State">
+                <input type="text" value={f.state || ''} onChange={e => set('state', e.target.value)}
+                  placeholder="e.g. Maharashtra" className={inp} />
+              </FField>
+              <FField label="Date of Birth">
+                <input type="date" value={f.dob || ''} onChange={e => set('dob', e.target.value)} className={inp} />
+              </FField>
+              <FField label="Data Source">
+                <select value={f.source || ''} onChange={e => set('source', e.target.value)} className={sel}>
+                  <option value="">All Sources</option>
+                  <option value="insurance">Insurance Upload</option>
+                  <option value="service">Service Upload</option>
+                  <option value="sales">Sales Upload</option>
+                </select>
+              </FField>
+            </FRow>
           </FilterSection>
 
           {/* Last Call */}
