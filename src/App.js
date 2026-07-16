@@ -1,5 +1,24 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Login from './pages/Login';
+import AdminLogin from './pages/AdminLogin';
+import TelecallerDashboard from './pages/TelecallerDashboard';
+import TeamLeaderDashboard from './pages/TeamLeaderDashboard';
+import ManagerDashboard from './pages/ManagerDashboard';
+import UploadPage from './pages/UploadPage';
+import UserManagement from './pages/UserManagement';
+import DailyCallReport from './pages/DailyCallReport';
+import AdvancedSearch from './pages/AdvancedSearch';
+import SettingsPage from './pages/SettingsPage';
+import AdminPanel from './pages/AdminPanel';
+import ServiceIntervalMaster from './pages/ServiceIntervalMaster';
+import ReportsPage from './pages/ReportsPage';
+import CampaignsPage from './pages/CampaignsPage';
+import AdminOverview from './pages/AdminOverview';
+import AdminUploadSetupPage from './pages/AdminUploadSetupPage';
+import ChangePassword from './pages/ChangePassword';
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { hasError: false, error: null }; }
@@ -24,25 +43,6 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-import { Toaster } from 'react-hot-toast';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import Login from './pages/Login';
-import AdminLogin from './pages/AdminLogin';
-import TelecallerDashboard from './pages/TelecallerDashboard';
-import TeamLeaderDashboard from './pages/TeamLeaderDashboard';
-import ManagerDashboard from './pages/ManagerDashboard';
-import UploadPage from './pages/UploadPage';
-import UserManagement from './pages/UserManagement';
-import DailyCallReport from './pages/DailyCallReport';
-import AdvancedSearch from './pages/AdvancedSearch';
-import SettingsPage from './pages/SettingsPage';
-import AdminPanel from './pages/AdminPanel';
-import ServiceIntervalMaster from './pages/ServiceIntervalMaster';
-import ReportsPage from './pages/ReportsPage';
-import CampaignsPage from './pages/CampaignsPage';
-import AdminOverview from './pages/AdminOverview';
-import AdminUploadSetupPage from './pages/AdminUploadSetupPage';
-import ChangePassword from './pages/ChangePassword';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
