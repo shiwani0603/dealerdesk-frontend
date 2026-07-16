@@ -524,7 +524,7 @@ const AdvancedSearch = () => {
 
         {/* Action buttons */}
         <div className="flex items-center gap-3 mb-8 flex-wrap">
-          <button onClick={handleSearch} disabled={loading}
+          <button onClick={() => handleSearch()} disabled={loading}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors disabled:opacity-60 shadow-sm">
             {loading
               ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Searching...</>
