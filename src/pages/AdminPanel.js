@@ -697,6 +697,7 @@ const OutletModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
     e.preventDefault();
     if (!form.name.trim()) { toast.error('Outlet name is required'); return; }
     if (!form.code.trim()) { toast.error('Outlet code is required'); return; }
+    if (form.modules.length === 0) { toast.error('Select at least one module'); return; }
     setSaving(true);
     try {
       const payload = {
@@ -723,6 +724,21 @@ const OutletModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
   };
 
   const parentOutlets = (dealership.locations || []).filter(l => !l.parentId && l.id !== existingOutlet?.id);
+
+  const selectedParent = form.parentId ? parentOutlets.find(l => l.id === form.parentId) : null;
+  const allowedModules = selectedParent && Array.isArray(selectedParent.modules) && selectedParent.modules.length > 0
+    ? selectedParent.modules
+    : ALL_MODULES;
+
+  const handleParentChange = (parentId) => {
+    const parent = parentOutlets.find(l => l.id === parentId);
+    const parentMods = parent && Array.isArray(parent.modules) ? parent.modules : ALL_MODULES;
+    setForm(f => ({
+      ...f,
+      parentId,
+      modules: f.modules.filter(m => parentMods.includes(m)),
+    }));
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -758,15 +774,23 @@ const OutletModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Modules *</label>
             <div className="flex gap-4">
-              {ALL_MODULES.map(mod => (
-                <label key={mod} className="flex items-center gap-1.5 cursor-pointer select-none">
-                  <input type="checkbox" checked={form.modules.includes(mod)} onChange={() => toggleModule(mod)} />
-                  <span className="text-sm text-gray-700 capitalize">{mod}</span>
-                </label>
-              ))}
+              {ALL_MODULES.map(mod => {
+                const disabled = !allowedModules.includes(mod);
+                return (
+                  <label key={mod} className={`flex items-center gap-1.5 select-none ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
+                    <input type="checkbox" checked={form.modules.includes(mod)}
+                      disabled={disabled}
+                      onChange={() => !disabled && toggleModule(mod)} />
+                    <span className="text-sm text-gray-700 capitalize">{mod}</span>
+                  </label>
+                );
+              })}
             </div>
+            {selectedParent && (
+              <p className="text-xs text-blue-600 mt-1">Restricted to parent outlet's modules</p>
+            )}
             {form.modules.length === 0 && (
-              <p className="text-xs text-amber-600 mt-1">Select at least one module</p>
+              <p className="text-xs text-red-500 mt-1">Select at least one module</p>
             )}
           </div>
           {parentOutlets.length > 0 && (
@@ -774,7 +798,7 @@ const OutletModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Parent Outlet <span className="text-gray-400 font-normal">(optional — for sub-outlets)</span>
               </label>
-              <select value={form.parentId} onChange={e => setForm(f => ({ ...f, parentId: e.target.value }))}
+              <select value={form.parentId} onChange={e => handleParentChange(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">— No parent (top-level outlet) —</option>
                 {parentOutlets.map(loc => (

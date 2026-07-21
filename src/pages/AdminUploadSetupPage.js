@@ -49,10 +49,9 @@ const SYSTEM_FIELDS = {
     'mobile', 'mobile2', 'mobile3', 'email', 'customer_address',
     'customer_city', 'customer_state', 'customer_pan', 'customer_dob',
     'make', 'model', 'model_head', 'sub_model', 'fuel_type', 'vehicle_color',
-    'transmission_type', 'charger_type',
     'vehicle_purchase_date', 'manufacturing_year',
     'sales_consultant_name', 'dealer_name', 'invoice_number',
-    'sold_by_location', 'outlet_code',
+    'outlet_code',
   ],
 };
 
