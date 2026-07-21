@@ -1119,7 +1119,7 @@ const DealershipCard = ({ d, number, onEdit, onAddLocation, onEditOutlet, onAddU
             {d.workshopCode && <p className="text-xs text-gray-400 font-mono mt-0.5">{d.workshopCode}</p>}
             <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
               <span>👥 {d._count?.users || 0} users</span>
-              <span>🏪 {d._count?.locations || 0} outlets</span>
+              <span>🏪 {d.locations?.length || 0} outlets</span>
             </div>
             {activeModules.length > 0 && (
               <div className="flex gap-1 mt-2 flex-wrap">
