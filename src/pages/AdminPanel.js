@@ -229,7 +229,7 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
     if (!form.username.trim()) { toast.error('Username is required'); return; }
     if (usernameTaken) { toast.error('Username is already taken'); return; }
     if (!isEdit && !form.password.trim()) { toast.error('Password is required'); return; }
-    if (!form.locationId) { toast.error('Location is required'); return; }
+    if (!form.locationId) { toast.error('Outlet is required'); return; }
 
     setSaving(true);
     try {
@@ -367,30 +367,30 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
             </div>
           </div>
 
-          {/* Location */}
+          {/* Outlet */}
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">
-              {isManagerRole ? 'Primary Location *' : 'Location *'}
+              {isManagerRole ? 'Primary Outlet *' : 'Outlet *'}
             </label>
             {dealership.locations?.length === 0
-              ? <p className="text-xs text-red-500">No locations — add a location to this dealership first.</p>
+              ? <p className="text-xs text-red-500">No outlets — add an outlet to this dealership first.</p>
               : (
                 <select value={form.locationId} onChange={e => set('locationId', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="">Select location…</option>
+                  <option value="">Select outlet…</option>
                   {dealership.locations?.map(loc => (
-                    <option key={loc.id} value={loc.id}>{loc.name}{loc.city ? ` — ${loc.city}` : ''}</option>
+                    <option key={loc.id} value={loc.id}>{loc.name}{loc.city ? ` — ${loc.city}` : ''}{loc.code ? ` (${loc.code})` : ''}</option>
                   ))}
                 </select>
               )
             }
           </div>
 
-          {/* Managed Locations (manager / super_manager only) */}
+          {/* Managed Outlets (manager / super_manager only) */}
           {isManagerRole && dealership.locations?.length > 1 && (
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Managed Locations <span className="text-gray-400 font-normal">(all locations if none selected)</span>
+                Managed Outlets <span className="text-gray-400 font-normal">(all outlets if none selected)</span>
               </label>
               <div className="space-y-1.5">
                 {dealership.locations?.map(loc => (
@@ -401,12 +401,12 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
                       onChange={() => toggleManagedLocation(loc.id)}
                       className="w-4 h-4 rounded border-gray-300 text-blue-600"
                     />
-                    <span className="text-sm text-gray-700">{loc.name}{loc.city ? ` — ${loc.city}` : ''}</span>
+                    <span className="text-sm text-gray-700">{loc.name}{loc.city ? ` — ${loc.city}` : ''}{loc.code ? ` (${loc.code})` : ''}</span>
                   </label>
                 ))}
               </div>
               {(form.managedLocationIds || []).length === 0 && (
-                <p className="text-xs text-gray-400 mt-1">No restriction — manager can see all locations</p>
+                <p className="text-xs text-gray-400 mt-1">No restriction — manager can see all outlets</p>
               )}
             </div>
           )}
@@ -671,41 +671,64 @@ const DealershipModal = ({ existing, onClose, onSaved }) => {
   );
 };
 
-// ─── Add Location Modal ───────────────────────────────────────────────────────
+// ─── Add Outlet Modal ─────────────────────────────────────────────────────────
+
+const ALL_MODULES = ['insurance', 'service', 'sales'];
 
 const AddLocationModal = ({ dealership, onClose, onSaved }) => {
-  const [form, setForm] = useState({ name: '', city: '' });
+  const [form, setForm] = useState({ name: '', city: '', code: '', modules: [], parentId: '' });
   const [saving, setSaving] = useState(false);
+
+  const toggleModule = (mod) => {
+    setForm(f => ({
+      ...f,
+      modules: f.modules.includes(mod) ? f.modules.filter(m => m !== mod) : [...f.modules, mod],
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) { toast.error('Location name is required'); return; }
+    if (!form.name.trim()) { toast.error('Outlet name is required'); return; }
     setSaving(true);
     try {
-      await dealershipService.addLocation(dealership.id, { name: form.name, city: form.city || null });
-      toast.success('Location added');
+      await dealershipService.addLocation(dealership.id, {
+        name: form.name,
+        city: form.city || null,
+        code: form.code || null,
+        modules: form.modules,
+        parentId: form.parentId || null,
+      });
+      toast.success('Outlet added');
       onSaved();
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to add location');
+      toast.error(err.response?.data?.error || 'Failed to add outlet');
     } finally {
       setSaving(false);
     }
   };
 
+  const parentOutlets = dealership.locations?.filter(l => !l.parentId) || [];
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-gray-900">Add Location</h2>
+          <h2 className="font-bold text-gray-900">Add Outlet</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
         </div>
         <p className="text-sm text-gray-500 mb-4">Adding to: <span className="font-semibold text-gray-700">{dealership.name}</span></p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Location Name *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Outlet Name *</label>
             <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="e.g. Main Showroom" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Outlet Code</label>
+            <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g. MH-001 (used to match rows in uploads)" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
@@ -713,9 +736,36 @@ const AddLocationModal = ({ dealership, onClose, onSaved }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="e.g. Pune" />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Modules (what this outlet handles)</label>
+            <div className="flex gap-3">
+              {ALL_MODULES.map(mod => (
+                <label key={mod} className="flex items-center gap-1.5 cursor-pointer select-none">
+                  <input type="checkbox" checked={form.modules.includes(mod)} onChange={() => toggleModule(mod)}
+                    className="rounded" />
+                  <span className="text-sm text-gray-700 capitalize">{mod}</span>
+                </label>
+              ))}
+            </div>
+            {form.modules.length === 0 && (
+              <p className="text-xs text-amber-600 mt-1">Select at least one module</p>
+            )}
+          </div>
+          {parentOutlets.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Parent Outlet <span className="text-gray-400 font-normal">(optional — for sub-outlets)</span></label>
+              <select value={form.parentId} onChange={e => setForm(f => ({ ...f, parentId: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">— No parent (top-level outlet) —</option>
+                {parentOutlets.map(loc => (
+                  <option key={loc.id} value={loc.id}>{loc.name}{loc.code ? ` (${loc.code})` : ''}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <button type="submit" disabled={saving}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50">
-            {saving ? 'Adding…' : 'Add Location'}
+            {saving ? 'Adding…' : 'Add Outlet'}
           </button>
         </form>
       </div>
@@ -1019,7 +1069,7 @@ const DealershipCard = ({ d, number, onEdit, onAddLocation, onAddUser, onEditUse
             {d.workshopCode && <p className="text-xs text-gray-400 font-mono mt-0.5">{d.workshopCode}</p>}
             <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
               <span>👥 {d._count?.users || 0} users</span>
-              <span>📍 {d._count?.locations || 0} locations</span>
+              <span>🏪 {d._count?.locations || 0} outlets</span>
             </div>
             {activeModules.length > 0 && (
               <div className="flex gap-1 mt-2 flex-wrap">
@@ -1049,7 +1099,7 @@ const DealershipCard = ({ d, number, onEdit, onAddLocation, onAddUser, onEditUse
         <div className="border-t border-gray-100">
           {/* Tabs */}
           <div className="flex border-b border-gray-100 px-5">
-            {[['locations', '📍 Locations'], ['users', '👥 Users'], ['settings', '⚙️ Settings']].map(([tab, label]) => (
+            {[['locations', '🏪 Outlets'], ['users', '👥 Users'], ['settings', '⚙️ Settings']].map(([tab, label]) => (
               <button key={tab} onClick={() => handleTabChange(tab)}
                 className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
                   activeTab === tab
@@ -1061,26 +1111,39 @@ const DealershipCard = ({ d, number, onEdit, onAddLocation, onAddUser, onEditUse
             ))}
           </div>
 
-          {/* Locations tab */}
+          {/* Outlets tab */}
           {activeTab === 'locations' && (
             <div className="px-5 py-4">
               <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Locations</p>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Outlets</p>
                 <button onClick={() => onAddLocation(d)}
                   className="text-xs text-blue-600 font-semibold hover:underline">
-                  + Add Location
+                  + Add Outlet
                 </button>
               </div>
               {d.locations?.length === 0
-                ? <p className="text-xs text-gray-400 italic">No locations yet</p>
+                ? <p className="text-xs text-gray-400 italic">No outlets yet</p>
                 : (
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     {d.locations?.map(loc => (
-                      <div key={loc.id} className="flex items-center gap-2 text-sm text-gray-600">
-                        <span className="text-gray-300">📍</span>
-                        <span>{loc.name}</span>
-                        {loc.city && <span className="text-gray-400 text-xs">— {loc.city}</span>}
-                        {!loc.isActive && <span className="text-xs text-red-400">(inactive)</span>}
+                      <div key={loc.id} className="bg-gray-50 rounded-lg px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-400">🏪</span>
+                          <span className="text-sm font-medium text-gray-700">{loc.name}</span>
+                          {loc.code && <span className="text-xs bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded font-mono">{loc.code}</span>}
+                          {!loc.isActive && <span className="text-xs text-red-400">(inactive)</span>}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1 ml-6">
+                          {loc.city && <span className="text-xs text-gray-400">{loc.city}</span>}
+                          {Array.isArray(loc.modules) && loc.modules.length > 0 && (
+                            <div className="flex gap-1">
+                              {loc.modules.map(m => (
+                                <span key={m} className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded capitalize">{m}</span>
+                              ))}
+                            </div>
+                          )}
+                          {loc.parentId && <span className="text-xs text-gray-400 italic">sub-outlet</span>}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1169,7 +1232,7 @@ const DealershipCard = ({ d, number, onEdit, onAddLocation, onAddUser, onEditUse
                         </div>
                         <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                           <p className="text-xs text-gray-400 font-mono">{user.username || '—'}</p>
-                          {user.location && <p className="text-xs text-gray-400">📍 {user.location.name}</p>}
+                          {user.location && <p className="text-xs text-gray-400">🏪 {user.location.name}</p>}
                           {user.moduleRights && (
                             <p className="text-xs text-gray-400">{MODULE_LABELS[user.moduleRights] || user.moduleRights}</p>
                           )}
