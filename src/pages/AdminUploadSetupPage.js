@@ -30,7 +30,7 @@ const SYSTEM_FIELDS = {
     'policy_inception_date', 'policy_issue_date', 'od_percentage', 'od_premium',
     'tp_premium', 'idv_value', 'ncb_percentage', 'gross_premium', 'net_premium',
     'gst_amount', 'insurer_name', 'payment_mode', 'addon_description',
-    'renewal_category', 'outlet_name', 'location_name',
+    'renewal_category', 'outlet_code',
   ],
   service: [
     'chassis_number', 'registration_number', 'engine_number', 'customer_name',
@@ -42,7 +42,7 @@ const SYSTEM_FIELDS = {
     'total_invoice_amount', 'labour_amount', 'parts_amount',
     'service_adviser_name', 'service_adviser_mspin',
     'warranty_start_date', 'warranty_end_date', 'campaign_name', 'pickup_type',
-    'outlet_name', 'location_name',
+    'outlet_code',
   ],
   sales: [
     'chassis_number', 'registration_number', 'engine_number', 'customer_name',
@@ -52,14 +52,14 @@ const SYSTEM_FIELDS = {
     'transmission_type', 'charger_type',
     'vehicle_purchase_date', 'manufacturing_year',
     'sales_consultant_name', 'dealer_name', 'invoice_number',
-    'sold_by_location', 'outlet_name', 'location_name',
+    'sold_by_location', 'outlet_code',
   ],
 };
 
 const REQUIRED_FIELDS = {
-  insurance: ['chassis_number', 'customer_name', 'mobile', 'policy_expiry_date', 'vehicle_purchase_date', 'outlet_name'],
-  service:   ['chassis_number', 'customer_name', 'mobile', 'job_card_number', 'service_date', 'service_type', 'mileage_at_service', 'vehicle_purchase_date', 'outlet_name'],
-  sales:     ['chassis_number', 'customer_name', 'mobile', 'vehicle_purchase_date', 'outlet_name'],
+  insurance: ['chassis_number', 'customer_name', 'mobile', 'policy_expiry_date', 'vehicle_purchase_date'],
+  service:   ['chassis_number', 'customer_name', 'mobile', 'job_card_number', 'service_date', 'service_type', 'mileage_at_service', 'vehicle_purchase_date'],
+  sales:     ['chassis_number', 'customer_name', 'mobile', 'vehicle_purchase_date'],
 };
 
 // ─── Upload Flow Modal (same flow as manager upload page) ─────────────────────

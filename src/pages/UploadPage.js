@@ -7,9 +7,9 @@ import SearchModal from '../components/SearchModal';
 import CustomerDetailPanel from '../components/CustomerDetailPanel';
 
 const REQUIRED_FIELDS = {
-  insurance: ['chassis_number', 'customer_name', 'mobile', 'policy_expiry_date', 'vehicle_purchase_date', 'outlet_name'],
-  service:   ['chassis_number', 'customer_name', 'mobile', 'job_card_number', 'service_date', 'service_type', 'mileage_at_service', 'vehicle_purchase_date', 'outlet_name'],
-  sales:     ['chassis_number', 'customer_name', 'mobile', 'vehicle_purchase_date', 'outlet_name'],
+  insurance: ['chassis_number', 'customer_name', 'mobile', 'policy_expiry_date', 'vehicle_purchase_date'],
+  service:   ['chassis_number', 'customer_name', 'mobile', 'job_card_number', 'service_date', 'service_type', 'mileage_at_service', 'vehicle_purchase_date'],
+  sales:     ['chassis_number', 'customer_name', 'mobile', 'vehicle_purchase_date'],
 };
 
 const MAKE_LABEL_MAP = {
@@ -31,7 +31,7 @@ const SYSTEM_FIELDS = {
     'policy_inception_date', 'policy_issue_date', 'od_expiry_date', 'tp_expiry_date',
     'od_percentage', 'od_premium', 'tp_premium', 'idv_value', 'ncb_percentage',
     'gross_premium', 'net_premium', 'gst_amount', 'insurer_name', 'payment_mode',
-    'financer_name', 'outlet_name', 'location_name',
+    'financer_name', 'outlet_code',
   ],
   service: [
     'chassis_number', 'registration_number', 'engine_number', 'customer_name',
@@ -41,7 +41,7 @@ const SYSTEM_FIELDS = {
     'customer_city', 'customer_state', 'customer_pan', 'customer_dob',
     'service_type', 'service_date', 'mileage_at_service', 'job_card_number',
     'total_invoice_amount', 'labour_amount', 'parts_amount',
-    'service_adviser_name', 'outlet_name', 'location_name',
+    'service_adviser_name', 'outlet_code',
   ],
   sales: [
     'chassis_number', 'registration_number', 'engine_number', 'customer_name',
@@ -49,7 +49,7 @@ const SYSTEM_FIELDS = {
     'make', 'model', 'model_head', 'sub_model', 'fuel_type', 'vehicle_color',
     'vehicle_purchase_date', 'manufacturing_year',
     'customer_city', 'customer_state', 'customer_pan', 'customer_dob',
-    'sales_consultant_name', 'dealer_name', 'invoice_number', 'outlet_name', 'location_name',
+    'sales_consultant_name', 'dealer_name', 'invoice_number', 'outlet_code',
   ],
 };
 
@@ -205,9 +205,11 @@ const UploadPage = () => {
   const [module, setModule] = useState('insurance');
   const [portalName, setPortalName] = useState('');
   const [make, setMake] = useState('');
+  const [defaultOutletId, setDefaultOutletId] = useState('');
   const [file, setFile] = useState(null);
   const [step, setStep] = useState(1);
   const [portals, setPortals] = useState([]);
+  const [outlets, setOutlets] = useState([]);
   const [allowedMakes, setAllowedMakes] = useState([]);
   const [allowCustomUploadFormat, setAllowCustomUploadFormat] = useState(true);
 
@@ -224,20 +226,23 @@ const UploadPage = () => {
   const dealershipId = user?.dealershipId || '';
 
   useEffect(() => {
-    const loadMappings = async () => {
+    const loadData = async () => {
       try {
-        const res = await api.get(`/upload/mappings?dealershipId=${dealershipId}`);
-        const loadedMakes = res.data.allowedMakes || [];
-        setPortals(res.data.portals || []);
+        const [mappingRes, locRes] = await Promise.all([
+          api.get(`/upload/mappings?dealershipId=${dealershipId}`),
+          api.get('/users/locations'),
+        ]);
+        const loadedMakes = mappingRes.data.allowedMakes || [];
+        setPortals(mappingRes.data.portals || []);
         setAllowedMakes(loadedMakes);
-        setAllowCustomUploadFormat(res.data.allowCustomUploadFormat ?? true);
-        // Auto-select make if only one is available
+        setAllowCustomUploadFormat(mappingRes.data.allowCustomUploadFormat ?? true);
+        setOutlets(locRes.data.locations || []);
         if (loadedMakes.length === 1) setMake(loadedMakes[0]);
       } catch (err) {
-        console.error('Failed to load mappings');
+        console.error('Failed to load data');
       }
     };
-    if (dealershipId) loadMappings();
+    if (dealershipId) loadData();
   }, [dealershipId]);
 
   const handleFileChange = (e) => {
@@ -321,6 +326,7 @@ const UploadPage = () => {
       formData.append('make', make);
       formData.append('dealershipId', dealershipId);
       formData.append('mappingJson', JSON.stringify(mapping));
+      if (defaultOutletId) formData.append('locationId', defaultOutletId);
 
       const res = await api.post('/upload/process', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -342,7 +348,7 @@ const UploadPage = () => {
     setMapping({});
     setResults(null);
     setPortalName('');
-    // If only one make is allowed it's shown as a static label — restore it so the Next button stays enabled
+    setDefaultOutletId('');
     setMake(allowedMakes.length === 1 ? allowedMakes[0] : '');
   };
 
@@ -414,7 +420,7 @@ const UploadPage = () => {
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Portal / Source Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Portal / Source *</label>
                 {(() => {
                   const filteredPortals = portals.filter(p => {
                     const matchesMake = !make || (p.makes && p.makes.map(pm => pm.toLowerCase()).includes(make.toLowerCase()));
@@ -434,6 +440,22 @@ const UploadPage = () => {
                 })()}
               </div>
             </div>
+
+            {outlets.length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Default Outlet <span className="text-gray-400 font-normal">(used when outlet not specified per row)</span>
+                </label>
+                <select value={defaultOutletId} onChange={e => setDefaultOutletId(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                  <option value="">— No default outlet —</option>
+                  {outlets.filter(o => o.isActive).map(o => (
+                    <option key={o.id} value={o.id}>{o.name}{o.code ? ` (${o.code})` : ''}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-400 mt-1">If your file has an <strong>outlet_code</strong> column mapped, each row will auto-match its outlet. This default is the fallback.</p>
+              </div>
+            )}
 
             <div
               onDrop={handleDrop}
