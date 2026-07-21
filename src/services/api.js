@@ -172,7 +172,6 @@ export const dealershipService = {
   create: (data) => api.post('/dealerships', data),
   update: (id, data) => api.put(`/dealerships/${id}`, data),
   addLocation: (id, data) => api.post(`/dealerships/${id}/locations`, data),
-  updateLocation: (id, locId, data) => api.put(`/dealerships/${id}/locations/${locId}`, data),
   createUser: (id, data) => api.post(`/dealerships/${id}/users`, data),
   getUsers: (id) => api.get(`/dealerships/${id}/users`),
   updateUser: (id, userId, data) => api.put(`/dealerships/${id}/users/${userId}`, data),

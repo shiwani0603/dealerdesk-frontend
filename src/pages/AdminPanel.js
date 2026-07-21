@@ -671,20 +671,12 @@ const DealershipModal = ({ existing, onClose, onSaved }) => {
   );
 };
 
-// ─── Add / Edit Outlet Modal ──────────────────────────────────────────────────
+// ─── Add Outlet Modal ─────────────────────────────────────────────────────────
 
 const ALL_MODULES = ['insurance', 'service', 'sales'];
 
-const AddLocationModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
-  const isEdit = !!existingOutlet;
-  const [form, setForm] = useState({
-    name:     existingOutlet?.name     || '',
-    city:     existingOutlet?.city     || '',
-    code:     existingOutlet?.code     || '',
-    modules:  Array.isArray(existingOutlet?.modules) ? existingOutlet.modules : [],
-    parentId: existingOutlet?.parentId || '',
-    isActive: existingOutlet?.isActive !== false,
-  });
+const AddLocationModal = ({ dealership, onClose, onSaved }) => {
+  const [form, setForm] = useState({ name: '', city: '', code: '', modules: [], parentId: '' });
   const [saving, setSaving] = useState(false);
 
   const toggleModule = (mod) => {
@@ -697,45 +689,34 @@ const AddLocationModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) { toast.error('Outlet name is required'); return; }
-    if (!form.code.trim()) { toast.error('Outlet code is required'); return; }
     setSaving(true);
     try {
-      const payload = {
-        name: form.name.trim(),
+      await dealershipService.addLocation(dealership.id, {
+        name: form.name,
         city: form.city || null,
-        code: form.code.trim(),
+        code: form.code || null,
         modules: form.modules,
         parentId: form.parentId || null,
-        isActive: form.isActive,
-      };
-      if (isEdit) {
-        await dealershipService.updateLocation(dealership.id, existingOutlet.id, payload);
-        toast.success('Outlet updated');
-      } else {
-        await dealershipService.addLocation(dealership.id, payload);
-        toast.success('Outlet added');
-      }
+      });
+      toast.success('Outlet added');
       onSaved();
     } catch (err) {
-      toast.error(err.response?.data?.error || (isEdit ? 'Failed to update outlet' : 'Failed to add outlet'));
+      toast.error(err.response?.data?.error || 'Failed to add outlet');
     } finally {
       setSaving(false);
     }
   };
 
-  const parentOutlets = (dealership.locations || []).filter(l => !l.parentId && l.id !== existingOutlet?.id);
+  const parentOutlets = dealership.locations?.filter(l => !l.parentId) || [];
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-sm p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-bold text-gray-900">{isEdit ? 'Edit Outlet' : 'Add Outlet'}</h2>
+          <h2 className="font-bold text-gray-900">Add Outlet</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
         </div>
-        <p className="text-sm text-gray-500 mb-4">
-          {isEdit ? 'Editing: ' : 'Adding to: '}
-          <span className="font-semibold text-gray-700">{isEdit ? existingOutlet.name : dealership.name}</span>
-        </p>
+        <p className="text-sm text-gray-500 mb-4">Adding to: <span className="font-semibold text-gray-700">{dealership.name}</span></p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Outlet Name *</label>
@@ -744,11 +725,10 @@ const AddLocationModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
               placeholder="e.g. Main Showroom" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Outlet Code *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Outlet Code</label>
             <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g. MH-001" />
-            <p className="text-xs text-gray-400 mt-0.5">Used to match rows in data uploads</p>
+              placeholder="e.g. MH-001 (used to match rows in uploads)" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
@@ -757,7 +737,7 @@ const AddLocationModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
               placeholder="e.g. Pune" />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Modules *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Modules (what this outlet handles)</label>
             <div className="flex gap-3">
               {ALL_MODULES.map(mod => (
                 <label key={mod} className="flex items-center gap-1.5 cursor-pointer select-none">
@@ -773,9 +753,7 @@ const AddLocationModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
           </div>
           {parentOutlets.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Parent Outlet <span className="text-gray-400 font-normal">(optional — for sub-outlets)</span>
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Parent Outlet <span className="text-gray-400 font-normal">(optional — for sub-outlets)</span></label>
               <select value={form.parentId} onChange={e => setForm(f => ({ ...f, parentId: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">— No parent (top-level outlet) —</option>
@@ -785,16 +763,9 @@ const AddLocationModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
               </select>
             </div>
           )}
-          {isEdit && (
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input type="checkbox" checked={form.isActive} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))}
-                className="rounded" />
-              <span className="text-sm text-gray-700">Active</span>
-            </label>
-          )}
           <button type="submit" disabled={saving}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors disabled:opacity-50">
-            {saving ? (isEdit ? 'Saving…' : 'Adding…') : (isEdit ? 'Save Changes' : 'Add Outlet')}
+            {saving ? 'Adding…' : 'Add Outlet'}
           </button>
         </form>
       </div>
@@ -1016,7 +987,7 @@ const DealershipSettingsTab = ({ dealership }) => {
 
 // ─── Dealership Card ──────────────────────────────────────────────────────────
 
-const DealershipCard = ({ d, number, onEdit, onAddLocation, onEditOutlet, onAddUser, onEditUser, usersRefreshKey }) => {
+const DealershipCard = ({ d, number, onEdit, onAddLocation, onAddUser, onEditUser, usersRefreshKey }) => {
   const [expanded, setExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState('locations');
   const [users, setUsers] = useState(null);
@@ -1156,16 +1127,11 @@ const DealershipCard = ({ d, number, onEdit, onAddLocation, onEditOutlet, onAddU
                   <div className="space-y-2">
                     {d.locations?.map(loc => (
                       <div key={loc.id} className="bg-gray-50 rounded-lg px-3 py-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-gray-400">🏪</span>
-                            <span className="text-sm font-medium text-gray-700 truncate">{loc.name}</span>
-                            {loc.code && <span className="text-xs bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded font-mono flex-shrink-0">{loc.code}</span>}
-                            {!loc.isActive && <span className="text-xs text-red-400 flex-shrink-0">(inactive)</span>}
-                          </div>
-                          <button onClick={() => onEditOutlet(d, loc)}
-                            className="text-xs text-gray-400 hover:text-blue-600 flex-shrink-0 p-1 rounded hover:bg-blue-50"
-                            title="Edit outlet">✏️</button>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-400">🏪</span>
+                          <span className="text-sm font-medium text-gray-700">{loc.name}</span>
+                          {loc.code && <span className="text-xs bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded font-mono">{loc.code}</span>}
+                          {!loc.isActive && <span className="text-xs text-red-400">(inactive)</span>}
                         </div>
                         <div className="flex items-center gap-2 mt-1 ml-6">
                           {loc.city && <span className="text-xs text-gray-400">{loc.city}</span>}
@@ -1333,7 +1299,6 @@ const AdminPanel = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [dealershipModal, setDealershipModal] = useState(null);
   const [locationModal, setLocationModal] = useState(null);
-  const [editOutletModal, setEditOutletModal] = useState(null); // { dealership, outlet }
   const [userModal, setUserModal] = useState(null);   // { dealership, user, users }
   const [credentialsModal, setCredentialsModal] = useState(null); // { name, username, password }
   const [searchTerm, setSearchTerm] = useState('');
@@ -1360,7 +1325,6 @@ const AdminPanel = () => {
   const handleDealershipSaved = () => {
     setDealershipModal(null);
     setLocationModal(null);
-    setEditOutletModal(null);
     loadData();
   };
 
@@ -1452,7 +1416,6 @@ const AdminPanel = () => {
                 number={idx + 1}
                 onEdit={setDealershipModal}
                 onAddLocation={setLocationModal}
-                onEditOutlet={(dealership, outlet) => setEditOutletModal({ dealership, outlet })}
                 onAddUser={handleAddUser}
                 onEditUser={handleEditUser}
                 usersRefreshKey={usersRefreshKeys[d.id] || 0}
@@ -1479,15 +1442,6 @@ const AdminPanel = () => {
         <AddLocationModal
           dealership={locationModal}
           onClose={() => setLocationModal(null)}
-          onSaved={handleDealershipSaved}
-        />
-      )}
-
-      {editOutletModal && (
-        <AddLocationModal
-          dealership={editOutletModal.dealership}
-          existingOutlet={editOutletModal.outlet}
-          onClose={() => setEditOutletModal(null)}
           onSaved={handleDealershipSaved}
         />
       )}
