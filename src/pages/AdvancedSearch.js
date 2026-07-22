@@ -210,6 +210,11 @@ const AdvancedSearch = () => {
 
   const telecallers = users.filter(u => u.role === 'telecaller');
 
+  const hasModule = (loc, mod) => !Array.isArray(loc.modules) || loc.modules.length === 0 || loc.modules.includes(mod);
+  const salesOutlets     = locations.filter(l => hasModule(l, 'sales'));
+  const insuranceOutlets = locations.filter(l => hasModule(l, 'insurance'));
+  const serviceOutlets   = locations.filter(l => hasModule(l, 'service'));
+
   const handleSearch = async (pageOverride = 1) => {
     const currentPage = pageOverride;
     setPage(currentPage);
@@ -333,14 +338,6 @@ const AdvancedSearch = () => {
                   {telecallers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </select>
               </FField>
-              {locations.length > 1 && (
-                <FField label="Location">
-                  <select value={f.locationId || ''} onChange={e => set('locationId', e.target.value)} className={sel}>
-                    <option value="">All Locations</option>
-                    {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                  </select>
-                </FField>
-              )}
               <FField label="Renewal Category">
                 <select value={f.renewalCategory || ''} onChange={e => set('renewalCategory', e.target.value)} className={sel}>
                   <option value="">All Categories</option>
@@ -386,7 +383,14 @@ const AdvancedSearch = () => {
                     <option value="Rollover">Rollover</option>
                   </select>
                 </FField>
-                <div /> {/* spacer */}
+                {insuranceOutlets.length > 1 && (
+                  <FField label="Insurance Outlet">
+                    <select value={f.locationId || ''} onChange={e => set('locationId', e.target.value)} className={sel}>
+                      <option value="">All Outlets</option>
+                      {insuranceOutlets.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                    </select>
+                  </FField>
+                )}
                 <FField label="Policy Expiry From">
                   <input type="date" value={f.expiryFrom || ''} onChange={e => set('expiryFrom', e.target.value)} className={inp} />
                 </FField>
@@ -405,6 +409,14 @@ const AdvancedSearch = () => {
                   <input type="text" value={f.serviceType || ''} onChange={e => set('serviceType', e.target.value)}
                     placeholder="e.g. Free Service, Paid..." className={inp} />
                 </FField>
+                {serviceOutlets.length > 1 && (
+                  <FField label="Service Outlet">
+                    <select value={f.locationId || ''} onChange={e => set('locationId', e.target.value)} className={sel}>
+                      <option value="">All Outlets</option>
+                      {serviceOutlets.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                    </select>
+                  </FField>
+                )}
                 <FField label="Due Date From">
                   <input type="date" value={f.dueDateFrom || ''} onChange={e => set('dueDateFrom', e.target.value)} className={inp} />
                 </FField>
@@ -418,6 +430,14 @@ const AdvancedSearch = () => {
           {/* Vehicle */}
           <FilterSection title="Vehicle" icon="🚗">
             <FRow>
+              {salesOutlets.length > 1 && (
+                <FField label="Sold by Outlet">
+                  <select value={f.soldByLocationId || ''} onChange={e => set('soldByLocationId', e.target.value)} className={sel}>
+                    <option value="">All Outlets</option>
+                    {salesOutlets.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                  </select>
+                </FField>
+              )}
               <FField label="Make">
                 {(user?.allowedMakes?.length > 0)
                   ? <select value={f.make || ''} onChange={e => set('make', e.target.value)} className={sel}>
