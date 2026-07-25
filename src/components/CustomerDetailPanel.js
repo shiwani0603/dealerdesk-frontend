@@ -535,7 +535,9 @@ useEffect(() => {
                       <div className="col-span-2 mt-1 bg-blue-50 rounded-lg p-2">
                         <p className="text-xs text-blue-600 font-medium">✓ Sold by this dealership</p>
                         {customer.soldByLocation?.name && (
-                          <p className="text-xs text-blue-500 mt-0.5">Outlet: {customer.soldByLocation.name}</p>
+                          <p className="text-xs text-blue-500 mt-0.5">
+                            Outlet: {customer.soldByLocation.name}{customer.soldByLocation.code ? ` (${customer.soldByLocation.code})` : ''}
+                          </p>
                         )}
                       </div>
                     )}
@@ -555,7 +557,7 @@ useEffect(() => {
                     <Field label="Category" value={openInsurancePlan.policyCategory} />
                     <Field label="Next Follow-up" value={formatDate(openInsurancePlan?.nextFollowupDate)} />
                     {openInsurancePlan.location?.name && (
-                      <Field label="Outlet" value={openInsurancePlan.location.name} />
+                      <Field label="Outlet" value={`${openInsurancePlan.location.name}${openInsurancePlan.location.code ? ` (${openInsurancePlan.location.code})` : ''}`} />
                     )}
                     <div className="flex items-end gap-2">
                       <Field label="Auto-close Date" value={formatDate(openInsurancePlan?.autoCloseDate)} />
@@ -683,7 +685,7 @@ useEffect(() => {
                     <Field label="Due Date" value={formatDate(openServicePlan?.calculatedNextDueDate)} highlight />
                     <Field label="Next Follow-up" value={formatDate(openServicePlan?.nextFollowupDate)} />
                     {openServicePlan.location?.name && (
-                      <Field label="Outlet" value={openServicePlan.location.name} />
+                      <Field label="Outlet" value={`${openServicePlan.location.name}${openServicePlan.location.code ? ` (${openServicePlan.location.code})` : ''}`} />
                     )}
                     <div className="flex items-end gap-2">
                       <Field label="Auto-close" value={formatDate(openServicePlan?.autoCloseDate)} />

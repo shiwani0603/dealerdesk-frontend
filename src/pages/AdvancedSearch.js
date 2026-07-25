@@ -383,11 +383,11 @@ const AdvancedSearch = () => {
                     <option value="Rollover">Rollover</option>
                   </select>
                 </FField>
-                {insuranceOutlets.length > 1 && (
+                {insuranceOutlets.length > 0 && (
                   <FField label="Insurance Outlet">
                     <select value={f.locationId || ''} onChange={e => set('locationId', e.target.value)} className={sel}>
                       <option value="">All Outlets</option>
-                      {insuranceOutlets.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                      {insuranceOutlets.map(l => <option key={l.id} value={l.id}>{l.name}{l.code ? ` (${l.code})` : ''}</option>)}
                     </select>
                   </FField>
                 )}
@@ -409,11 +409,11 @@ const AdvancedSearch = () => {
                   <input type="text" value={f.serviceType || ''} onChange={e => set('serviceType', e.target.value)}
                     placeholder="e.g. Free Service, Paid..." className={inp} />
                 </FField>
-                {serviceOutlets.length > 1 && (
+                {serviceOutlets.length > 0 && (
                   <FField label="Service Outlet">
                     <select value={f.locationId || ''} onChange={e => set('locationId', e.target.value)} className={sel}>
                       <option value="">All Outlets</option>
-                      {serviceOutlets.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                      {serviceOutlets.map(l => <option key={l.id} value={l.id}>{l.name}{l.code ? ` (${l.code})` : ''}</option>)}
                     </select>
                   </FField>
                 )}
@@ -430,11 +430,11 @@ const AdvancedSearch = () => {
           {/* Vehicle */}
           <FilterSection title="Vehicle" icon="🚗">
             <FRow>
-              {salesOutlets.length > 1 && (
+              {locations.length > 0 && (
                 <FField label="Sold by Outlet">
                   <select value={f.soldByLocationId || ''} onChange={e => set('soldByLocationId', e.target.value)} className={sel}>
                     <option value="">All Outlets</option>
-                    {salesOutlets.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                    {locations.map(l => <option key={l.id} value={l.id}>{l.name}{l.code ? ` (${l.code})` : ''}</option>)}
                   </select>
                 </FField>
               )}
