@@ -352,7 +352,7 @@ const UploadPage = () => {
     setMake(allowedMakes.length === 1 ? allowedMakes[0] : '');
   };
 
-  const systemFields = SYSTEM_FIELDS[module] || [];
+  const systemFields = (SYSTEM_FIELDS[module] || []).filter(f => !(f === 'make' && make));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -505,51 +505,94 @@ const UploadPage = () => {
               <span className="text-xs text-red-500 font-medium whitespace-nowrap flex-shrink-0">* = required field</span>
             </div>
 
+            {(() => {
+              const mappedFields = Object.values(mapping);
+              const unmetRequired = (REQUIRED_FIELDS[module] || []).filter(f => !mappedFields.includes(f));
+              if (unmetRequired.length === 0) return null;
+              return (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 flex items-start gap-2">
+                  <span className="text-amber-500 mt-0.5">⚠️</span>
+                  <div>
+                    <p className="text-sm font-semibold text-amber-700">Required fields not yet mapped:</p>
+                    <p className="text-xs text-amber-600 mt-0.5">{unmetRequired.join(', ')}</p>
+                  </div>
+                </div>
+              );
+            })()}
             <div className="border border-gray-200 rounded-xl overflow-hidden mb-4">
               <div className="grid grid-cols-2 gap-4 px-4 py-2 bg-gray-50 border-b text-xs font-semibold text-gray-500 uppercase">
                 <div>Excel Column</div>
                 <div>System Field</div>
               </div>
               <div className="max-h-96 overflow-y-auto">
-                {(allowCustomUploadFormat ? headers : headers.filter(h => mapping[h])).map(header => (
-                  <div key={header} className="grid grid-cols-2 gap-4 px-4 py-2 border-b border-gray-100 items-center">
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{header}</p>
-                      {sampleRows[0] && sampleRows[0][headers.indexOf(header)] !== undefined && (
-                        <p className="text-xs text-gray-400 truncate">e.g. {String(sampleRows[0][headers.indexOf(header)]).substring(0, 30)}</p>
+                {(allowCustomUploadFormat ? headers : headers.filter(h => mapping[h])).map(header => {
+                  const isRequired = (REQUIRED_FIELDS[module] || []).includes(mapping[header] || '');
+                  const unmappedRequired = allowCustomUploadFormat && (REQUIRED_FIELDS[module] || []).includes(mapping[header] || '') && !mapping[header];
+                  return (
+                    <div key={header} className="grid grid-cols-2 gap-4 px-4 py-2 border-b border-gray-100 items-center">
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">{header}</p>
+                        {sampleRows[0] && sampleRows[0][headers.indexOf(header)] !== undefined && (
+                          <p className="text-xs text-gray-400 truncate">e.g. {String(sampleRows[0][headers.indexOf(header)]).substring(0, 30)}</p>
+                        )}
+                      </div>
+                      {allowCustomUploadFormat ? (
+                        <select
+                          value={mapping[header] || ''}
+                          onChange={e => {
+                            const newMapping = { ...mapping };
+                            if (e.target.value) newMapping[header] = e.target.value;
+                            else delete newMapping[header];
+                            setMapping(newMapping);
+                          }}
+                          className={`w-full px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none ${
+                            mapping[header]
+                              ? (REQUIRED_FIELDS[module] || []).includes(mapping[header]) ? 'border-green-500 bg-green-50' : 'border-green-400 bg-green-50'
+                              : 'border-gray-300'
+                          }`}
+                        >
+                          <option value="">-- Skip --</option>
+                          {systemFields.map(field => {
+                            const alreadyMapped = Object.values(mapping).includes(field) && mapping[header] !== field;
+                            const isReq = (REQUIRED_FIELDS[module] || []).includes(field);
+                            return (
+                              <option key={field} value={field} disabled={alreadyMapped} style={alreadyMapped ? {color:'#ccc'} : {}}>
+                                {isReq ? '* ' : ''}{field}{alreadyMapped ? ' ✓' : ''}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      ) : (
+                        <span className={`px-3 py-1.5 text-sm rounded-lg font-medium ${
+                          (REQUIRED_FIELDS[module] || []).includes(mapping[header])
+                            ? 'text-blue-700 bg-blue-50 border border-blue-200'
+                            : 'text-green-700 bg-green-50 border border-green-200'
+                        }`}>
+                          {(REQUIRED_FIELDS[module] || []).includes(mapping[header]) ? '* ' : ''}{mapping[header]}
+                        </span>
                       )}
                     </div>
-                    {allowCustomUploadFormat ? (
-                      <select
-                        value={mapping[header] || ''}
-                        onChange={e => {
-                          const newMapping = { ...mapping };
-                          if (e.target.value) newMapping[header] = e.target.value;
-                          else delete newMapping[header];
-                          setMapping(newMapping);
-                        }}
-                        className={`w-full px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none ${
-                          mapping[header] ? 'border-green-400 bg-green-50' : 'border-gray-300'
-                        }`}
-                      >
-                        <option value="">-- Skip --</option>
-                        {systemFields.map(field => {
-                          const alreadyMapped = Object.values(mapping).includes(field) && mapping[header] !== field;
-                          const isRequired = (REQUIRED_FIELDS[module] || []).includes(field);
-                          return (
-                            <option key={field} value={field} disabled={alreadyMapped} style={alreadyMapped ? {color:'#ccc'} : {}}>
-                              {isRequired ? '* ' : ''}{field}{alreadyMapped ? ' ✓' : ''}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    ) : (
-                      <span className="px-3 py-1.5 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg font-medium">
-                        {mapping[header]}
+                  );
+                })}
+                {!allowCustomUploadFormat && (() => {
+                  const missingCols = Object.keys(mapping).filter(col => !headers.includes(col));
+                  if (missingCols.length === 0) return null;
+                  return missingCols.map(col => (
+                    <div key={col} className="grid grid-cols-2 gap-4 px-4 py-2 border-b border-red-100 bg-red-50 items-center">
+                      <div>
+                        <p className="text-sm font-medium text-red-700 line-through">{col}</p>
+                        <p className="text-xs text-red-500">Column not found in uploaded file</p>
+                      </div>
+                      <span className={`px-3 py-1.5 text-sm rounded-lg font-medium ${
+                        (REQUIRED_FIELDS[module] || []).includes(mapping[col])
+                          ? 'text-red-700 bg-red-100 border border-red-300'
+                          : 'text-orange-700 bg-orange-50 border border-orange-200'
+                      }`}>
+                        {(REQUIRED_FIELDS[module] || []).includes(mapping[col]) ? '* ' : ''}{mapping[col]}
                       </span>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
 
@@ -569,7 +612,30 @@ const UploadPage = () => {
                   🌐 Save as Global Template
                 </button>
               ) : allowCustomUploadFormat ? (
-                <button onClick={handleSaveMapping} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200">💾 Save Mapping</button>
+                <>
+                  <button onClick={handleSaveMapping} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200">💾 Save Mapping</button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const res = await api.delete(`/upload/mapping/local?module=${module}&portalName=${encodeURIComponent(portalName)}&make=${make}&dealershipId=${dealershipId}`);
+                        if (res.data.globalMapping) {
+                          setMapping(res.data.globalMapping);
+                          setSavedMappingExists(true);
+                          toast.success('Reset to global template!');
+                        } else {
+                          setMapping({});
+                          setSavedMappingExists(false);
+                          toast('No global template found for this portal/make. Mapping cleared.', { icon: 'ℹ️' });
+                        }
+                      } catch {
+                        toast.error('Failed to reset mapping');
+                      }
+                    }}
+                    className="px-4 py-2 bg-orange-50 text-orange-700 rounded-xl text-sm font-medium hover:bg-orange-100 border border-orange-200"
+                  >
+                    🔄 Reset to Global
+                  </button>
+                </>
               ) : (
                 <span className="px-4 py-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl flex items-center">🔒 Custom mappings locked by admin</span>
               )}
