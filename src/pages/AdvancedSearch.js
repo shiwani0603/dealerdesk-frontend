@@ -430,11 +430,11 @@ const AdvancedSearch = () => {
           {/* Vehicle */}
           <FilterSection title="Vehicle" icon="🚗">
             <FRow>
-              {salesOutlets.length > 0 && (
+              {locations.length > 0 && (
                 <FField label="Sold by Outlet">
                   <select value={f.soldByLocationId || ''} onChange={e => set('soldByLocationId', e.target.value)} className={sel}>
                     <option value="">All Outlets</option>
-                    {salesOutlets.map(l => <option key={l.id} value={l.id}>{l.name}{l.code ? ` (${l.code})` : ''}</option>)}
+                    {locations.map(l => <option key={l.id} value={l.id}>{l.name}{l.code ? ` (${l.code})` : ''}</option>)}
                   </select>
                 </FField>
               )}
