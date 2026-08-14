@@ -758,6 +758,7 @@ useEffect(() => {
                           <td className="px-3 py-2">Job Card No</td>
                           <td className="px-3 py-2 whitespace-nowrap">Job Card Date</td>
                           <td className="px-3 py-2">Service Type</td>
+                          <td className="px-3 py-2">Services / Demands</td>
                           <td className="px-3 py-2">Service Location</td>
                         </tr>
                       </thead>
@@ -768,6 +769,13 @@ useEffect(() => {
                             <td className="px-3 py-2 font-mono text-gray-700">{rec.jobCardNumber || '—'}</td>
                             <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{formatDate(rec.serviceDate)}</td>
                             <td className="px-3 py-2 text-gray-800">{rec.serviceType || '—'}</td>
+                            <td className="px-3 py-2 text-gray-600">
+                              {rec.demands?.length > 0
+                                ? <div className="flex flex-wrap gap-1">{rec.demands.map((d, j) => (
+                                    <span key={j} className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full border border-blue-100">{d}</span>
+                                  ))}</div>
+                                : '—'}
+                            </td>
                             <td className="px-3 py-2 text-gray-600">{rec.location?.name || '—'}</td>
                           </tr>
                         ))}
