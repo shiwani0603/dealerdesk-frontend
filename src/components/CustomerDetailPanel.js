@@ -61,6 +61,11 @@ const InputField = ({ label, value, onChange, type = 'text', options }) => (
 const CustomerDetailPanel = ({ customerId, planId, planType, onClose, onLogCall }) => {
   const { user } = useAuth();
   const canEdit = ['manager', 'team_leader', 'telecaller'].includes(user?.role);
+  const isSA = user?.role === 'super_admin';
+  const modEnabled = user?.modulesEnabled || {};
+  const mr = user?.moduleRights;
+  const canInsurance = isSA || (modEnabled.insurance && (!mr || mr === 'insurance' || mr === 'both'));
+  const canService   = isSA || (modEnabled.service   && (!mr || mr === 'service'   || mr === 'both'));
 
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -353,7 +358,7 @@ useEffect(() => {
 
         {/* Tabs */}
         <div className="flex border-b flex-shrink-0 bg-white">
-          {['customer', 'vehicle', 'insurance', 'service', 'history'].map(tab => (
+          {['customer', 'vehicle', canInsurance && 'insurance', canService && 'service', 'history'].filter(Boolean).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}

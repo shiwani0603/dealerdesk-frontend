@@ -172,11 +172,14 @@ const BulkAssignModal = ({ count, module, users, onConfirm, onClose, progressing
 // ─────────────────────────────────────────────────────────────────────────────
 const AdvancedSearch = () => {
   const { user } = useAuth();
-  const showInsurance = !user?.moduleRights || user?.moduleRights === 'insurance' || user?.moduleRights === 'both';
-  const showService   = !user?.moduleRights || user?.moduleRights === 'service'   || user?.moduleRights === 'both';
+  const isSA = user?.role === 'super_admin';
+  const modEnabled = user?.modulesEnabled || {};
+  const mr = user?.moduleRights;
+  const showInsurance = isSA || (modEnabled.insurance && (!mr || mr === 'insurance' || mr === 'both'));
+  const showService   = isSA || (modEnabled.service   && (!mr || mr === 'service'   || mr === 'both'));
 
   const [activeModule, setActiveModule] = useState(
-    user?.moduleRights === 'service' ? 'service' : 'insurance'
+    (!showInsurance || mr === 'service') ? 'service' : 'insurance'
   );
   const [filters, setFilters] = useState({});
   const [users, setUsers] = useState([]);

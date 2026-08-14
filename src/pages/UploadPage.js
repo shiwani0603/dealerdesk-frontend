@@ -198,11 +198,17 @@ const GeneratePlansCard = () => {
 
 const UploadPage = () => {
   const { user } = useAuth();
+  const isSA = user?.role === 'super_admin';
+  const modEnabled = user?.modulesEnabled || {};
+  const mr = user?.moduleRights;
+  const canInsurance = isSA || (modEnabled.insurance && (!mr || mr === 'insurance' || mr === 'both'));
+  const canService   = isSA || (modEnabled.service   && (!mr || mr === 'service'   || mr === 'both'));
+
   const [showSearch, setShowSearch] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const fileInputRef = useRef(null);
 
-  const [module, setModule] = useState('insurance');
+  const [module, setModule] = useState(canInsurance ? 'insurance' : 'service');
   const [portalName, setPortalName] = useState('');
   const [make, setMake] = useState('');
   const [defaultOutletId, setDefaultOutletId] = useState('');
@@ -384,7 +390,7 @@ const UploadPage = () => {
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">Module *</label>
               <div className="flex gap-3">
-                {['insurance', 'service', 'sales'].map(m => (
+                {['insurance', 'service', 'sales'].filter(m => m === 'sales' || (m === 'insurance' ? canInsurance : canService)).map(m => (
                   <button key={m} onClick={() => setModule(m)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
                       module === m ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
