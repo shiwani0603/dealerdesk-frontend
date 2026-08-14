@@ -167,7 +167,11 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
     locationId: existingUser?.locationId || (dealership.locations?.[0]?.id || ''),
     managedLocationIds: existingUser?.managedLocationIds || [],
     teamLeaderId: existingUser?.teamLeaderId || '',
-    moduleRights: existingUser?.moduleRights || 'both',
+    moduleRights: existingUser?.moduleRights || (
+      (dealership.modulesEnabled?.insurance && dealership.modulesEnabled?.service) ? 'both'
+      : dealership.modulesEnabled?.service ? 'service'
+      : 'insurance'
+    ),
     uploadRights: existingUser?.uploadRights || false,
     allowedMakes: existingUser?.allowedMakes || [],
   }));
@@ -416,7 +420,13 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Module Access</label>
               <div className="flex gap-2">
-                {Object.entries(MODULE_LABELS).map(([val, lbl]) => (
+                {Object.entries(MODULE_LABELS).filter(([val]) => {
+                  const me = dealership.modulesEnabled || {};
+                  if (val === 'insurance') return me.insurance;
+                  if (val === 'service')   return me.service;
+                  if (val === 'both')      return me.insurance && me.service;
+                  return true;
+                }).map(([val, lbl]) => (
                   <button key={val} type="button" onClick={() => set('moduleRights', val)}
                     className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all text-center ${
                       form.moduleRights === val ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
