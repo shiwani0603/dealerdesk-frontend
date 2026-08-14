@@ -214,6 +214,7 @@ const AdvancedSearch = () => {
   const telecallers = users.filter(u => u.role === 'telecaller');
 
   const hasModule = (loc, mod) => !Array.isArray(loc.modules) || loc.modules.length === 0 || loc.modules.includes(mod);
+  // eslint-disable-next-line no-unused-vars
   const salesOutlets     = locations.filter(l => hasModule(l, 'sales'));
   const insuranceOutlets = locations.filter(l => hasModule(l, 'insurance'));
   const serviceOutlets   = locations.filter(l => hasModule(l, 'service'));

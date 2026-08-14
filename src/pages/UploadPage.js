@@ -532,7 +532,9 @@ const UploadPage = () => {
               </div>
               <div className="max-h-96 overflow-y-auto">
                 {(allowCustomUploadFormat ? headers : headers.filter(h => mapping[h])).map(header => {
+                  // eslint-disable-next-line no-unused-vars
                   const isRequired = (REQUIRED_FIELDS[module] || []).includes(mapping[header] || '');
+                  // eslint-disable-next-line no-unused-vars
                   const unmappedRequired = allowCustomUploadFormat && (REQUIRED_FIELDS[module] || []).includes(mapping[header] || '') && !mapping[header];
                   return (
                     <div key={header} className="grid grid-cols-2 gap-4 px-4 py-2 border-b border-gray-100 items-center">
