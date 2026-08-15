@@ -22,7 +22,7 @@ const SYSTEM_FIELDS = {
   insurance: [
     'chassis_number', 'registration_number', 'engine_number', 'customer_name',
     'mobile', 'mobile2', 'mobile3', 'email', 'customer_address',
-    'customer_city', 'customer_state', 'customer_pan', 'customer_dob',
+    'customer_city', 'customer_state', 'customer_pin', 'customer_pan', 'customer_dob',
     'make', 'model', 'sub_model', 'fuel_type', 'vehicle_color',
     'vehicle_purchase_date', 'manufacturing_year',
     'policy_number', 'policy_category', 'policy_type', 'is_fresh_policy',
@@ -35,10 +35,10 @@ const SYSTEM_FIELDS = {
   service: [
     'chassis_number', 'registration_number', 'engine_number', 'customer_name',
     'mobile', 'mobile2', 'mobile3', 'email', 'customer_address',
-    'customer_city', 'customer_state', 'customer_pan', 'customer_dob',
+    'customer_city', 'customer_state', 'customer_pin', 'customer_pan', 'customer_dob',
     'make', 'model', 'sub_model', 'fuel_type', 'vehicle_color',
     'vehicle_purchase_date', 'manufacturing_year',
-    'service_type', 'service_date', 'mileage_at_service', 'job_card_number',
+    'service_type', 'service_date', 'mileage_at_service', 'job_card_number', 'demand',
     'total_invoice_amount', 'labour_amount', 'parts_amount',
     'service_adviser_name', 'service_adviser_mspin',
     'warranty_start_date', 'warranty_end_date', 'campaign_name', 'pickup_type',
