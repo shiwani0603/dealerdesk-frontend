@@ -7,18 +7,25 @@ import toast from 'react-hot-toast';
 
 const FUEL_TYPES = ['petrol', 'diesel', 'cng', 'electric', 'petrol+cng', 'hybrid'];
 
-const SERVICE_CODES = ['DELIVERY', '1FI', '1FS', '2FS', '3FS', '4FS', '5FS', 'PMS'];
+const SERVICE_CODES = [
+  'Delivery',
+  '1st Free Service',
+  '2nd Free Service',
+  '3rd Free Service',
+  '4th Free Service',
+  '5th Free Service',
+  'Paid Service',
+];
 
-// What file values we recognise as each canonical code
+// What uploaded file values are recognised as each canonical name
 const SERVICE_ALIASES = {
-  'DELIVERY': ['delivery', 'deli'],
-  '1FI': ['1fi', '1st free inspection', 'first free inspection', 'ist free inspection'],
-  '1FS': ['1fs', '1st free service', 'first free service', 'ist free service', 'i free service'],
-  '2FS': ['2fs', '2nd free service', 'second free service', 'iind free service'],
-  '3FS': ['3fs', '3rd free service', 'third free service'],
-  '4FS': ['4fs', '4th free service', 'fourth free service'],
-  '5FS': ['5fs', '5th free service', 'fifth free service'],
-  'PMS': ['pms', 'paid service', 'maintenance service', 'paid maintenance service', 'periodic maintenance service', 'periodic maintenance', 'maintainace service', 'maintenace service'],
+  'Delivery':         ['delivery', 'deli'],
+  '1st Free Service': ['1fi', '1fs', 'ifs', '1st free service', 'first free service', 'ist free service', '1st free inspection', 'first free inspection'],
+  '2nd Free Service': ['2fs', 'iifs', '2nd free service', 'second free service', 'iind free service'],
+  '3rd Free Service': ['3fs', '3rd free service', 'third free service', 'iiird free service'],
+  '4th Free Service': ['4fs', '4th free service', 'fourth free service'],
+  '5th Free Service': ['5fs', '5th free service', 'fifth free service'],
+  'Paid Service':     ['pms', 'paid service', 'maintenance service', 'paid maintenance service', 'periodic maintenance service', 'periodic maintenance', 'maintainace service', 'maintenace service'],
 };
 
 const MAKES_LIST = [
@@ -165,27 +172,31 @@ const IntervalFormModal = ({ existing, onClose, onSaved }) => {
             <div>
               <label className={labelCls}>Current Service * <span className="text-gray-400 font-normal">(what was done)</span></label>
               <input
-                list="svc-codes-list"
+                list="svc-codes-current"
                 value={form.currentService}
-                onChange={e => set('currentService', e.target.value.toUpperCase())}
-                placeholder="e.g. 1FS"
+                onChange={e => set('currentService', e.target.value)}
+                onFocus={e => e.target.select()}
+                placeholder="e.g. 1st Free Service"
                 className={inputCls}
               />
+              <datalist id="svc-codes-current">
+                {SERVICE_CODES.map(c => <option key={c} value={c} />)}
+              </datalist>
             </div>
             <div>
               <label className={labelCls}>Next Service * <span className="text-gray-400 font-normal">(what comes next)</span></label>
               <input
-                list="svc-codes-list"
+                list="svc-codes-next"
                 value={form.nextService}
-                onChange={e => set('nextService', e.target.value.toUpperCase())}
-                placeholder="e.g. PMS"
+                onChange={e => set('nextService', e.target.value)}
+                onFocus={e => e.target.select()}
+                placeholder="e.g. Paid Service"
                 className={inputCls}
               />
+              <datalist id="svc-codes-next">
+                {SERVICE_CODES.map(c => <option key={c} value={c} />)}
+              </datalist>
             </div>
-          </div>
-          <datalist id="svc-codes-list">
-            {SERVICE_CODES.map(c => <option key={c} value={c} />)}
-          </datalist>
 
           {/* Period + Mileage */}
           <div className="grid grid-cols-2 gap-4">
@@ -225,8 +236,8 @@ const IntervalFormModal = ({ existing, onClose, onSaved }) => {
           {/* Flags */}
           <div className="grid grid-cols-2 gap-3">
             {[
-              ['dealershipOverrideAllowed', 'Allow Dealership Override', 'Dealership can set their own interval for this make/model'],
-              ['visibleToDealership', 'Visible to Dealership', 'Dealership can see this chain in their settings'],
+              ['dealershipOverrideAllowed', 'Allow Dealership Override', 'ON: dealership can set their own service period for this make (overrides this global rule). OFF: this global rule is enforced for all.'],
+              ['visibleToDealership', 'Visible to Dealership', 'ON: dealership admin can see and use this interval. OFF: hidden — only super admin can see it (used for internal rules).'],
             ].map(([key, label, hint]) => (
               <div key={key} className={`flex items-center justify-between rounded-xl px-4 py-3 border ${form[key] ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
                 <div>
@@ -452,12 +463,12 @@ const ServiceIntervalMaster = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex gap-1">
+                          <div className="flex gap-1 flex-wrap">
                             {iv.dealershipOverrideAllowed && (
-                              <span title="Dealership can override" className="text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded font-medium">Override ✓</span>
+                              <span title="Dealership can set their own period for this make" className="text-xs bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded font-medium">Override allowed</span>
                             )}
                             {!iv.visibleToDealership && (
-                              <span title="Hidden from dealership" className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">Hidden</span>
+                              <span title="Dealership cannot see this interval — super admin only" className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium">Hidden from dealership</span>
                             )}
                           </div>
                         </td>
