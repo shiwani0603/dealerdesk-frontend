@@ -23,7 +23,7 @@ const MAKE_LABELS = {
 
 const emptyForm = () => ({
   make: '',
-  fuelType: 'petrol',
+  fuelType: '',
   model: '',
   subModel: '',
   category: '',
@@ -43,7 +43,7 @@ const IntervalFormModal = ({ existing, onClose, onSaved }) => {
   const isEdit = !!existing;
   const [form, setForm] = useState(isEdit ? {
     make: existing.make || '',
-    fuelType: existing.fuelType || 'petrol',
+    fuelType: existing.fuelType || '',
     model: existing.model || '',
     subModel: existing.subModel || '',
     category: existing.category || '',
@@ -62,7 +62,7 @@ const IntervalFormModal = ({ existing, onClose, onSaved }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.make || !form.fuelType || !form.currentService || !form.nextService || !form.nextServicePeriodDays || !form.daysAddTo) {
+    if (!form.make || !form.currentService || !form.nextService || !form.nextServicePeriodDays || !form.daysAddTo) {
       toast.error('Fill all required fields');
       return;
     }
@@ -126,8 +126,9 @@ const IntervalFormModal = ({ existing, onClose, onSaved }) => {
               </select>
             </div>
             <div>
-              <label className={labelCls}>Fuel Type *</label>
+              <label className={labelCls}>Fuel Type <span className="text-gray-400 font-normal">(blank = all fuels)</span></label>
               <select value={form.fuelType} onChange={e => set('fuelType', e.target.value)} className={inputCls} disabled={isEdit}>
+                <option value="">All Fuel Types</option>
                 {FUEL_TYPES.map(f => <option key={f} value={f}>{f.charAt(0).toUpperCase() + f.slice(1)}</option>)}
               </select>
             </div>
@@ -349,7 +350,7 @@ const ServiceIntervalMaster = () => {
                     🚗 {MAKE_LABELS[make] || make}
                   </span>
                   <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium capitalize">
-                    {fuelType}
+                    {fuelType || 'All Fuels'}
                   </span>
                   <span className="text-xs text-gray-400 ml-auto">{chains.length} step{chains.length !== 1 ? 's' : ''} in chain</span>
                 </div>
