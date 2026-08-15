@@ -714,12 +714,11 @@ useEffect(() => {
                       ) : (
                         <div className="flex items-center gap-2">
                           <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                            openServicePlan.renewalCategory === 'OWN_RENEWAL' ? 'bg-green-100 text-green-700' :
                             openServicePlan.renewalCategory === 'COMPETITOR'  ? 'bg-amber-100 text-amber-700' :
                             openServicePlan.renewalCategory === 'LAPSED'      ? 'bg-red-100 text-red-700' :
                             openServicePlan.renewalCategory === 'NEW'         ? 'bg-blue-100 text-blue-700' :
                             'bg-gray-100 text-gray-500'
-                          }`}>{openServicePlan.renewalCategory?.replace('_', ' ') || 'Not set'}</span>
+                          }`}>{(openServicePlan.renewalCategory === 'OWN_RENEWAL' ? 'NEW' : openServicePlan.renewalCategory?.replace('_', ' ')) || 'Not set'}</span>
                           <button onClick={() => setEditingRenewalCat('service')} className="text-xs text-green-600 hover:underline">Edit</button>
                         </div>
                       )}

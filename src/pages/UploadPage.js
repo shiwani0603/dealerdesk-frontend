@@ -622,7 +622,7 @@ const UploadPage = () => {
               ) : allowCustomUploadFormat ? (
                 <>
                   <button onClick={handleSaveMapping} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200">💾 Save Mapping</button>
-                  {['manager', 'super_manager', 'super_admin'].includes(user?.role) && (
+                  {user?.role === 'super_admin' && (
                     <button
                       onClick={async () => {
                         try {
