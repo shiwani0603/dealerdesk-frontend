@@ -164,19 +164,28 @@ const IntervalFormModal = ({ existing, onClose, onSaved }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Current Service * <span className="text-gray-400 font-normal">(what was done)</span></label>
-              <select value={form.currentService} onChange={e => set('currentService', e.target.value)} className={inputCls}>
-                <option value="">Select...</option>
-                {SERVICE_CODES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <input
+                list="svc-codes-list"
+                value={form.currentService}
+                onChange={e => set('currentService', e.target.value.toUpperCase())}
+                placeholder="e.g. 1FS"
+                className={inputCls}
+              />
             </div>
             <div>
               <label className={labelCls}>Next Service * <span className="text-gray-400 font-normal">(what comes next)</span></label>
-              <select value={form.nextService} onChange={e => set('nextService', e.target.value)} className={inputCls}>
-                <option value="">Select...</option>
-                {SERVICE_CODES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <input
+                list="svc-codes-list"
+                value={form.nextService}
+                onChange={e => set('nextService', e.target.value.toUpperCase())}
+                placeholder="e.g. PMS"
+                className={inputCls}
+              />
             </div>
           </div>
+          <datalist id="svc-codes-list">
+            {SERVICE_CODES.map(c => <option key={c} value={c} />)}
+          </datalist>
 
           {/* Period + Mileage */}
           <div className="grid grid-cols-2 gap-4">
