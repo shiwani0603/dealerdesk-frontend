@@ -693,6 +693,19 @@ const UploadPage = () => {
               </div>
             )}
 
+            {results.planWarnings && results.planWarnings.length > 0 && (
+              <div className="mb-4">
+                <h3 className="font-medium text-amber-700 mb-2">⚠️ Service Plan Skipped (no interval match):</h3>
+                <div className="border border-amber-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                  {results.planWarnings.map((w, i) => (
+                    <div key={i} className="px-4 py-2 border-b border-amber-100 bg-amber-50">
+                      <p className="text-xs font-mono text-amber-800">{w.chassis}: {w.reason}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <button onClick={resetUpload} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors">
               Upload Another File
             </button>
