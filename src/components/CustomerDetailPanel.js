@@ -701,7 +701,7 @@ useEffect(() => {
                       <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Renewal Category</p>
                       {editingRenewalCat === 'service' ? (
                         <div className="flex flex-wrap gap-1">
-                          {['OWN_RENEWAL', 'COMPETITOR', 'LAPSED', 'NEW'].map(cat => (
+                          {['COMPETITOR', 'LAPSED', 'NEW'].map(cat => (
                             <button key={cat} disabled={savingRenewalCat}
                               onClick={() => handleRenewalCategoryUpdate(openServicePlan.id, 'service', cat)}
                               className={`px-2 py-1 rounded text-xs font-medium transition-all ${

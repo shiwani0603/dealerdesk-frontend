@@ -42,7 +42,7 @@ const SearchModal = ({ onClose, onSelectCustomer }) => {
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search by name, mobile, chassis, registration, policy number..."
+            placeholder="Search by name, mobile, chassis, registration, policy number, job card..."
             className="flex-1 text-base outline-none text-gray-800 placeholder-gray-400"
           />
           {loading && <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>}

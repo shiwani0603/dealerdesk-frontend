@@ -622,27 +622,29 @@ const UploadPage = () => {
               ) : allowCustomUploadFormat ? (
                 <>
                   <button onClick={handleSaveMapping} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200">💾 Save Mapping</button>
-                  <button
-                    onClick={async () => {
-                      try {
-                        const res = await api.delete(`/upload/mapping/local?module=${module}&portalName=${encodeURIComponent(portalName)}&make=${make}&dealershipId=${dealershipId}`);
-                        if (res.data.globalMapping) {
-                          setMapping(res.data.globalMapping);
-                          setSavedMappingExists(true);
-                          toast.success('Reset to global template!');
-                        } else {
-                          setMapping({});
-                          setSavedMappingExists(false);
-                          toast('No global template found for this portal/make. Mapping cleared.', { icon: 'ℹ️' });
+                  {['manager', 'super_manager', 'super_admin'].includes(user?.role) && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const res = await api.delete(`/upload/mapping/local?module=${module}&portalName=${encodeURIComponent(portalName)}&make=${make}&dealershipId=${dealershipId}`);
+                          if (res.data.globalMapping) {
+                            setMapping(res.data.globalMapping);
+                            setSavedMappingExists(true);
+                            toast.success('Reset to global template!');
+                          } else {
+                            setMapping({});
+                            setSavedMappingExists(false);
+                            toast('No global template found for this portal/make. Mapping cleared.', { icon: 'ℹ️' });
+                          }
+                        } catch {
+                          toast.error('Failed to reset mapping');
                         }
-                      } catch {
-                        toast.error('Failed to reset mapping');
-                      }
-                    }}
-                    className="px-4 py-2 bg-orange-50 text-orange-700 rounded-xl text-sm font-medium hover:bg-orange-100 border border-orange-200"
-                  >
-                    🔄 Reset to Global
-                  </button>
+                      }}
+                      className="px-4 py-2 bg-orange-50 text-orange-700 rounded-xl text-sm font-medium hover:bg-orange-100 border border-orange-200"
+                    >
+                      🔄 Reset to Global
+                    </button>
+                  )}
                 </>
               ) : (
                 <span className="px-4 py-2 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl flex items-center">🔒 Custom mappings locked by admin</span>
