@@ -157,14 +157,18 @@ useEffect(() => {
   };
 
   const openEditVehicle = () => {
+    const primaryMob = customer.contacts?.find(c => c.contactType === 'mobile' && c.isPrimary)?.value
+      || customer.contacts?.find(c => c.contactType === 'mobile')?.value || '';
     setVehForm({
       registrationNumber: customer.registrationNumber || '',
       engineNumber: customer.engineNumber || '',
+      subModel: customer.subModel || '',
       fuelType: customer.fuelType || '',
       transmissionType: customer.transmissionType || '',
       manufacturingYear: customer.manufacturingYear || '',
       vehiclePurchaseDate: customer.vehiclePurchaseDate ? new Date(customer.vehiclePurchaseDate).toISOString().split('T')[0] : '',
       salesConsultantName: customer.salesConsultantName || '',
+      primaryMobile: primaryMob,
     });
     setEditingVehicle(true);
   };
@@ -503,6 +507,8 @@ useEffect(() => {
                     <div className="grid grid-cols-2 gap-x-3">
                       <InputField label="Registration No" value={vehForm.registrationNumber} onChange={v => setVehForm(f => ({ ...f, registrationNumber: v }))} />
                       <InputField label="Engine Number" value={vehForm.engineNumber} onChange={v => setVehForm(f => ({ ...f, engineNumber: v }))} />
+                      <InputField label="Sub Model" value={vehForm.subModel} onChange={v => setVehForm(f => ({ ...f, subModel: v }))} />
+                      <InputField label="Primary Mobile" type="tel" value={vehForm.primaryMobile} onChange={v => setVehForm(f => ({ ...f, primaryMobile: v }))} />
                       <InputField label="Fuel Type" value={vehForm.fuelType} onChange={v => setVehForm(f => ({ ...f, fuelType: v }))}
                         options={['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid', 'LPG']} />
                       <InputField label="Transmission" value={vehForm.transmissionType} onChange={v => setVehForm(f => ({ ...f, transmissionType: v }))}
@@ -698,7 +704,7 @@ useEffect(() => {
                         className="text-xs text-green-600 hover:underline mb-2 flex-shrink-0">Extend</button>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Renewal Category</p>
+                      <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Customer Type</p>
                       {editingRenewalCat === 'service' ? (
                         <div className="flex flex-wrap gap-1">
                           {['COMPETITOR', 'LAPSED', 'NEW'].map(cat => (
@@ -769,11 +775,23 @@ useEffect(() => {
                             <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{formatDate(rec.serviceDate)}</td>
                             <td className="px-3 py-2 text-gray-800">{rec.serviceType || '—'}</td>
                             <td className="px-3 py-2 text-gray-600">
-                              {rec.demands?.length > 0
-                                ? <div className="flex flex-wrap gap-1">{rec.demands.map((d, j) => (
+                              {rec.demands?.length > 0 ? (
+                                <div className="flex flex-wrap gap-1 items-center">
+                                  {rec.demands.slice(0, 2).map((d, j) => (
                                     <span key={j} className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full border border-blue-100">{d}</span>
-                                  ))}</div>
-                                : '—'}
+                                  ))}
+                                  {rec.demands.length > 2 && (
+                                    <span className="relative group cursor-pointer">
+                                      <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full border border-gray-200">+{rec.demands.length - 2} more</span>
+                                      <div className="absolute z-10 hidden group-hover:block bottom-full left-0 mb-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 min-w-max">
+                                        {rec.demands.slice(2).map((d, j) => (
+                                          <div key={j} className="text-xs text-gray-700 py-0.5">{d}</div>
+                                        ))}
+                                      </div>
+                                    </span>
+                                  )}
+                                </div>
+                              ) : '—'}
                             </td>
                             <td className="px-3 py-2 text-gray-600">{rec.location?.name || '—'}</td>
                           </tr>
