@@ -801,7 +801,7 @@ useEffect(() => {
                       </thead>
                       <tbody>
                         {customer.serviceRecords.map((rec, i) => {
-                          const linkedPlan = customer.servicePlans?.find(p => p.latestRecordId === rec.id);
+                          const linkedPlan = rec.servicePlans?.[0];
                           return (
                           <tr key={i} className={`border-t border-gray-100 ${i % 2 === 1 ? 'bg-gray-50' : 'bg-white'}`}>
                             <td className="px-3 py-2 text-gray-400 font-medium">{i + 1}</td>
