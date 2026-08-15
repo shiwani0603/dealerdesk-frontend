@@ -793,28 +793,33 @@ useEffect(() => {
                           <td className="px-3 py-2">Job Card No</td>
                           <td className="px-3 py-2 whitespace-nowrap">Job Card Date</td>
                           <td className="px-3 py-2">Service Type</td>
+                          <td className="px-3 py-2 whitespace-nowrap">Mileage (km)</td>
                           <td className="px-3 py-2">Services / Demands</td>
-                          <td className="px-3 py-2">Service Location</td>
+                          <td className="px-3 py-2 whitespace-nowrap">Next Due</td>
+                          <td className="px-3 py-2">Location</td>
                         </tr>
                       </thead>
                       <tbody>
-                        {customer.serviceRecords.map((rec, i) => (
+                        {customer.serviceRecords.map((rec, i) => {
+                          const linkedPlan = customer.servicePlans?.find(p => p.latestRecordId === rec.id);
+                          return (
                           <tr key={i} className={`border-t border-gray-100 ${i % 2 === 1 ? 'bg-gray-50' : 'bg-white'}`}>
                             <td className="px-3 py-2 text-gray-400 font-medium">{i + 1}</td>
                             <td className="px-3 py-2 font-mono text-gray-700">{rec.jobCardNumber || '—'}</td>
                             <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{formatDate(rec.serviceDate)}</td>
                             <td className="px-3 py-2 text-gray-800">{rec.serviceType || '—'}</td>
+                            <td className="px-3 py-2 text-gray-600">{rec.mileageAtService ? rec.mileageAtService.toLocaleString() : '—'}</td>
                             <td className="px-3 py-2 text-gray-600">
                               {rec.demands?.length > 0 ? (
                                 <div className="flex flex-wrap gap-1 items-center">
-                                  {rec.demands.slice(0, 2).map((d, j) => (
+                                  {rec.demands.slice(0, 1).map((d, j) => (
                                     <span key={j} className="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full border border-blue-100">{d}</span>
                                   ))}
-                                  {rec.demands.length > 2 && (
+                                  {rec.demands.length > 1 && (
                                     <span className="relative group cursor-pointer">
-                                      <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full border border-gray-200">+{rec.demands.length - 2} more</span>
+                                      <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full border border-gray-200">+{rec.demands.length - 1} more</span>
                                       <div className="absolute z-10 hidden group-hover:block bottom-full left-0 mb-1 bg-white border border-gray-200 rounded-lg shadow-lg p-2 min-w-max">
-                                        {rec.demands.slice(2).map((d, j) => (
+                                        {rec.demands.slice(1).map((d, j) => (
                                           <div key={j} className="text-xs text-gray-700 py-0.5">{d}</div>
                                         ))}
                                       </div>
@@ -823,9 +828,19 @@ useEffect(() => {
                                 </div>
                               ) : '—'}
                             </td>
+                            <td className="px-3 py-2">
+                              {linkedPlan ? (
+                                <div>
+                                  <p className="text-gray-800 font-medium">{linkedPlan.currentServiceDue}</p>
+                                  <p className="text-gray-500 whitespace-nowrap">{formatDate(linkedPlan.calculatedNextDueDate)}</p>
+                                  <p className="text-gray-400 text-xs">{linkedPlan.dueDateSource === 'manual' ? 'Manual' : 'Period'}</p>
+                                </div>
+                              ) : '—'}
+                            </td>
                             <td className="px-3 py-2 text-gray-600">{rec.location?.name || '—'}</td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
