@@ -7,6 +7,20 @@ import toast from 'react-hot-toast';
 
 const FUEL_TYPES = ['petrol', 'diesel', 'cng', 'electric', 'petrol+cng', 'hybrid'];
 
+const SERVICE_CODES = ['DELIVERY', '1FI', '1FS', '2FS', '3FS', '4FS', '5FS', 'PMS'];
+
+// What file values we recognise as each canonical code
+const SERVICE_ALIASES = {
+  'DELIVERY': ['delivery', 'deli'],
+  '1FI': ['1fi', '1st free inspection', 'first free inspection', 'ist free inspection'],
+  '1FS': ['1fs', '1st free service', 'first free service', 'ist free service', 'i free service'],
+  '2FS': ['2fs', '2nd free service', 'second free service', 'iind free service'],
+  '3FS': ['3fs', '3rd free service', 'third free service'],
+  '4FS': ['4fs', '4th free service', 'fourth free service'],
+  '5FS': ['5fs', '5th free service', 'fifth free service'],
+  'PMS': ['pms', 'paid service', 'maintenance service', 'paid maintenance service', 'periodic maintenance service', 'periodic maintenance', 'maintainace service', 'maintenace service'],
+};
+
 const MAKES_LIST = [
   'tata', 'maruti', 'hyundai', 'honda', 'toyota', 'mahindra', 'kia',
   'mg', 'renault', 'nissan', 'volkswagen', 'skoda', 'jeep', 'ford',
@@ -63,7 +77,7 @@ const IntervalFormModal = ({ existing, onClose, onSaved }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.make || !form.currentService || !form.nextService || !form.nextServicePeriodDays || !form.daysAddTo) {
-      toast.error('Fill all required fields');
+      toast.error('Please fill: Make, Current Service, Next Service, Period and Calculate From');
       return;
     }
     setSaving(true);
@@ -120,14 +134,14 @@ const IntervalFormModal = ({ existing, onClose, onSaved }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Make *</label>
-              <select value={form.make} onChange={e => set('make', e.target.value)} className={inputCls} disabled={isEdit}>
+              <select value={form.make} onChange={e => set('make', e.target.value)} className={inputCls}>
                 <option value="">Select make...</option>
                 {MAKES_LIST.map(m => <option key={m} value={m}>{MAKE_LABELS[m] || m}</option>)}
               </select>
             </div>
             <div>
               <label className={labelCls}>Fuel Type <span className="text-gray-400 font-normal">(blank = all fuels)</span></label>
-              <select value={form.fuelType} onChange={e => set('fuelType', e.target.value)} className={inputCls} disabled={isEdit}>
+              <select value={form.fuelType} onChange={e => set('fuelType', e.target.value)} className={inputCls}>
                 <option value="">All Fuel Types</option>
                 {FUEL_TYPES.map(f => <option key={f} value={f}>{f.charAt(0).toUpperCase() + f.slice(1)}</option>)}
               </select>
@@ -138,7 +152,7 @@ const IntervalFormModal = ({ existing, onClose, onSaved }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Model <span className="text-gray-400 font-normal">(blank = all models)</span></label>
-              <input value={form.model} onChange={e => set('model', e.target.value)} placeholder="e.g. Nexon" className={inputCls} disabled={isEdit} />
+              <input value={form.model} onChange={e => set('model', e.target.value)} placeholder="e.g. Nexon" className={inputCls} />
             </div>
             <div>
               <label className={labelCls}>Sub Model <span className="text-gray-400 font-normal">(optional)</span></label>
@@ -150,13 +164,17 @@ const IntervalFormModal = ({ existing, onClose, onSaved }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Current Service * <span className="text-gray-400 font-normal">(what was done)</span></label>
-              <input value={form.currentService} onChange={e => set('currentService', e.target.value.toUpperCase())}
-                placeholder="e.g. 1FI" className={inputCls} disabled={isEdit} />
+              <select value={form.currentService} onChange={e => set('currentService', e.target.value)} className={inputCls}>
+                <option value="">Select...</option>
+                {SERVICE_CODES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
             </div>
             <div>
               <label className={labelCls}>Next Service * <span className="text-gray-400 font-normal">(what comes next)</span></label>
-              <input value={form.nextService} onChange={e => set('nextService', e.target.value.toUpperCase())}
-                placeholder="e.g. 1FS" className={inputCls} />
+              <select value={form.nextService} onChange={e => set('nextService', e.target.value)} className={inputCls}>
+                <option value="">Select...</option>
+                {SERVICE_CODES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
             </div>
           </div>
 
@@ -326,6 +344,30 @@ const ServiceIntervalMaster = () => {
           <span className="ml-auto text-xs text-gray-400">{intervals.length} rule{intervals.length !== 1 ? 's' : ''}</span>
         </div>
 
+        {/* Service type alias legend */}
+        <details className="mb-5 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <summary className="px-5 py-3 text-sm font-semibold text-gray-700 cursor-pointer select-none flex items-center gap-2">
+            <span className="text-blue-600">ℹ️</span> How service type names from uploaded files are recognised
+          </summary>
+          <div className="px-5 pb-4 pt-2">
+            <p className="text-xs text-gray-500 mb-3">
+              When a file uses a long name instead of the code, we auto-map it to the matching interval code.
+              Names are matched case-insensitively.
+            </p>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-1">
+              {Object.entries(SERVICE_ALIASES).map(([code, aliases]) => (
+                <div key={code} className="flex gap-2 text-xs py-1 border-b border-gray-50">
+                  <span className="font-mono font-bold text-blue-700 w-14 flex-shrink-0">{code}</span>
+                  <span className="text-gray-500">{aliases.join(', ')}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-3">
+              If no exact match is found, the system falls back to any active interval for that make (highest period wins).
+            </p>
+          </div>
+        </details>
+
         {/* Content */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
@@ -361,10 +403,11 @@ const ServiceIntervalMaster = () => {
                     <tr>
                       <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Current Service</th>
                       <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Next Service</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Fuel Type</th>
+                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Model</th>
                       <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Period</th>
                       <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Mileage</th>
                       <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Days From</th>
-                      <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Model</th>
                       <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Flags</th>
                       <th className="px-4 py-2.5"></th>
                     </tr>
@@ -382,6 +425,12 @@ const ServiceIntervalMaster = () => {
                             {iv.nextService}
                           </span>
                         </td>
+                        <td className="px-4 py-3">
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-blue-100 text-blue-700 capitalize">
+                            {iv.fuelType || <span className="italic text-gray-400 font-normal">All fuels</span>}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 text-xs">{iv.model || <span className="italic text-gray-300">All models</span>}</td>
                         <td className="px-4 py-3 font-medium text-gray-700">{iv.nextServicePeriodDays} days</td>
                         <td className="px-4 py-3 text-gray-500">{iv.nextMileageKm ? `${iv.nextMileageKm.toLocaleString()} km` : '—'}</td>
                         <td className="px-4 py-3">
@@ -393,7 +442,6 @@ const ServiceIntervalMaster = () => {
                             {iv.daysAddTo === 'purchase_date' ? '📅 Purchase' : '🔧 Last Service'}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-gray-500 text-xs">{iv.model || <span className="italic text-gray-300">All models</span>}</td>
                         <td className="px-4 py-3">
                           <div className="flex gap-1">
                             {iv.dealershipOverrideAllowed && (
