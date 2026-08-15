@@ -695,11 +695,24 @@ const UploadPage = () => {
 
             {results.planWarnings && results.planWarnings.length > 0 && (
               <div className="mb-4">
-                <h3 className="font-medium text-amber-700 mb-2">⚠️ Service Plan Skipped (no interval match):</h3>
+                <h3 className="font-medium text-amber-700 mb-2">⚠️ Service Plan Skipped:</h3>
                 <div className="border border-amber-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
                   {results.planWarnings.map((w, i) => (
                     <div key={i} className="px-4 py-2 border-b border-amber-100 bg-amber-50">
                       <p className="text-xs font-mono text-amber-800">{w.chassis}: {w.reason}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {results.serviceDebug && results.serviceDebug.length > 0 && (
+              <div className="mb-4">
+                <h3 className="font-medium text-blue-700 mb-2">🔍 Service Plan Debug:</h3>
+                <div className="border border-blue-200 rounded-xl overflow-hidden max-h-64 overflow-y-auto">
+                  {results.serviceDebug.map((d, i) => (
+                    <div key={i} className="px-4 py-2 border-b border-blue-100 bg-blue-50">
+                      <p className="text-xs font-mono text-blue-900 whitespace-pre-wrap">{JSON.stringify(d, null, 2)}</p>
                     </div>
                   ))}
                 </div>
