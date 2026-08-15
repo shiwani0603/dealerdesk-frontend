@@ -226,6 +226,7 @@ const IntervalFormModal = ({ existing, onClose, onSaved }) => {
                 )}
               </select>
             </div>
+          </div>
 
           {/* Period + Mileage */}
           <div className="grid grid-cols-2 gap-4">
