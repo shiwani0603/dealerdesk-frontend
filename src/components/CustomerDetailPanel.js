@@ -79,6 +79,8 @@ const CustomerDetailPanel = ({ customerId, planId, planType, onClose, onLogCall 
   const [savingNote, setSavingNote] = useState(false);
   const [extendingAutoClose, setExtendingAutoClose] = useState(null); // 'insurance' | 'service'
   const [newAutoCloseDate, setNewAutoCloseDate] = useState('');
+  const [editingServiceDueDate, setEditingServiceDueDate] = useState(false);
+  const [newServiceDueDate, setNewServiceDueDate] = useState('');
   const [editingRenewalCat, setEditingRenewalCat] = useState(null); // 'insurance' | 'service'
   const [savingRenewalCat, setSavingRenewalCat] = useState(false);
 
@@ -157,18 +159,16 @@ useEffect(() => {
   };
 
   const openEditVehicle = () => {
-    const primaryMob = customer.contacts?.find(c => c.contactType === 'mobile' && c.isPrimary)?.value
-      || customer.contacts?.find(c => c.contactType === 'mobile')?.value || '';
     setVehForm({
       registrationNumber: customer.registrationNumber || '',
       engineNumber: customer.engineNumber || '',
+      model: customer.model || '',
       subModel: customer.subModel || '',
       fuelType: customer.fuelType || '',
       transmissionType: customer.transmissionType || '',
       manufacturingYear: customer.manufacturingYear || '',
       vehiclePurchaseDate: customer.vehiclePurchaseDate ? new Date(customer.vehiclePurchaseDate).toISOString().split('T')[0] : '',
       salesConsultantName: customer.salesConsultantName || '',
-      primaryMobile: primaryMob,
     });
     setEditingVehicle(true);
   };
@@ -217,6 +217,19 @@ useEffect(() => {
       loadCustomer();
     } catch (err) {
       toast.error('Failed to extend auto-close date');
+    }
+  };
+
+  const handleUpdateServiceDueDate = async (planId) => {
+    if (!newServiceDueDate || !planId) return;
+    try {
+      await serviceService.updateDueDate(planId, newServiceDueDate);
+      toast.success('Service due date updated');
+      setEditingServiceDueDate(false);
+      setNewServiceDueDate('');
+      loadCustomer();
+    } catch (err) {
+      toast.error('Failed to update due date');
     }
   };
 
@@ -507,8 +520,8 @@ useEffect(() => {
                     <div className="grid grid-cols-2 gap-x-3">
                       <InputField label="Registration No" value={vehForm.registrationNumber} onChange={v => setVehForm(f => ({ ...f, registrationNumber: v }))} />
                       <InputField label="Engine Number" value={vehForm.engineNumber} onChange={v => setVehForm(f => ({ ...f, engineNumber: v }))} />
+                      <InputField label="Model" value={vehForm.model} onChange={v => setVehForm(f => ({ ...f, model: v }))} />
                       <InputField label="Sub Model" value={vehForm.subModel} onChange={v => setVehForm(f => ({ ...f, subModel: v }))} />
-                      <InputField label="Primary Mobile" type="tel" value={vehForm.primaryMobile} onChange={v => setVehForm(f => ({ ...f, primaryMobile: v }))} />
                       <InputField label="Fuel Type" value={vehForm.fuelType} onChange={v => setVehForm(f => ({ ...f, fuelType: v }))}
                         options={['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid', 'LPG']} />
                       <InputField label="Transmission" value={vehForm.transmissionType} onChange={v => setVehForm(f => ({ ...f, transmissionType: v }))}
@@ -693,7 +706,24 @@ useEffect(() => {
                   <p className="text-xs font-medium text-green-600 mb-2">ACTIVE PLAN</p>
                   <div className="grid grid-cols-2 gap-x-4">
                     <Field label="Service Due" value={openServicePlan?.currentServiceDue} />
-                    <Field label="Due Date" value={formatDate(openServicePlan?.calculatedNextDueDate)} highlight />
+                    <div>
+                      <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-0.5">Due Date</p>
+                      {editingServiceDueDate ? (
+                        <div className="flex gap-1 items-center">
+                          <input type="date" value={newServiceDueDate} onChange={e => setNewServiceDueDate(e.target.value)}
+                            className="text-xs border border-gray-300 rounded px-2 py-1" />
+                          <button onClick={() => handleUpdateServiceDueDate(openServicePlan.id)}
+                            className="text-xs bg-green-600 text-white px-2 py-1 rounded">Save</button>
+                          <button onClick={() => setEditingServiceDueDate(false)} className="text-xs text-gray-400 px-1">✕</button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-blue-700">{formatDate(openServicePlan?.calculatedNextDueDate)}</p>
+                          {canEdit && <button onClick={() => { setEditingServiceDueDate(true); setNewServiceDueDate(''); }}
+                            className="text-xs text-blue-500 hover:underline">Edit</button>}
+                        </div>
+                      )}
+                    </div>
                     <Field label="Next Follow-up" value={formatDate(openServicePlan?.nextFollowupDate)} />
                     {openServicePlan.location?.name && (
                       <Field label="Outlet" value={`${openServicePlan.location.name}${openServicePlan.location.code ? ` (${openServicePlan.location.code})` : ''}`} />

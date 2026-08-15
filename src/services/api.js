@@ -67,6 +67,7 @@ export const serviceService = {
   markReported: (id) => api.put(`/service/${id}/reported`),
   transferPlan: (id, newUserId) => api.put(`/service/${id}/transfer`, { newUserId }),
   extendAutoClose: (id, newAutoCloseDate) => api.put(`/service/${id}/extend-auto-close`, { newAutoCloseDate }),
+  updateDueDate: (id, newDueDate) => api.put(`/service/${id}/update-due-date`, { newDueDate }),
   updateRenewalCategory: (id, renewalCategory) => api.patch(`/service/${id}/renewal-category`, { renewalCategory }),
   getLapsingSoon: (days = 30) => api.get(`/service/lapsing-soon?days=${days}`),
   getPipeline: () => api.get('/service/pipeline'),
