@@ -706,18 +706,6 @@ const UploadPage = () => {
               </div>
             )}
 
-            {results.serviceDebug && results.serviceDebug.length > 0 && (
-              <div className="mb-4">
-                <h3 className="font-medium text-blue-700 mb-2">🔍 Service Plan Debug:</h3>
-                <div className="border border-blue-200 rounded-xl overflow-hidden max-h-64 overflow-y-auto">
-                  {results.serviceDebug.map((d, i) => (
-                    <div key={i} className="px-4 py-2 border-b border-blue-100 bg-blue-50">
-                      <p className="text-xs font-mono text-blue-900 whitespace-pre-wrap">{JSON.stringify(d, null, 2)}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <button onClick={resetUpload} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors">
               Upload Another File
