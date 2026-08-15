@@ -7,6 +7,35 @@ import toast from 'react-hot-toast';
 
 const FUEL_TYPES = ['petrol', 'diesel', 'cng', 'electric', 'petrol+cng', 'hybrid'];
 
+// Translate any stored code or variant → canonical full name for display
+function toFullName(v) {
+  if (!v) return '';
+  const lower = v.toLowerCase().replace(/\s+/g, ' ').trim();
+  const MAP = {
+    'delivery': 'Delivery', 'deli': 'Delivery',
+    '1fi': '1st Free Service', '1fs': '1st Free Service', 'ifs': '1st Free Service',
+    '1st free service': '1st Free Service', 'first free service': '1st Free Service',
+    'ist free service': '1st Free Service', 'i free service': '1st Free Service',
+    '1 free service': '1st Free Service', '1 free inspection': '1st Free Service',
+    '1st free inspection': '1st Free Service', 'first free inspection': '1st Free Service',
+    'ist free inspection': '1st Free Service',
+    '2fs': '2nd Free Service', 'iifs': '2nd Free Service',
+    '2nd free service': '2nd Free Service', 'second free service': '2nd Free Service',
+    '2 free service': '2nd Free Service', 'iind free service': '2nd Free Service',
+    '3fs': '3rd Free Service', '3rd free service': '3rd Free Service', 'third free service': '3rd Free Service',
+    '3 free service': '3rd Free Service', 'iiird free service': '3rd Free Service',
+    '4fs': '4th Free Service', '4th free service': '4th Free Service', 'fourth free service': '4th Free Service',
+    '4 free service': '4th Free Service',
+    '5fs': '5th Free Service', '5th free service': '5th Free Service', 'fifth free service': '5th Free Service',
+    '5 free service': '5th Free Service',
+    'pms': 'Paid Service', 'paid service': 'Paid Service', 'paid maintenance service': 'Paid Service',
+    'maintenance service': 'Paid Service', 'maintenace service': 'Paid Service',
+    'maintainace service': 'Paid Service', 'periodic maintenance': 'Paid Service',
+    'periodic maintenance service': 'Paid Service', 'paid maint': 'Paid Service',
+  };
+  return MAP[lower] || v;
+}
+
 const SERVICE_CODES = [
   'Delivery',
   '1st Free Service',
@@ -68,8 +97,8 @@ const IntervalFormModal = ({ existing, onClose, onSaved }) => {
     model: existing.model || '',
     subModel: existing.subModel || '',
     category: existing.category || '',
-    currentService: existing.currentService || '',
-    nextService: existing.nextService || '',
+    currentService: toFullName(existing.currentService || ''),
+    nextService: toFullName(existing.nextService || ''),
     nextServicePeriodDays: existing.nextServicePeriodDays || '',
     nextMileageKm: existing.nextMileageKm || '',
     daysAddTo: existing.daysAddTo || 'last_service_date',
@@ -171,31 +200,31 @@ const IntervalFormModal = ({ existing, onClose, onSaved }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>Current Service * <span className="text-gray-400 font-normal">(what was done)</span></label>
-              <input
-                list="svc-codes-current"
+              <select
                 value={form.currentService}
                 onChange={e => set('currentService', e.target.value)}
-                onFocus={e => e.target.select()}
-                placeholder="e.g. 1st Free Service"
                 className={inputCls}
-              />
-              <datalist id="svc-codes-current">
-                {SERVICE_CODES.map(c => <option key={c} value={c} />)}
-              </datalist>
+              >
+                <option value="">— Select —</option>
+                {SERVICE_CODES.map(c => <option key={c} value={c}>{c}</option>)}
+                {form.currentService && !SERVICE_CODES.includes(form.currentService) && (
+                  <option value={form.currentService}>{form.currentService} (legacy)</option>
+                )}
+              </select>
             </div>
             <div>
               <label className={labelCls}>Next Service * <span className="text-gray-400 font-normal">(what comes next)</span></label>
-              <input
-                list="svc-codes-next"
+              <select
                 value={form.nextService}
                 onChange={e => set('nextService', e.target.value)}
-                onFocus={e => e.target.select()}
-                placeholder="e.g. Paid Service"
                 className={inputCls}
-              />
-              <datalist id="svc-codes-next">
-                {SERVICE_CODES.map(c => <option key={c} value={c} />)}
-              </datalist>
+              >
+                <option value="">— Select —</option>
+                {SERVICE_CODES.map(c => <option key={c} value={c}>{c}</option>)}
+                {form.nextService && !SERVICE_CODES.includes(form.nextService) && (
+                  <option value={form.nextService}>{form.nextService} (legacy)</option>
+                )}
+              </select>
             </div>
 
           {/* Period + Mileage */}
@@ -437,12 +466,12 @@ const ServiceIntervalMaster = () => {
                       <tr key={iv.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3">
                           <span className="font-mono font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
-                            {iv.currentService}
+                            {toFullName(iv.currentService)}
                           </span>
                         </td>
                         <td className="px-4 py-3">
                           <span className="font-mono font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded">
-                            {iv.nextService}
+                            {toFullName(iv.nextService)}
                           </span>
                         </td>
                         <td className="px-4 py-3">
