@@ -345,7 +345,7 @@ const AdvancedSearch = () => {
               <FField label="Renewal Category">
                 <select value={f.renewalCategory || ''} onChange={e => set('renewalCategory', e.target.value)} className={sel}>
                   <option value="">All Categories</option>
-                  <option value="OWN_RENEWAL">✅ Own Renewal</option>
+                  <option value="OWN_RENEWAL">✅ Own Service</option>
                   <option value="COMPETITOR">🔄 Competitor</option>
                   <option value="LAPSED">⚠️ Lapsed</option>
                   <option value="NEW">🆕 New</option>
