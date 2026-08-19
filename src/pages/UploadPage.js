@@ -349,10 +349,17 @@ const UploadPage = () => {
 
   const resetUpload = () => {
     setFile(null);
+    // Clear the file input DOM value so the same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setStep(1);
     setHeaders([]);
+    setSampleRows([]);
     setMapping({});
+    setSavedMappingExists(false);
+    setTotalRows(0);
     setResults(null);
+    setLoadingPreview(false);
+    setImporting(false);
     setPortalName('');
     setDefaultOutletId('');
     setMake(allowedMakes.length === 1 ? allowedMakes[0] : '');
