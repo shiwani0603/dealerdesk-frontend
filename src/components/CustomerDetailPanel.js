@@ -833,7 +833,7 @@ useEffect(() => {
                                 <div>
                                   <p className="text-gray-800 font-medium">{linkedPlan.currentServiceDue}</p>
                                   <p className="text-gray-500 whitespace-nowrap">{formatDate(linkedPlan.calculatedNextDueDate)}</p>
-                                  <p className="text-gray-400 text-xs">{linkedPlan.dueDateSource === 'manual' ? 'Manual' : 'Period'}</p>
+                                  <p className="text-gray-400 text-xs">{linkedPlan.dueDateSource === 'manual' ? 'Manual' : linkedPlan.dueDateSource === 'mileage_estimated' ? 'Mileage' : 'Period'}</p>
                                 </div>
                               ) : '—'}
                             </td>

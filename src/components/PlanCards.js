@@ -345,6 +345,8 @@ export const ServicePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer }
           ? '⚠️ No interval rule'
           : plan?.dueDateSource === 'manual'
           ? '✏️ Manual'
+          : plan?.dueDateSource === 'mileage_estimated'
+          ? '🛣️ Mileage based'
           : '📅 Time based';
 
         return (
