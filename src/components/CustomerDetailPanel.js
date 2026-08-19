@@ -222,6 +222,12 @@ useEffect(() => {
 
   const handleUpdateServiceDueDate = async (planId) => {
     if (!newServiceDueDate || !planId) return;
+    const maxDate = new Date();
+    maxDate.setMonth(maxDate.getMonth() + 6);
+    if (new Date(newServiceDueDate) > maxDate) {
+      toast.error('Due date cannot be more than 6 months from today');
+      return;
+    }
     try {
       await serviceService.updateDueDate(planId, newServiceDueDate);
       toast.success('Service due date updated');
@@ -711,6 +717,8 @@ useEffect(() => {
                       {editingServiceDueDate ? (
                         <div className="flex gap-1 items-center">
                           <input type="date" value={newServiceDueDate} onChange={e => setNewServiceDueDate(e.target.value)}
+                            min={new Date().toISOString().split('T')[0]}
+                            max={(() => { const d = new Date(); d.setMonth(d.getMonth() + 6); return d.toISOString().split('T')[0]; })()}
                             className="text-xs border border-gray-300 rounded px-2 py-1" />
                           <button onClick={() => handleUpdateServiceDueDate(openServicePlan.id)}
                             className="text-xs bg-green-600 text-white px-2 py-1 rounded">Save</button>
@@ -750,12 +758,12 @@ useEffect(() => {
                       ) : (
                         <div className="flex items-center gap-2">
                           <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                            openServicePlan.renewalCategory === 'OWN_RENEWAL' ? 'bg-green-100 text-green-700' :
+                            (openServicePlan.renewalCategory === 'OWN_RENEWAL' || openServicePlan.renewalCategory === 'NEW') ? 'bg-green-100 text-green-700' :
                             openServicePlan.renewalCategory === 'COMPETITOR'  ? 'bg-amber-100 text-amber-700' :
                             openServicePlan.renewalCategory === 'LAPSED'      ? 'bg-red-100 text-red-700' :
                             'bg-gray-100 text-gray-500'
                           }`}>{
-                            openServicePlan.renewalCategory === 'OWN_RENEWAL' ? 'Own Service' :
+                            (openServicePlan.renewalCategory === 'OWN_RENEWAL' || openServicePlan.renewalCategory === 'NEW') ? 'Own Service' :
                             openServicePlan.renewalCategory === 'COMPETITOR'  ? 'Competitor' :
                             openServicePlan.renewalCategory === 'LAPSED'      ? 'Lapsed' :
                             openServicePlan.renewalCategory || 'Not set'
