@@ -1062,26 +1062,34 @@ const ManagerDashboard = () => {
                 <h2 className="font-bold text-gray-900 mb-4">Portfolio by Category</h2>
                 <div className="grid grid-cols-2 gap-4">
                   {['insurance', 'service'].map(mod => {
-                    const cats = mod === 'insurance' ? ins.renewalCategories : svc.renewalCategories;
-                    if (!cats) return null;
-                    const total = Object.values(cats).reduce((a, b) => a + b, 0) || 1;
+                    const rawCats = mod === 'insurance' ? ins.renewalCategories : svc.renewalCategories;
+                    if (!rawCats) return null;
+                    // Merge NEW into OWN_RENEWAL so it doesn't appear as a separate row
+                    const cats = { ...rawCats, OWN_RENEWAL: (rawCats.OWN_RENEWAL || 0) + (rawCats.NEW || 0) };
+                    const total = (cats.OWN_RENEWAL || 0) + (cats.COMPETITOR || 0) + (cats.LAPSED || 0) || 1;
+                    const ownLabel = mod === 'insurance' ? 'Own Insurance' : 'Own Service';
+                    const rows = [
+                      { key: 'OWN_RENEWAL', label: ownLabel,     color: 'bg-green-100 text-green-700' },
+                      { key: 'COMPETITOR',  label: 'Competitor',  color: 'bg-amber-100 text-amber-700' },
+                      { key: 'LAPSED',      label: 'Lapsed',      color: 'bg-red-100 text-red-700' },
+                    ];
                     return (
                       <div key={mod}>
                         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                           {mod === 'insurance' ? '🛡️ Insurance' : '🔧 Service'}
                         </p>
                         <div className="space-y-2">
-                          {Object.entries(RENEWAL_CAT_META).map(([key, meta]) => {
+                          {rows.map(({ key, label, color }) => {
                             const count = cats[key] || 0;
                             const pct = Math.round((count / total) * 100);
                             return (
                               <div key={key}>
                                 <div className="flex items-center justify-between mb-0.5">
-                                  <span className={`text-xs px-2 py-0.5 rounded font-medium ${meta.color}`}>{meta.label}</span>
+                                  <span className={`text-xs px-2 py-0.5 rounded font-medium ${color}`}>{label}</span>
                                   <span className="text-xs text-gray-500">{count} ({pct}%)</span>
                                 </div>
                                 <div className="w-full bg-gray-100 rounded-full h-1.5">
-                                  <div className={`h-1.5 rounded-full ${meta.color.split(' ')[0].replace('bg-', 'bg-').replace('100', '400')}`} style={{ width: `${pct}%` }} />
+                                  <div className={`h-1.5 rounded-full ${color.split(' ')[0].replace('100', '400')}`} style={{ width: `${pct}%` }} />
                                 </div>
                               </div>
                             );
