@@ -1061,7 +1061,7 @@ const ManagerDashboard = () => {
               <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
                 <h2 className="font-bold text-gray-900 mb-4">Portfolio by Category</h2>
                 <div className="grid grid-cols-2 gap-4">
-                  {['insurance', 'service'].map(mod => {
+                  {['insurance', 'service'].filter(mod => mod === 'insurance' ? showInsurance : showService).map(mod => {
                     const rawCats = mod === 'insurance' ? ins.renewalCategories : svc.renewalCategories;
                     if (!rawCats) return null;
                     // Merge NEW into OWN_RENEWAL so it doesn't appear as a separate row
