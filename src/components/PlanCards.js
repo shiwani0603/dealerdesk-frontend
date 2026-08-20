@@ -38,10 +38,10 @@ const Pagination = ({ total, page, onPage }) => {
 };
 
 const RENEWAL_CATEGORY_META = {
-  OWN_RENEWAL: { label: 'Own', color: 'bg-green-100 text-green-700' },
-  COMPETITOR:  { label: 'Competitor', color: 'bg-amber-100 text-amber-700' },
-  LAPSED:      { label: 'Lapsed', color: 'bg-red-100 text-red-700' },
-  NEW:         { label: 'New', color: 'bg-blue-100 text-blue-700' },
+  OWN_RENEWAL: { label: 'Own Service', color: 'bg-green-100 text-green-700' },
+  COMPETITOR:  { label: 'Competitor',  color: 'bg-amber-100 text-amber-700' },
+  LAPSED:      { label: 'Lapsed',      color: 'bg-red-100 text-red-700' },
+  NEW:         { label: 'Own Service', color: 'bg-green-100 text-green-700' },
 };
 
 const RenewalCategoryBadge = ({ category }) => {

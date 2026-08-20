@@ -362,10 +362,10 @@ const TeamLeaderDashboard = () => {
             <div className="flex gap-2 mb-4 flex-wrap">
               {[
                 { key: 'ALL',         label: 'All' },
-                { key: 'OWN_RENEWAL', label: 'Own',        color: 'bg-green-100 text-green-700 border-green-300' },
-                { key: 'COMPETITOR',  label: 'Competitor', color: 'bg-amber-100 text-amber-700 border-amber-300' },
-                { key: 'LAPSED',      label: 'Lapsed',     color: 'bg-red-100 text-red-700 border-red-300' },
-                { key: 'NEW',         label: 'New',        color: 'bg-blue-100 text-blue-700 border-blue-300' },
+                { key: 'OWN_RENEWAL', label: 'Own Service', color: 'bg-green-100 text-green-700 border-green-300' },
+                { key: 'COMPETITOR',  label: 'Competitor',  color: 'bg-amber-100 text-amber-700 border-amber-300' },
+                { key: 'LAPSED',      label: 'Lapsed',      color: 'bg-red-100 text-red-700 border-red-300' },
+                { key: 'NEW',         label: 'Own Service', color: 'bg-green-100 text-green-700 border-green-300' },
               ].map(({ key, label, color }) => {
                 const count = key === 'ALL' ? (rawPlans?.length || 0) : (rawPlans || []).filter(p => p?.renewalCategory === key).length;
                 return (

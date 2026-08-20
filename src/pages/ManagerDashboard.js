@@ -567,10 +567,10 @@ const ReportsTab = ({ moduleRights }) => {
 
 // ─── LAPSING SOON TAB ────────────────────────────────────────────────────────
 const RENEWAL_CAT_META = {
-  OWN_RENEWAL: { label: 'Own',        color: 'bg-green-100 text-green-700' },
-  COMPETITOR:  { label: 'Competitor', color: 'bg-amber-100 text-amber-700' },
-  LAPSED:      { label: 'Lapsed',     color: 'bg-red-100 text-red-700' },
-  NEW:         { label: 'New',        color: 'bg-blue-100 text-blue-700' },
+  OWN_RENEWAL: { label: 'Own Service', color: 'bg-green-100 text-green-700' },
+  COMPETITOR:  { label: 'Competitor',  color: 'bg-amber-100 text-amber-700' },
+  LAPSED:      { label: 'Lapsed',      color: 'bg-red-100 text-red-700' },
+  NEW:         { label: 'Own Service', color: 'bg-green-100 text-green-700' },
 };
 
 // ─── PIPELINE TAB ────────────────────────────────────────────────────────────
@@ -1059,7 +1059,7 @@ const ManagerDashboard = () => {
             {/* Renewal Category Breakdown */}
             {(ins.renewalCategories || svc.renewalCategories) && (
               <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
-                <h2 className="font-bold text-gray-900 mb-4">Portfolio by Renewal Category</h2>
+                <h2 className="font-bold text-gray-900 mb-4">Portfolio by Category</h2>
                 <div className="grid grid-cols-2 gap-4">
                   {['insurance', 'service'].map(mod => {
                     const cats = mod === 'insurance' ? ins.renewalCategories : svc.renewalCategories;

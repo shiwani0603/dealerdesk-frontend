@@ -80,7 +80,7 @@ const Navbar = ({ onSearchClick }) => {
             <NavBtn label="📤 Upload Setup" active={isActive('/admin/upload-setup')} activeClass="bg-gray-100 text-gray-700" onClick={() => nav('/admin/upload-setup')} />
           </>}
 
-          {!isSuperAdmin && <NavBtn label="📋 Plans"       active={isActive('/dashboard')} onClick={() => nav('/dashboard')} />}
+          {!isSuperAdmin && <NavBtn label="📊 Dashboard"       active={isActive('/dashboard')} onClick={() => nav('/dashboard')} />}
           {isTL          && <NavBtn label="👥 Team"        active={isActive('/team-leader')} onClick={() => nav('/team-leader')} />}
           {canViewTeam   && <NavBtn label="👥 Team"        active={isActive('/manager-dashboard') || isActive('/manager')} activeClass="bg-purple-100 text-purple-700" onClick={() => nav('/manager-dashboard')} />}
           {canManageUsers && <NavBtn label="👤 Users"      active={isActive('/users')} onClick={() => nav('/users')} />}
@@ -186,7 +186,7 @@ const Navbar = ({ onSearchClick }) => {
               <MobileNavItem label="📊 Admin Overview"   active={isActive('/admin/overview')} onClick={() => nav('/admin/overview')} />
               <MobileNavItem label="📤 Upload Setup"     active={isActive('/admin/upload-setup')} onClick={() => nav('/admin/upload-setup')} />
             </>}
-            {!isSuperAdmin && <MobileNavItem label="📋 Plans"      active={isActive('/dashboard')} onClick={() => nav('/dashboard')} />}
+            {!isSuperAdmin && <MobileNavItem label="📊 Dashboard"      active={isActive('/dashboard')} onClick={() => nav('/dashboard')} />}
             {isTL          && <MobileNavItem label="👥 Team"       active={isActive('/team-leader')} onClick={() => nav('/team-leader')} />}
             {canViewTeam   && <MobileNavItem label="👥 Team"       active={isActive('/manager-dashboard')} onClick={() => nav('/manager-dashboard')} />}
             {canManageUsers && <MobileNavItem label="👤 Users"     active={isActive('/users')} onClick={() => nav('/users')} />}
