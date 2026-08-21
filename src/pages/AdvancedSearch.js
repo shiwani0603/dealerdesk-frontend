@@ -409,8 +409,16 @@ const AdvancedSearch = () => {
             <FilterSection title="Service Details" icon="🔧">
               <FRow>
                 <FField label="Service Type">
-                  <input type="text" value={f.serviceType || ''} onChange={e => set('serviceType', e.target.value)}
-                    placeholder="e.g. Free Service, Paid..." className={inp} />
+                  <select value={f.serviceType || ''} onChange={e => set('serviceType', e.target.value)} className={sel}>
+                    <option value="">All Service Types</option>
+                    <option value="Delivery">Delivery</option>
+                    <option value="1st Free Service">1st Free Service</option>
+                    <option value="2nd Free Service">2nd Free Service</option>
+                    <option value="3rd Free Service">3rd Free Service</option>
+                    <option value="4th Free Service">4th Free Service</option>
+                    <option value="5th Free Service">5th Free Service</option>
+                    <option value="Paid Service">Paid Service</option>
+                  </select>
                 </FField>
                 {serviceOutlets.length > 0 && (
                   <FField label="Service Outlet">
