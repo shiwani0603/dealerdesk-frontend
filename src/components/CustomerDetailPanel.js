@@ -731,6 +731,9 @@ useEffect(() => {
                             className="text-xs text-blue-500 hover:underline">Edit</button>}
                         </div>
                       )}
+                      {openServicePlan?.dueDateSource === 'mileage_estimated' && openServicePlan?.estimatedKmPerMonth && (
+                        <p className="text-xs text-gray-400 mt-0.5">🛣️ Avg. {openServicePlan.estimatedKmPerMonth.toLocaleString()} km/month</p>
+                      )}
                     </div>
                     <Field label="Next Follow-up" value={formatDate(openServicePlan?.nextFollowupDate)} />
                     {openServicePlan.location?.name && (
@@ -846,7 +849,7 @@ useEffect(() => {
                                 <div>
                                   <p className="text-gray-800 font-medium">{linkedPlan.currentServiceDue}</p>
                                   <p className="text-gray-500 whitespace-nowrap">{formatDate(linkedPlan.calculatedNextDueDate)}</p>
-                                  <p className="text-gray-400 text-xs">{linkedPlan.dueDateSource === 'manual' ? 'Manual' : linkedPlan.dueDateSource === 'mileage_estimated' ? 'Mileage' : 'Period'}</p>
+                                  <p className="text-gray-400 text-xs">{linkedPlan.dueDateSource === 'manual' ? 'Manual' : linkedPlan.dueDateSource === 'mileage_estimated' ? 'Mileage' : 'Period'}{linkedPlan.dueDateSource === 'mileage_estimated' && linkedPlan.estimatedKmPerMonth ? ` · ${linkedPlan.estimatedKmPerMonth.toLocaleString()} km/mo` : ''}</p>
                                 </div>
                               ) : '—'}
                             </td>
