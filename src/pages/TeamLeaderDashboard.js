@@ -84,9 +84,11 @@ const TransferModal = ({ plan, module, telecallers, onClose, onSuccess }) => {
 
 const TeamLeaderDashboard = () => {
   const { user } = useAuth();
-  const showInsurance = !user?.moduleRights || user?.moduleRights === 'insurance' || user?.moduleRights === 'both';
-  const showService   = !user?.moduleRights || user?.moduleRights === 'service'   || user?.moduleRights === 'both';
-  const showPsf       = !user?.moduleRights || user?.moduleRights === 'both';
+  const modEnabled = user?.modulesEnabled || {};
+  const mr = user?.moduleRights;
+  const showInsurance = (modEnabled.insurance !== false) && (!mr || mr === 'insurance' || mr === 'both');
+  const showService   = (modEnabled.service   !== false) && (!mr || mr === 'service'   || mr === 'both');
+  const showPsf       = (modEnabled.psf       !== false) && (!mr || mr === 'both');
 
   const [teamStats, setTeamStats] = useState(null);
   const [insurancePlans, setInsurancePlans] = useState({ today: [], overdue: [], redAlert: [] });

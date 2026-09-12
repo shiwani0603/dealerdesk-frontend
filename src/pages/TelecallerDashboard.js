@@ -422,9 +422,11 @@ const PsfLogModal = ({ plan, onClose, onSuccess }) => {
 
 const TelecallerDashboard = () => {
   const { user } = useAuth();
-  const showInsurance = !user?.moduleRights || user?.moduleRights === 'insurance' || user?.moduleRights === 'both';
-  const showService   = !user?.moduleRights || user?.moduleRights === 'service'   || user?.moduleRights === 'both';
-  const showPsf       = !user?.moduleRights || user?.moduleRights === 'both';
+  const modEnabled = user?.modulesEnabled || {};
+  const mr = user?.moduleRights;
+  const showInsurance = (modEnabled.insurance !== false) && (!mr || mr === 'insurance' || mr === 'both');
+  const showService   = (modEnabled.service   !== false) && (!mr || mr === 'service'   || mr === 'both');
+  const showPsf       = (modEnabled.psf       !== false) && (!mr || mr === 'both');
 
   const [stats, setStats] = useState(null);
   const [insurancePlans, setInsurancePlans] = useState({ today: [], overdue: [], redAlert: [] });
@@ -435,7 +437,7 @@ const TelecallerDashboard = () => {
   const [lapsingSoonLoading, setLapsingSoonLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('today');
   const [activeModule, setActiveModule] = useState(
-    user?.moduleRights === 'service' ? 'service' : 'insurance'
+    showService && !showInsurance ? 'service' : 'insurance'
   );
   const [catFilter, setCatFilter] = useState('ALL');
   const [selectedPlan, setSelectedPlan] = useState(null);
