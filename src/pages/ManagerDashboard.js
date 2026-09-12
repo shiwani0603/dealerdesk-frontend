@@ -1028,14 +1028,22 @@ const ManagerDashboard = () => {
           <>
             {/* KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <StatCard title="Open Plans" value={(ins.totalOpen || 0) + (svc.totalOpen || 0)}
-                sub={`${ins.totalOpen || 0} ins · ${svc.totalOpen || 0} svc`} color="border-blue-500" icon="📋" />
-              <StatCard title="Overdue" value={(ins.totalOverdue || 0) + (svc.totalOverdue || 0)}
-                sub={`${ins.totalOverdue || 0} ins · ${svc.totalOverdue || 0} svc`} color="border-orange-500" icon="⚠️" />
-              <StatCard title="Won This Month" value={(ins.conversionsThisMonth || 0) + (svc.conversionsThisMonth || 0)}
-                sub={`${ins.conversionsThisMonth || 0} ins · ${svc.conversionsThisMonth || 0} svc`} color="border-green-500" icon="✅" />
-              <StatCard title="Lost Business" value={(ins.lostBusiness || 0) + (svc.lostBusiness || 0)}
-                sub={`${ins.lostBusiness || 0} ins · ${svc.lostBusiness || 0} svc`} color="border-red-500" icon="❌" />
+              <StatCard title="Open Plans"
+                value={(showInsurance ? ins.totalOpen || 0 : 0) + (showService ? svc.totalOpen || 0 : 0)}
+                sub={showInsurance && showService ? `${ins.totalOpen || 0} ins · ${svc.totalOpen || 0} svc` : showInsurance ? 'Insurance' : 'Service'}
+                color="border-blue-500" icon="📋" />
+              <StatCard title="Overdue"
+                value={(showInsurance ? ins.totalOverdue || 0 : 0) + (showService ? svc.totalOverdue || 0 : 0)}
+                sub={showInsurance && showService ? `${ins.totalOverdue || 0} ins · ${svc.totalOverdue || 0} svc` : showInsurance ? 'Insurance' : 'Service'}
+                color="border-orange-500" icon="⚠️" />
+              <StatCard title="Won This Month"
+                value={(showInsurance ? ins.conversionsThisMonth || 0 : 0) + (showService ? svc.conversionsThisMonth || 0 : 0)}
+                sub={showInsurance && showService ? `${ins.conversionsThisMonth || 0} ins · ${svc.conversionsThisMonth || 0} svc` : showInsurance ? 'Insurance' : 'Service'}
+                color="border-green-500" icon="✅" />
+              <StatCard title="Lost Business"
+                value={(showInsurance ? ins.lostBusiness || 0 : 0) + (showService ? svc.lostBusiness || 0 : 0)}
+                sub={showInsurance && showService ? `${ins.lostBusiness || 0} ins · ${svc.lostBusiness || 0} svc` : showInsurance ? 'Insurance' : 'Service'}
+                color="border-red-500" icon="❌" />
             </div>
 
             {/* Customers row */}
