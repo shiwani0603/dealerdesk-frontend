@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import CustomerDetailPanel from '../components/CustomerDetailPanel';
 import QuickLogModal from '../components/QuickLogModal';
-import { InsurancePlanTable, ServicePlanTable, PsfPlanTable } from '../components/PlanCards';
+import { InsurancePlanTable, ServicePlanTable, PsfPlanTable, AppointmentsList } from '../components/PlanCards';
 import toast from 'react-hot-toast';
 
 const StatCard = ({ title, value, sub, color, icon }) => (
@@ -107,8 +107,30 @@ const TeamLeaderDashboard = () => {
   const [transferTarget, setTransferTarget] = useState(null);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showSearch, setShowSearch] = useState(false);
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
 
   const telecallers = (teamStats?.telecallerStats || []).map(s => s.telecaller);
+
+  const loadAppointments = async () => {
+    setAppointmentsLoading(true);
+    try {
+      const [insRes, svcRes] = await Promise.all([
+        showInsurance ? insuranceService.getAppointments().catch(() => ({ data: { appointments: [] } })) : Promise.resolve({ data: { appointments: [] } }),
+        showService   ? serviceService.getAppointments().catch(() => ({ data: { appointments: [] } }))   : Promise.resolve({ data: { appointments: [] } }),
+      ]);
+      const ins = (insRes.data?.appointments || []).map(a => ({ ...a, _module: 'insurance' }));
+      const svc = (svcRes.data?.appointments || []).map(a => ({ ...a, _module: 'service' }));
+      const combined = [...ins, ...svc].sort((a, b) => {
+        const da = new Date(a.appointmentDate) - new Date(b.appointmentDate);
+        if (da !== 0) return da;
+        return (a.appointmentTime || '').localeCompare(b.appointmentTime || '');
+      });
+      setAppointments(combined);
+    } finally {
+      setAppointmentsLoading(false);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -232,6 +254,10 @@ const TeamLeaderDashboard = () => {
               ⭐ PSF ({psfPlans.length})
             </button>
           )}
+          <button onClick={() => { setActiveSection('appointments'); loadAppointments(); }}
+            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeSection === 'appointments' ? 'bg-indigo-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
+            📅 Appointments
+          </button>
         </div>
 
         {/* Team Overview */}
@@ -419,6 +445,16 @@ const TeamLeaderDashboard = () => {
         {/* PSF plans */}
         {activeSection === 'psf' && (
           <PsfPlanTable plans={psfPlans} onQuickLog={(plan) => toast('Use PSF log from your telecaller view')} />
+        )}
+
+        {/* Appointments */}
+        {activeSection === 'appointments' && (
+          <AppointmentsList
+            appointments={appointments}
+            loading={appointmentsLoading}
+            showCre={true}
+            onOpenDetail={(a) => setSelectedCustomer({ customerId: a.customer.id, planId: a.id, planType: a._module, plan: a })}
+          />
         )}
       </div>
 

@@ -4,7 +4,7 @@ import { dashboardService, insuranceService, serviceService, psfService } from '
 import CustomerDetailPanel from '../components/CustomerDetailPanel';
 import QuickLogModal from '../components/QuickLogModal';
 import toast from 'react-hot-toast';
-import { InsurancePlanTable, ServicePlanTable, PsfPlanTable } from '../components/PlanCards';
+import { InsurancePlanTable, ServicePlanTable, PsfPlanTable, AppointmentsList } from '../components/PlanCards';
 import SearchModal from '../components/SearchModal';
 import Navbar from '../components/Navbar';
 
@@ -446,7 +446,8 @@ const TelecallerDashboard = () => {
   const [showSearch, setShowSearch] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
 
   const loadData = async () => {
     try {
@@ -464,6 +465,26 @@ const TelecallerDashboard = () => {
       toast.error('Failed to load dashboard');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadAppointments = async () => {
+    setAppointmentsLoading(true);
+    try {
+      const [insRes, svcRes] = await Promise.all([
+        showInsurance ? insuranceService.getAppointments().catch(() => ({ data: { appointments: [] } })) : Promise.resolve({ data: { appointments: [] } }),
+        showService   ? serviceService.getAppointments().catch(() => ({ data: { appointments: [] } }))   : Promise.resolve({ data: { appointments: [] } }),
+      ]);
+      const ins = (insRes.data?.appointments || []).map(a => ({ ...a, _module: 'insurance' }));
+      const svc = (svcRes.data?.appointments || []).map(a => ({ ...a, _module: 'service' }));
+      const combined = [...ins, ...svc].sort((a, b) => {
+        const da = new Date(a.appointmentDate) - new Date(b.appointmentDate);
+        if (da !== 0) return da;
+        return (a.appointmentTime || '').localeCompare(b.appointmentTime || '');
+      });
+      setAppointments(combined);
+    } finally {
+      setAppointmentsLoading(false);
     }
   };
 
@@ -549,10 +570,14 @@ const TelecallerDashboard = () => {
               ⭐ PSF ({psfPlans.length})
             </button>
           )}
+          <button onClick={() => { setActiveModule('appointments'); loadAppointments(); }}
+            className={`flex-1 py-2.5 text-sm font-medium rounded-lg transition-all ${activeModule === 'appointments' ? 'bg-indigo-600 text-white' : 'text-gray-500 hover:text-gray-700'}`}>
+            📅 Appointments
+          </button>
         </div>
 
         {/* Plan sub-tabs (only for insurance/service) */}
-        {activeModule !== 'psf' && (
+        {activeModule !== 'psf' && activeModule !== 'appointments' && (
           <>
             <div className="flex gap-2 mb-3 flex-wrap">
               {[
@@ -619,7 +644,9 @@ const TelecallerDashboard = () => {
 
         {/* Plans list */}
         <div className="space-y-3">
-          {activeModule === 'psf' ? (
+          {activeModule === 'appointments' ? (
+            <AppointmentsList appointments={appointments} loading={appointmentsLoading} onOpenDetail={(a) => setSelectedCustomer({ customerId: a.customer.id, planId: a.id, planType: a._module, plan: a })} showCre={false} />
+          ) : activeModule === 'psf' ? (
             <PsfPlanTable plans={psfPlans} onQuickLog={handleQuickLog} />
           ) : lapsingSoonLoading && activeTab === 'lapsingSoon' ? (
             <div className="bg-white rounded-xl p-10 text-center shadow-sm">

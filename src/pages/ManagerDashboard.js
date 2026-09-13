@@ -3,6 +3,7 @@ import { dashboardService, insuranceService, serviceService, reportService, user
 import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import CustomerDetailPanel from '../components/CustomerDetailPanel';
+import { AppointmentsList } from '../components/PlanCards';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -894,6 +895,8 @@ const ManagerDashboard = () => {
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
   const [activeTab, setActiveTab] = useState('overview');
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
   const [summary, setSummary] = useState(null);
   const [locationStats, setLocationStats] = useState([]);
   const [performance, setPerformance] = useState([]);
@@ -942,6 +945,32 @@ const ManagerDashboard = () => {
     };
     load();
   }, [fromDate, toDate]);
+
+  const loadAppointments = useCallback(async () => {
+    setAppointmentsLoading(true);
+    try {
+      const [insRes, svcRes] = await Promise.all([
+        showInsurance ? insuranceService.getAppointments() : Promise.resolve({ data: { appointments: [] } }),
+        showService   ? serviceService.getAppointments()   : Promise.resolve({ data: { appointments: [] } }),
+      ]);
+      const ins = (insRes.data.appointments || []).map(a => ({ ...a, _module: 'insurance' }));
+      const svc = (svcRes.data.appointments || []).map(a => ({ ...a, _module: 'service' }));
+      const combined = [...ins, ...svc].sort((a, b) => {
+        const da = a.appointmentDate + (a.appointmentTime || '');
+        const db = b.appointmentDate + (b.appointmentTime || '');
+        return da.localeCompare(db);
+      });
+      setAppointments(combined);
+    } catch {
+      toast.error('Failed to load appointments');
+    } finally {
+      setAppointmentsLoading(false);
+    }
+  }, [showInsurance, showService]);
+
+  useEffect(() => {
+    if (activeTab === 'appointments') loadAppointments();
+  }, [activeTab, loadAppointments]);
 
   const handleSort = (col) => {
     if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -993,12 +1022,13 @@ const ManagerDashboard = () => {
   const customers = summary?.customers || {};
 
   const tabs = [
-    { id: 'overview',     label: '📊 Overview' },
-    { id: 'pipeline',     label: '📦 Pipeline' },
-    { id: 'lapsingSoon',  label: '⏰ Lapsing Soon' },
-    { id: 'unassigned',   label: '📥 Unassigned' },
-    { id: 'psf',          label: '😊 PSF' },
-    { id: 'reports',      label: '📋 Reports' },
+    { id: 'overview',      label: '📊 Overview' },
+    { id: 'pipeline',      label: '📦 Pipeline' },
+    { id: 'lapsingSoon',   label: '⏰ Lapsing Soon' },
+    { id: 'unassigned',    label: '📥 Unassigned' },
+    { id: 'appointments',  label: '📅 Appointments' },
+    { id: 'psf',           label: '😊 PSF' },
+    { id: 'reports',       label: '📋 Reports' },
   ];
 
   return (
@@ -1230,6 +1260,15 @@ const ManagerDashboard = () => {
         {activeTab === 'unassigned' && <UnassignedTab users={users} moduleRights={moduleRights} />}
 
         {/* ── PSF SUMMARY ── */}
+        {activeTab === 'appointments' && (
+          <AppointmentsList
+            appointments={appointments}
+            loading={appointmentsLoading}
+            showCre={true}
+            onOpenDetail={(a) => setSelectedCustomer({ customerId: a.customer.id, planId: a.id, planType: a._module, plan: a })}
+          />
+        )}
+
         {activeTab === 'psf' && <PsfSummaryTab />}
 
         {/* ── REPORTS ── */}

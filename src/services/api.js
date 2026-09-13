@@ -57,6 +57,7 @@ export const insuranceService = {
   updateRenewalCategory: (id, renewalCategory) => api.patch(`/insurance/${id}/renewal-category`, { renewalCategory }),
   getLapsingSoon: (days = 30) => api.get(`/insurance/lapsing-soon?days=${days}`),
   getPipeline: () => api.get('/insurance/pipeline'),
+  getAppointments: () => api.get('/insurance/appointments'),
 };
 
 export const serviceService = {
@@ -71,6 +72,7 @@ export const serviceService = {
   updateRenewalCategory: (id, renewalCategory) => api.patch(`/service/${id}/renewal-category`, { renewalCategory }),
   getLapsingSoon: (days = 30) => api.get(`/service/lapsing-soon?days=${days}`),
   getPipeline: () => api.get('/service/pipeline'),
+  getAppointments: () => api.get('/service/appointments'),
 };
 
 export const customerService = {

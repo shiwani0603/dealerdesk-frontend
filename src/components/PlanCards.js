@@ -308,6 +308,91 @@ export const PsfPlanTable = ({ plans, onQuickLog }) => {
   );
 };
 
+export const AppointmentsList = ({ appointments, loading, onOpenDetail, showCre = true }) => {
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl p-10 text-center shadow-sm">
+        <div className="w-8 h-8 border-3 border-indigo-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-gray-400 text-sm">Loading appointments…</p>
+      </div>
+    );
+  }
+  if (!appointments || appointments.length === 0) {
+    return (
+      <div className="bg-white rounded-xl p-10 text-center shadow-sm">
+        <p className="text-4xl mb-3">📅</p>
+        <p className="text-gray-500 font-medium">No upcoming appointments</p>
+        <p className="text-gray-400 text-sm mt-1">Appointments fixed during follow-up calls will appear here</p>
+      </div>
+    );
+  }
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+  const dayLabel = (d) => {
+    const dt = new Date(d); dt.setHours(0,0,0,0);
+    if (dt.getTime() === today.getTime()) return 'Today';
+    if (dt.getTime() === tomorrow.getTime()) return 'Tomorrow';
+    return dt.toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'short' });
+  };
+
+  // Group by date
+  const groups = [];
+  let lastDate = null;
+  appointments.forEach(a => {
+    const d = new Date(a.appointmentDate).toDateString();
+    if (d !== lastDate) { groups.push({ label: dayLabel(a.appointmentDate), items: [] }); lastDate = d; }
+    groups[groups.length - 1].items.push(a);
+  });
+
+  return (
+    <div className="space-y-4">
+      {groups.map((g, gi) => (
+        <div key={gi} className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="px-4 py-2.5 bg-indigo-50 border-b border-indigo-100">
+            <p className="text-sm font-semibold text-indigo-700">📅 {g.label}</p>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {g.items.map((a, i) => {
+              const mobile = a.customer?.contacts?.[0]?.value;
+              const isPickup = a.appointmentType === 'pickup';
+              return (
+                <div key={i} className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => onOpenDetail && onOpenDetail(a)}>
+                  <div className="flex-shrink-0 w-14 text-center">
+                    <p className="text-lg font-bold text-indigo-700">{a.appointmentTime || '—'}</p>
+                    <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${isPickup ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
+                      {isPickup ? '🚗 Pickup' : '🚶 Walk-in'}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{a.customer?.name || '—'}</p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {[a.customer?.make, a.customer?.model, a.customer?.registrationNumber].filter(Boolean).join(' · ')}
+                    </p>
+                    {mobile && <p className="text-xs text-gray-400">{mobile}</p>}
+                  </div>
+                  <div className="flex-shrink-0 text-right space-y-1">
+                    <span className={`text-xs px-2 py-0.5 rounded font-medium ${a._module === 'insurance' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                      {a._module === 'insurance' ? '🛡️ Insurance' : '🔧 Service'}
+                    </span>
+                    {showCre && a.assignedTo?.name && (
+                      <p className="text-xs text-gray-400">👤 {a.assignedTo.name}</p>
+                    )}
+                    {a.location?.name && (
+                      <p className="text-xs text-gray-400 truncate max-w-[120px]">{a.location.name}</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export const ServicePlanTable = ({ plans, onOpenDetail, onQuickLog, onTransfer }) => {
   const [page, setPage] = useState(1);
   const allPlans = React.useMemo(() => (plans || []).filter(p => p != null), [plans]);
