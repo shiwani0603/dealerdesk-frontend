@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { reportService, userService } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import toast from 'react-hot-toast';
@@ -31,11 +33,15 @@ const Cell = ({ value, highlight, dim, bold }) => (
 );
 
 const DailyCallReport = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const today = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(today);
   const [activeModule, setActiveModule] = useState('insurance');
   const [locations, setLocations] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState('ALL');
+  const [telecallers, setTelecallers] = useState([]);
+  const [selectedTelecaller, setSelectedTelecaller] = useState('ALL');
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -44,19 +50,24 @@ const DailyCallReport = () => {
     userService.listLocations().then(res => {
       setLocations(res.data?.locations || []);
     }).catch(() => {});
-  }, []);
+    userService.list().then(res => {
+      const tcs = (res.data?.users || []).filter(u =>
+        u.role === 'telecaller' && (user?.role !== 'team_leader' || u.teamLeaderId === user.id));
+      setTelecallers(tcs);
+    }).catch(() => {});
+  }, [user]);
 
   const loadReport = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await reportService.getDailyCalls(selectedDate, activeModule, selectedLocation);
+      const res = await reportService.getDailyCalls(selectedDate, activeModule, selectedLocation, selectedTelecaller);
       setRows(res.data?.rows || []);
     } catch (err) {
       toast.error('Failed to load report');
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, activeModule, selectedLocation]);
+  }, [selectedDate, activeModule, selectedLocation, selectedTelecaller]);
 
   useEffect(() => { loadReport(); }, [loadReport]);
 
@@ -77,20 +88,45 @@ const DailyCallReport = () => {
     next30Count: (acc.next30Count || 0) + r.next30Count,
   }), {});
 
+  const exportCSV = () => {
+    if (!rows.length) { toast.error('No data to export'); return; }
+    const headers = ['Telecaller', 'Fresh Due', 'Repeat Due', 'Total Due', 'Done', 'Pending', 'Calls', 'Connected', 'No Answer', 'Appointments', 'Appt %', 'Won', 'Lost+DNC', 'Overdue', 'Next 30d'];
+    const lines = rows.map(r => [
+      r.telecaller.name, r.freshDue, r.followupDue, r.totalDue, r.done, r.pending, r.totalCalls, r.connected,
+      r.notReachable, r.appointmentFixed, `${r.appointmentPct}%`, r.won, r.lost, r.overdueCount, r.next30Count,
+    ].map(v => {
+      const str = v == null ? '' : String(v);
+      return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+    }).join(','));
+    const blob = new Blob([[headers.join(','), ...lines].join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `daily_calls_${activeModule}_${selectedDate}.csv`;
+    a.click();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar onSearchClick={() => setShowSearch(true)} />
 
       <div className="max-w-full mx-auto px-4 py-6">
         {/* Page header */}
+        <button onClick={() => navigate('/reports')} className="text-sm text-blue-600 hover:underline mb-2">
+          ← All Reports
+        </button>
         <div className="flex items-center justify-between mb-5">
           <div>
             <h1 className="text-xl font-bold text-gray-900">Daily Call Report</h1>
             <p className="text-sm text-gray-500">Per-telecaller activity for a given date</p>
           </div>
-          <button onClick={loadReport} className="text-sm bg-white border border-gray-200 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-50 shadow-sm">
-            ↻ Refresh
-          </button>
+          <div className="flex gap-2">
+            <button onClick={exportCSV} className="text-sm bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg shadow-sm">
+              ⬇ CSV
+            </button>
+            <button onClick={loadReport} className="text-sm bg-white border border-gray-200 text-gray-600 px-3 py-2 rounded-lg hover:bg-gray-50 shadow-sm">
+              ↻ Refresh
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -157,6 +193,23 @@ const DailyCallReport = () => {
                 <option value="ALL">All Locations</option>
                 {locations.map(loc => (
                   <option key={loc.id} value={loc.id}>{loc.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Telecaller */}
+          {telecallers.length > 0 && (
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Telecaller</label>
+              <select
+                value={selectedTelecaller}
+                onChange={e => setSelectedTelecaller(e.target.value)}
+                className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-blue-300 bg-white"
+              >
+                <option value="ALL">All Telecallers</option>
+                {telecallers.map(tc => (
+                  <option key={tc.id} value={tc.id}>{tc.name}{tc.isActive ? '' : ' (inactive)'}</option>
                 ))}
               </select>
             </div>

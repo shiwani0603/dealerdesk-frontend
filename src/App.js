@@ -195,6 +195,15 @@ const AppRoutes = () => {
       />
 
       <Route
+        path="/reports/:reportId"
+        element={
+          <ProtectedRoute allowedRoles={['manager', 'team_leader', 'super_admin', 'super_manager']}>
+            <ReportsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/campaigns"
         element={
           <ProtectedRoute allowedRoles={['manager', 'team_leader', 'super_admin', 'super_manager']}>

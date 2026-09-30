@@ -101,11 +101,12 @@ export const searchService = {
 };
 
 export const reportService = {
-  getDailyCalls: (date, module, locationId) => {
+  getDailyCalls: (date, module, locationId, telecallerId) => {
     const params = new URLSearchParams();
     if (date) params.set('date', date);
     if (module) params.set('module', module);
     if (locationId && locationId !== 'ALL') params.set('locationId', locationId);
+    if (telecallerId && telecallerId !== 'ALL') params.set('telecallerId', telecallerId);
     return api.get(`/dashboard/reports/daily-calls?${params}`);
   },
   getLostBusiness: (fromDate, toDate) =>

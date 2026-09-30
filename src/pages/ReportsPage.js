@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { reportService } from '../services/api';
 import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
@@ -482,18 +483,23 @@ const PerformanceReport = () => {
     finally { setLoading(false); }
   };
 
+  const rows = data?.performance || [];
+  const rate = (s) => parseInt(s, 10) || 0;
+
   const exportCSV = () => {
-    if (!data?.telecallers) return;
-    downloadCSV(data.telecallers.map(t => ({
-      Telecaller: t.telecaller?.name, Calls: t.callsMade, Conversions: t.conversions,
-      ConvRate: `${t.conversionRate}%`, Lost: t.lost, NotConnected: t.notConnected,
+    downloadCSV(rows.map(t => ({
+      Telecaller: t.telecaller?.name, Calls: t.totalCalls, Connected: t.connectedCalls,
+      ConnectRate: t.connectRate, Appointments: t.appointments,
+      InsConversions: t.conversions.insurance, SvcConversions: t.conversions.service,
+      TotalConversions: t.conversions.total, ConvRate: t.conversionRate, Lost: t.lost.total,
     })), 'telecaller_performance');
   };
 
   return (
     <div>
       <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} onLoad={load} loading={loading} />
-      {data?.telecallers && (
+      {data && rows.length === 0 && <EmptyState msg="No telecallers found" />}
+      {rows.length > 0 && (
         <div>
           <div className="flex justify-end mb-2">
             <button onClick={exportCSV} className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg">⬇ CSV</button>
@@ -504,20 +510,24 @@ const PerformanceReport = () => {
                 <thead><tr className="bg-gray-100 text-gray-500 text-xs font-semibold uppercase">
                   <td className="px-4 py-2">Telecaller</td>
                   <td className="px-4 py-2 text-right">Calls</td>
-                  <td className="px-4 py-2 text-right">Conversions</td>
+                  <td className="px-4 py-2 text-right">Connected</td>
+                  <td className="px-4 py-2 text-right">Appts</td>
+                  <td className="px-4 py-2 text-right">Ins Conv</td>
+                  <td className="px-4 py-2 text-right">Svc Conv</td>
                   <td className="px-4 py-2 text-right">Conv Rate</td>
                   <td className="px-4 py-2 text-right">Lost</td>
-                  <td className="px-4 py-2 text-right">Not Connected</td>
                 </tr></thead>
                 <tbody>
-                  {data.telecallers.map((t, i) => (
-                    <tr key={i} className={`border-t border-gray-100 ${i % 2 === 1 ? 'bg-gray-50' : ''}`}>
+                  {rows.map((t, i) => (
+                    <tr key={t.telecaller?.id || i} className={`border-t border-gray-100 ${i % 2 === 1 ? 'bg-gray-50' : ''}`}>
                       <td className="px-4 py-2.5 font-semibold text-gray-800">{t.telecaller?.name || '—'}</td>
-                      <td className="px-4 py-2.5 text-right text-gray-700">{t.callsMade}</td>
-                      <td className="px-4 py-2.5 text-right text-green-600 font-bold">{t.conversions}</td>
-                      <td className="px-4 py-2.5 text-right"><span className={`text-xs font-semibold px-2 py-0.5 rounded ${t.conversionRate >= 50 ? 'bg-green-100 text-green-700' : t.conversionRate >= 25 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{t.conversionRate}%</span></td>
-                      <td className="px-4 py-2.5 text-right text-red-500">{t.lost}</td>
-                      <td className="px-4 py-2.5 text-right text-gray-400">{t.notConnected}</td>
+                      <td className="px-4 py-2.5 text-right text-gray-700">{t.totalCalls}</td>
+                      <td className="px-4 py-2.5 text-right text-teal-600">{t.connectedCalls} <span className="text-xs text-gray-400">({t.connectRate})</span></td>
+                      <td className="px-4 py-2.5 text-right text-amber-600">{t.appointments}</td>
+                      <td className="px-4 py-2.5 text-right text-blue-600 font-bold">{t.conversions.insurance}</td>
+                      <td className="px-4 py-2.5 text-right text-green-600 font-bold">{t.conversions.service}</td>
+                      <td className="px-4 py-2.5 text-right"><span className={`text-xs font-semibold px-2 py-0.5 rounded ${rate(t.conversionRate) >= 50 ? 'bg-green-100 text-green-700' : rate(t.conversionRate) >= 25 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{t.conversionRate}</span></td>
+                      <td className="px-4 py-2.5 text-right text-red-500">{t.lost.total}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -601,53 +611,85 @@ const JobCardFraud = () => {
 };
 
 // ── Main Reports Page ─────────────────────────────────────────────────────────
-const TABS = [
-  { id: 'lyvty',       label: '📈 LY vs TY',          component: LyVsTy },
-  { id: 'lost',        label: '❌ Lost Business',       component: LostBusiness },
-  { id: 'retention',   label: '🏠 Own Sale Retention', component: OwnSaleRetention },
-  { id: 'autoclose',   label: '🔒 Auto-Close Summary', component: AutoCloseSummary },
-  { id: 'psf',         label: '⭐ PSF / CEI / NPS',   component: PsfReport },
-  { id: 'performance', label: '👤 Performance',        component: PerformanceReport },
-  { id: 'fraud',       label: '🚨 Fraud Log',          component: JobCardFraud },
+// Main reports (shown first) — daily-calls has its own page at /reports/daily-calls
+const MAIN_REPORTS = [
+  { id: 'daily-calls', icon: '📞', label: 'Daily Call Report',       desc: 'Per-telecaller calls, appointments, won/lost for a day. Filter by date, module, location and telecaller.' },
+  { id: 'retention',   icon: '🏠', label: 'Own Sale Retention',      desc: 'Own-sale customers retained vs lost in a date range, with retention rate.', component: OwnSaleRetention },
+  { id: 'performance', icon: '👤', label: 'Telecaller Performance',  desc: 'Calls, connects, appointments, conversions and lost per telecaller.', component: PerformanceReport },
+  { id: 'lyvty',       icon: '📈', label: 'LY vs TY',                desc: 'This year vs last year — plans, conversions and lost for insurance and service.', component: LyVsTy },
 ];
 
+const OTHER_REPORTS = [
+  { id: 'lost',        icon: '❌', label: 'Lost Business',       desc: 'Plans closed as lost in a date range.', component: LostBusiness },
+  { id: 'autoclose',   icon: '🔒', label: 'Auto-Close Summary', desc: 'Plans auto-closed by the system, by telecaller.', component: AutoCloseSummary },
+  { id: 'psf',         icon: '⭐', label: 'PSF / CEI / NPS',    desc: 'Post-service feedback scores and satisfaction.', component: PsfReport },
+  { id: 'fraud',       icon: '🚨', label: 'Fraud Log',          desc: 'Duplicate job cards across locations.', component: JobCardFraud },
+];
+
+const ALL_REPORTS = [...MAIN_REPORTS, ...OTHER_REPORTS];
+
+const ReportCard = ({ report, onClick }) => (
+  <button onClick={onClick}
+    className="text-left bg-white rounded-xl shadow-sm border border-gray-100 p-4 hover:border-blue-300 hover:shadow-md transition-all flex gap-3 items-start">
+    <span className="text-2xl leading-none">{report.icon}</span>
+    <div className="min-w-0">
+      <p className="font-semibold text-gray-900 text-sm">{report.label}</p>
+      <p className="text-xs text-gray-500 mt-1">{report.desc}</p>
+    </div>
+  </button>
+);
+
 const ReportsPage = () => {
-  const [activeTab, setActiveTab] = useState('lyvty');
+  const { reportId } = useParams();
+  const navigate = useNavigate();
   const [showSearch, setShowSearch] = useState(false);
-  const ActiveComponent = TABS.find(t => t.id === activeTab)?.component || LyVsTy;
+  const active = ALL_REPORTS.find(r => r.id === reportId && r.component);
+  const ActiveComponent = active?.component;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar onSearchClick={() => setShowSearch(true)} />
 
       <div className="max-w-6xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Reports</h1>
-            <p className="text-sm text-gray-500">Analytics and performance insights</p>
-          </div>
-          <button onClick={() => window.print()} className="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white text-sm font-medium rounded-lg">
-            🖨️ Print
-          </button>
-        </div>
+        {!active ? (
+          <>
+            <div className="mb-6">
+              <h1 className="text-xl font-bold text-gray-900">Reports</h1>
+              <p className="text-sm text-gray-500">Select a report to view</p>
+            </div>
 
-        {/* Tab navigation */}
-        <div className="flex gap-1 flex-wrap mb-6 bg-white rounded-xl shadow-sm p-1">
-          {TABS.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                activeTab === tab.id ? 'bg-blue-600 text-white' : 'text-gray-500 hover:bg-gray-100'
-              }`}>
-              {tab.label}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+              {MAIN_REPORTS.map(r => (
+                <ReportCard key={r.id} report={r} onClick={() => navigate(`/reports/${r.id}`)} />
+              ))}
+            </div>
+
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Other Reports</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {OTHER_REPORTS.map(r => (
+                <ReportCard key={r.id} report={r} onClick={() => navigate(`/reports/${r.id}`)} />
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <button onClick={() => navigate('/reports')} className="text-sm text-blue-600 hover:underline mb-2">
+              ← All Reports
             </button>
-          ))}
-        </div>
-
-        {/* Report content */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <h2 className="font-bold text-gray-900 mb-4">{TABS.find(t => t.id === activeTab)?.label}</h2>
-          <ActiveComponent />
-        </div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">{active.icon} {active.label}</h1>
+                <p className="text-sm text-gray-500">{active.desc}</p>
+              </div>
+              <button onClick={() => window.print()} className="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white text-sm font-medium rounded-lg">
+                🖨️ Print
+              </button>
+            </div>
+            <div className="bg-white rounded-2xl shadow-sm p-6">
+              <ActiveComponent />
+            </div>
+          </>
+        )}
       </div>
 
       {showSearch && <SearchModal onClose={() => setShowSearch(false)} onSelectCustomer={() => setShowSearch(false)} />}
