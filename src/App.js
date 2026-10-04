@@ -101,7 +101,7 @@ const AppRoutes = () => {
       <Route
         path="/upload"
         element={
-          <ProtectedRoute allowedRoles={['manager', 'super_manager', 'team_leader', 'super_admin']}>
+          <ProtectedRoute allowedRoles={['manager', 'super_manager', 'team_leader', 'super_admin', 'telecaller', 'service_adviser']}>
             <UploadPage />
           </ProtectedRoute>
         }

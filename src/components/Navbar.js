@@ -36,7 +36,7 @@ const Navbar = ({ onSearchClick }) => {
   const isSuperManager = user?.role === 'super_manager';
   const isManager      = user?.role === 'manager';
   const isTL           = user?.role === 'team_leader';
-  const canUpload      = ['manager', 'super_manager', 'team_leader'].includes(user?.role);
+  const canUpload      = ['manager', 'super_manager', 'team_leader'].includes(user?.role) || !!user?.salesUploadRights;
   const canViewTeam    = isManager || isSuperManager;
   const canManageUsers = isManager || isSuperManager;
 

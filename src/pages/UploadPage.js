@@ -201,14 +201,18 @@ const UploadPage = () => {
   const isSA = user?.role === 'super_admin';
   const modEnabled = user?.modulesEnabled || {};
   const mr = user?.moduleRights;
-  const canInsurance = isSA || (modEnabled.insurance && (!mr || mr === 'insurance' || mr === 'both'));
-  const canService   = isSA || (modEnabled.service   && (!mr || mr === 'service'   || mr === 'both'));
+  const isUploaderRole = ['manager', 'super_manager', 'team_leader'].includes(user?.role);
+  const canInsurance = isSA || (isUploaderRole && modEnabled.insurance && (!mr || mr === 'insurance' || mr === 'both'));
+  const canService   = isSA || (isUploaderRole && modEnabled.service   && (!mr || mr === 'service'   || mr === 'both'));
+  const canSales     = isSA || !!user?.salesUploadRights;
+  const uploadModules = ['insurance', 'service', 'sales'].filter(m =>
+    m === 'insurance' ? canInsurance : m === 'service' ? canService : canSales);
 
   const [showSearch, setShowSearch] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const fileInputRef = useRef(null);
 
-  const [module, setModule] = useState(canInsurance ? 'insurance' : 'service');
+  const [module, setModule] = useState(uploadModules[0] || 'insurance');
   const [portalName, setPortalName] = useState('');
   const [make, setMake] = useState('');
   const [defaultOutletId, setDefaultOutletId] = useState('');
@@ -397,7 +401,12 @@ const UploadPage = () => {
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">Module *</label>
               <div className="flex gap-3">
-                {['insurance', 'service', 'sales'].filter(m => m === 'sales' || (m === 'insurance' ? canInsurance : canService)).map(m => (
+                {uploadModules.length === 0 && (
+                  <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    You don't have upload rights. Contact your manager.
+                  </p>
+                )}
+                {uploadModules.map(m => (
                   <button key={m} onClick={() => setModule(m)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
                       module === m ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'

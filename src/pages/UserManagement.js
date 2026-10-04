@@ -230,6 +230,7 @@ const buildEmptyForm = () => ({
   moduleRights: 'both',
   teamLeaderId: '',
   uploadRights: false,
+  salesUploadRights: false,
   managedLocationIds: [],
   allowedMakes: [],
 });
@@ -246,6 +247,7 @@ const buildEditForm = (u) => ({
   moduleRights: u.moduleRights || 'both',
   teamLeaderId: u.teamLeaderId || '',
   uploadRights: u.uploadRights || false,
+  salesUploadRights: u.salesUploadRights || false,
   managedLocationIds: u.managedLocationIds || [],
   allowedMakes: u.allowedMakes || [],
 });
@@ -254,9 +256,16 @@ const buildEditForm = (u) => ({
 
 const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSuperManager, dealershipMakes, onClose, onSaved }) => {
   const isEdit = !!editUser;
+  const { user: currentUser } = useAuth();
+
+  // Module rights options limited to what the dealership has enabled
+  const modulesEnabled = currentUser?.modulesEnabled || {};
+  const moduleOptions = ['insurance', 'service', 'both'].filter((m) =>
+    m === 'both' ? (modulesEnabled.insurance && modulesEnabled.service) : modulesEnabled[m]);
+  const defaultModule = moduleOptions.includes('both') ? 'both' : (moduleOptions[0] || 'both');
 
   // Lazy initializer runs once on mount — key={panelKey} guarantees fresh mount each open
-  const [form, setForm] = useState(() => isEdit ? buildEditForm(editUser) : buildEmptyForm());
+  const [form, setForm] = useState(() => isEdit ? buildEditForm(editUser) : { ...buildEmptyForm(), moduleRights: defaultModule });
   const [saving, setSaving] = useState(false);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -363,6 +372,7 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
           moduleRights: form.moduleRights,
           teamLeaderId: form.teamLeaderId || null,
           uploadRights: form.uploadRights,
+          salesUploadRights: form.salesUploadRights,
           managedLocationIds: isManagerRole ? (form.managedLocationIds || []) : [],
           allowedMakes: form.allowedMakes || [],
         };
@@ -382,6 +392,7 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
           moduleRights: form.moduleRights,
           teamLeaderId: form.teamLeaderId || null,
           uploadRights: form.uploadRights,
+          salesUploadRights: form.salesUploadRights,
           managedLocationIds: isManagerRole ? (form.managedLocationIds || []) : [],
           allowedMakes: form.allowedMakes || [],
         });
@@ -547,7 +558,7 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Module Rights</label>
               <div className="flex gap-2">
-                {['insurance', 'service', 'both'].map((m) => (
+                {moduleOptions.map((m) => (
                   <button
                     key={m}
                     type="button"
@@ -612,6 +623,23 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
               </button>
             </div>
           )}
+
+          {/* Sales Upload Rights — any role */}
+          <div className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-gray-700">Sales Upload Rights</p>
+              <p className="text-xs text-gray-400 mt-0.5">Allow uploading sales data (vehicles sold — used for calling)</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => set('salesUploadRights', !form.salesUploadRights)}
+              className={`relative w-11 h-6 rounded-full transition-colors ${form.salesUploadRights ? 'bg-blue-600' : 'bg-gray-300'}`}
+            >
+              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                form.salesUploadRights ? 'translate-x-5' : 'translate-x-0.5'
+              }`} />
+            </button>
+          </div>
 
           {/* Make Rights */}
           {dealershipMakes && dealershipMakes.length > 0 && (
@@ -944,6 +972,9 @@ const UserManagement = () => {
                             </span>
                           ) : (
                             <span className="text-gray-300 text-xs">—</span>
+                          )}
+                          {user.salesUploadRights && (
+                            <span className="ml-1 px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-700">🚗 Sales</span>
                           )}
                         </td>
                         <td className="px-4 py-3.5">

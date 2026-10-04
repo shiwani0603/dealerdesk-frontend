@@ -173,6 +173,7 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
       : 'insurance'
     ),
     uploadRights: existingUser?.uploadRights || false,
+    salesUploadRights: existingUser?.salesUploadRights || false,
     allowedMakes: existingUser?.allowedMakes || [],
   }));
   const [saving, setSaving] = useState(false);
@@ -247,6 +248,7 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
         teamLeaderId: needsTeamLeader ? (form.teamLeaderId || null) : null,
         moduleRights: needsModuleRights ? form.moduleRights : null,
         uploadRights: form.uploadRights,
+        salesUploadRights: form.salesUploadRights,
         managedLocationIds: isManagerRole ? (form.managedLocationIds || []) : [],
         allowedMakes: form.allowedMakes || [],
       };
@@ -481,6 +483,18 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
             <button type="button" onClick={() => set('uploadRights', !form.uploadRights)}
               className={`relative w-11 h-6 rounded-full transition-colors ${form.uploadRights ? 'bg-blue-600' : 'bg-gray-300'}`}>
               <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.uploadRights ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+
+          {/* Sales Upload Rights */}
+          <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+            <div>
+              <p className="text-sm font-semibold text-gray-700">Sales Upload Rights</p>
+              <p className="text-xs text-gray-400">Allow uploading sales data (vehicles sold — used for calling)</p>
+            </div>
+            <button type="button" onClick={() => set('salesUploadRights', !form.salesUploadRights)}
+              className={`relative w-11 h-6 rounded-full transition-colors ${form.salesUploadRights ? 'bg-blue-600' : 'bg-gray-300'}`}>
+              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.salesUploadRights ? 'translate-x-5' : 'translate-x-0.5'}`} />
             </button>
           </div>
 
@@ -1303,6 +1317,7 @@ const DealershipCard = ({ d, number, onEdit, onAddLocation, onEditOutlet, onAddU
                             <p className="text-xs text-gray-400">{MODULE_LABELS[user.moduleRights] || user.moduleRights}</p>
                           )}
                           {user.uploadRights && <p className="text-xs text-blue-500">📤 Upload</p>}
+                          {user.salesUploadRights && <p className="text-xs text-blue-500">🚗 Sales Upload</p>}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
