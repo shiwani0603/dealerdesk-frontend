@@ -237,19 +237,22 @@ const UploadPage = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      try {
-        const [mappingRes, locRes] = await Promise.all([
-          api.get(`/upload/mappings?dealershipId=${dealershipId}`),
-          api.get('/users/locations'),
-        ]);
-        const loadedMakes = mappingRes.data.allowedMakes || [];
-        setPortals(mappingRes.data.portals || []);
+      // Load independently — a failure in one must not wipe out the other
+      const [mappingRes, locRes] = await Promise.allSettled([
+        api.get(`/upload/mappings?dealershipId=${dealershipId}`),
+        api.get('/users/locations'),
+      ]);
+      if (mappingRes.status === 'fulfilled') {
+        const loadedMakes = mappingRes.value.data.allowedMakes || [];
+        setPortals(mappingRes.value.data.portals || []);
         setAllowedMakes(loadedMakes);
-        setAllowCustomUploadFormat(mappingRes.data.allowCustomUploadFormat ?? true);
-        setOutlets(locRes.data.locations || []);
+        setAllowCustomUploadFormat(mappingRes.value.data.allowCustomUploadFormat ?? true);
         if (loadedMakes.length === 1) setMake(loadedMakes[0]);
-      } catch (err) {
-        console.error('Failed to load data');
+      } else {
+        toast.error('Failed to load makes');
+      }
+      if (locRes.status === 'fulfilled') {
+        setOutlets(locRes.value.data.locations || []);
       }
     };
     if (dealershipId) loadData();
