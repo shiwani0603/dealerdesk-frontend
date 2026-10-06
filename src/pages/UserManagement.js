@@ -4,6 +4,7 @@ import { userService, settingsService } from '../services/api';
 import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import { useAuth } from '../context/AuthContext';
+import OutletRightsEditor from '../components/OutletRightsEditor';
 import toast from 'react-hot-toast';
 
 // ─── Deactivation Block Modal ─────────────────────────────────────────────────
@@ -208,6 +209,8 @@ const ROLE_STYLES = {
 };
 
 const MODULE_LABELS = { insurance: 'Insurance', service: 'Service', both: 'Both' };
+// Roles whose data visibility is controlled by the outlet rights table
+const RIGHTS_ROLES = ['manager', 'team_leader', 'service_adviser'];
 
 const suggestUsername = (name) =>
   name.toLowerCase().trim().replace(/\s+/g, '.').replace(/[^a-z0-9.]/g, '');
@@ -231,6 +234,8 @@ const buildEmptyForm = () => ({
   teamLeaderId: '',
   uploadRights: false,
   salesUploadRights: false,
+  outletRights: [],
+  teamScope: 'own_team',
   managedLocationIds: [],
   allowedMakes: [],
 });
@@ -248,6 +253,8 @@ const buildEditForm = (u) => ({
   teamLeaderId: u.teamLeaderId || '',
   uploadRights: u.uploadRights || false,
   salesUploadRights: u.salesUploadRights || false,
+  outletRights: Array.isArray(u.outletRights) ? u.outletRights : [],
+  teamScope: u.teamScope || 'own_team',
   managedLocationIds: u.managedLocationIds || [],
   allowedMakes: u.allowedMakes || [],
 });
@@ -329,18 +336,6 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
     return true;
   });
 
-  const toggleManagedLocation = (locId) => {
-    setForm(f => {
-      const current = f.managedLocationIds || [];
-      return {
-        ...f,
-        managedLocationIds: current.includes(locId)
-          ? current.filter(id => id !== locId)
-          : [...current, locId],
-      };
-    });
-  };
-
   const toggleAllowedMake = (make) => {
     setForm(f => {
       const current = f.allowedMakes || [];
@@ -373,6 +368,8 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
           teamLeaderId: form.teamLeaderId || null,
           uploadRights: form.uploadRights,
           salesUploadRights: form.salesUploadRights,
+          outletRights: RIGHTS_ROLES.includes(currentRole) ? form.outletRights : [],
+          teamScope: form.teamScope,
           managedLocationIds: isManagerRole ? (form.managedLocationIds || []) : [],
           allowedMakes: form.allowedMakes || [],
         };
@@ -393,6 +390,8 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
           teamLeaderId: form.teamLeaderId || null,
           uploadRights: form.uploadRights,
           salesUploadRights: form.salesUploadRights,
+          outletRights: RIGHTS_ROLES.includes(currentRole) ? form.outletRights : [],
+          teamScope: form.teamScope,
           managedLocationIds: isManagerRole ? (form.managedLocationIds || []) : [],
           allowedMakes: form.allowedMakes || [],
         });
@@ -527,29 +526,36 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
             </select>
           </div>
 
-          {/* Managed Locations — manager / super_manager with multiple locations */}
-          {isManagerRole && locations.length > 1 && (
+          {/* Outlet Rights — which outlets' data this user can see */}
+          {RIGHTS_ROLES.includes(currentRole) && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Managed Locations{' '}
-                <span className="text-gray-400 font-normal text-xs">(all if none selected)</span>
+                Outlet Rights{' '}
+                <span className="text-gray-400 font-normal text-xs">(which outlets' data this user can see)</span>
               </label>
-              <div className="space-y-1.5 bg-gray-50 rounded-lg p-3">
-                {locations.map((loc) => (
-                  <label key={loc.id} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={(form.managedLocationIds || []).includes(loc.id)}
-                      onChange={() => toggleManagedLocation(loc.id)}
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600"
-                    />
-                    <span className="text-sm text-gray-700">{loc.name}{loc.city ? ` — ${loc.city}` : ''}</span>
-                  </label>
+              <OutletRightsEditor outlets={locations} value={form.outletRights} onChange={(v) => set('outletRights', v)} />
+            </div>
+          )}
+
+          {/* Team access — team leader */}
+          {currentRole === 'team_leader' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Team Access</label>
+              <div className="flex gap-2">
+                {[['own_team', 'Own team only'], ['all_teams', 'All teams in my outlets']].map(([val, lbl]) => (
+                  <button key={val} type="button" onClick={() => set('teamScope', val)}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                      form.teamScope === val ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}>
+                    {lbl}
+                  </button>
                 ))}
               </div>
-              {(form.managedLocationIds || []).length === 0 && (
-                <p className="text-xs text-gray-400 mt-1">No restriction — can see all locations</p>
-              )}
+              <p className="text-xs text-gray-400 mt-1">
+                {form.teamScope === 'all_teams'
+                  ? "Sees and manages all telecallers' cases in their outlets."
+                  : 'Sees only cases of their own telecallers, plus unassigned cases to distribute.'}
+              </p>
             </div>
           )}
 

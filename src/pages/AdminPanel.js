@@ -4,6 +4,10 @@ import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import toast from 'react-hot-toast';
 import OutletTree, { OUTLET_MODULES } from '../components/OutletTree';
+import OutletRightsEditor from '../components/OutletRightsEditor';
+
+// Roles whose data visibility is controlled by the outlet rights table
+const RIGHTS_ROLES = ['manager', 'team_leader', 'service_adviser'];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -176,6 +180,8 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
     uploadRights: existingUser?.uploadRights || false,
     salesUploadRights: existingUser?.salesUploadRights || false,
     allowedMakes: existingUser?.allowedMakes || [],
+    outletRights: Array.isArray(existingUser?.outletRights) ? existingUser.outletRights : [],
+    teamScope: existingUser?.teamScope || 'own_team',
   }));
   const [saving, setSaving] = useState(false);
 
@@ -204,18 +210,6 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
     return true;
   });
   const hiddenTLCount = allTeamLeaders.length - teamLeaders.length;
-
-  const toggleManagedLocation = (locId) => {
-    setForm(f => {
-      const current = f.managedLocationIds || [];
-      return {
-        ...f,
-        managedLocationIds: current.includes(locId)
-          ? current.filter(id => id !== locId)
-          : [...current, locId],
-      };
-    });
-  };
 
   const toggleAllowedMake = (make) => {
     setForm(f => {
@@ -250,6 +244,8 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
         moduleRights: needsModuleRights ? form.moduleRights : null,
         uploadRights: form.uploadRights,
         salesUploadRights: form.salesUploadRights,
+        outletRights: RIGHTS_ROLES.includes(form.role) ? form.outletRights : [],
+        teamScope: form.teamScope,
         managedLocationIds: isManagerRole ? (form.managedLocationIds || []) : [],
         allowedMakes: form.allowedMakes || [],
       };
@@ -393,28 +389,35 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
             }
           </div>
 
-          {/* Managed Outlets (manager / super_manager only) */}
-          {isManagerRole && dealership.locations?.length > 1 && (
+          {/* Outlet Rights — which outlets' data this user can see */}
+          {RIGHTS_ROLES.includes(form.role) && (
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Managed Outlets <span className="text-gray-400 font-normal">(all outlets if none selected)</span>
+                Outlet Rights <span className="text-gray-400 font-normal">(which outlets' data this user can see)</span>
               </label>
-              <div className="space-y-1.5">
-                {dealership.locations?.map(loc => (
-                  <label key={loc.id} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={(form.managedLocationIds || []).includes(loc.id)}
-                      onChange={() => toggleManagedLocation(loc.id)}
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600"
-                    />
-                    <span className="text-sm text-gray-700">{loc.name}{loc.city ? ` — ${loc.city}` : ''}{loc.code ? ` (${loc.code})` : ''}</span>
-                  </label>
+              <OutletRightsEditor outlets={dealership.locations || []} value={form.outletRights} onChange={v => set('outletRights', v)} />
+            </div>
+          )}
+
+          {/* Team access — team leader */}
+          {form.role === 'team_leader' && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Team Access</label>
+              <div className="flex gap-2">
+                {[['own_team', 'Own team only'], ['all_teams', 'All teams in my outlets']].map(([val, lbl]) => (
+                  <button key={val} type="button" onClick={() => set('teamScope', val)}
+                    className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all text-center ${
+                      form.teamScope === val ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}>
+                    {lbl}
+                  </button>
                 ))}
               </div>
-              {(form.managedLocationIds || []).length === 0 && (
-                <p className="text-xs text-gray-400 mt-1">No restriction — manager can see all outlets</p>
-              )}
+              <p className="text-xs text-gray-400 mt-1">
+                {form.teamScope === 'all_teams'
+                  ? "Sees and manages all telecallers' cases in their outlets (useful where there is no manager)."
+                  : 'Sees only cases of their own telecallers, plus unassigned cases to distribute.'}
+              </p>
             </div>
           )}
 
