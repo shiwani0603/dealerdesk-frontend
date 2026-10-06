@@ -3,6 +3,7 @@ import { dealershipService, userService } from '../services/api';
 import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import toast from 'react-hot-toast';
+import OutletTree, { OUTLET_MODULES } from '../components/OutletTree';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -697,39 +698,50 @@ const DealershipModal = ({ existing, onClose, onSaved }) => {
 
 // ─── Add / Edit Outlet Modal ──────────────────────────────────────────────────
 
-const ALL_MODULES = ['insurance', 'service', 'sales'];
-
 const OutletModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
   const isEdit = !!existingOutlet;
+  const existingModules = Array.isArray(existingOutlet?.modules) ? existingOutlet.modules : [];
   const [form, setForm] = useState({
-    name:     existingOutlet?.name     || '',
-    code:     existingOutlet?.code     || '',
-    city:     existingOutlet?.city     || '',
-    modules:  Array.isArray(existingOutlet?.modules) ? existingOutlet.modules : [],
-    parentId: existingOutlet?.parentId || '',
-    isActive: existingOutlet?.isActive !== false,
+    name:        existingOutlet?.name     || '',
+    code:        existingOutlet?.code     || '',
+    city:        existingOutlet?.city     || '',
+    module:      existingModules.length === 1 ? existingModules[0] : '',
+    type:        existingOutlet?.parentId ? 'sub' : 'main',
+    parentId:    existingOutlet?.parentId || '',
+    callingMode: existingOutlet?.callingMode || 'local',
+    isActive:    existingOutlet?.isActive !== false,
   });
   const [saving, setSaving] = useState(false);
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const toggleModule = (mod) =>
-    setForm(f => ({
-      ...f,
-      modules: f.modules.includes(mod) ? f.modules.filter(m => m !== mod) : [...f.modules, mod],
-    }));
+  const me = dealership.modulesEnabled || {};
+  const moduleOptions = OUTLET_MODULES.filter(m => m.key === 'sales' || me[m.key] !== false);
+
+  const allOutlets = dealership.locations || [];
+  const hasSubs = isEdit && allOutlets.some(l => l.parentId === existingOutlet.id);
+  // Main outlets of the chosen module (not itself)
+  const mainOptions = allOutlets.filter(l =>
+    !l.parentId && l.id !== existingOutlet?.id && l.isActive !== false
+    && Array.isArray(l.modules) && l.modules.length === 1 && l.modules[0] === form.module);
+
+  const handleModuleChange = (module) =>
+    setForm(f => ({ ...f, module, parentId: '' }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) { toast.error('Outlet name is required'); return; }
     if (!form.code.trim()) { toast.error('Outlet code is required'); return; }
-    if (form.modules.length === 0) { toast.error('Select at least one module'); return; }
+    if (!form.module) { toast.error('Select a module'); return; }
+    if (form.type === 'sub' && !form.parentId) { toast.error('Select the main outlet for this sub outlet'); return; }
     setSaving(true);
     try {
       const payload = {
         name: form.name.trim(),
         code: form.code.trim(),
         city: form.city || null,
-        modules: form.modules,
-        parentId: form.parentId || null,
+        module: form.module,
+        parentId: form.type === 'sub' ? form.parentId : null,
+        callingMode: form.type === 'main' ? form.callingMode : 'local',
         isActive: form.isActive,
       };
       if (isEdit) {
@@ -747,26 +759,12 @@ const OutletModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
     }
   };
 
-  const parentOutlets = (dealership.locations || []).filter(l => !l.parentId && l.id !== existingOutlet?.id);
-
-  const selectedParent = form.parentId ? parentOutlets.find(l => l.id === form.parentId) : null;
-  const allowedModules = selectedParent && Array.isArray(selectedParent.modules) && selectedParent.modules.length > 0
-    ? selectedParent.modules
-    : ALL_MODULES;
-
-  const handleParentChange = (parentId) => {
-    const parent = parentOutlets.find(l => l.id === parentId);
-    const parentMods = parent && Array.isArray(parent.modules) ? parent.modules : ALL_MODULES;
-    setForm(f => ({
-      ...f,
-      parentId,
-      modules: f.modules.filter(m => parentMods.includes(m)),
-    }));
-  };
+  const choiceCls = (active) => `flex-1 py-2 rounded-lg text-sm font-medium transition-all text-center ${
+    active ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-sm p-6">
+      <div className="bg-white rounded-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-gray-900">{isEdit ? 'Edit Outlet' : 'Add Outlet'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
@@ -776,64 +774,93 @@ const OutletModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
           <span className="font-semibold text-gray-700">{dealership.name}</span>
         </p>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Module */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Module *</label>
+            <div className="flex gap-2">
+              {moduleOptions.map(m => (
+                <button key={m.key} type="button" disabled={hasSubs}
+                  onClick={() => handleModuleChange(m.key)}
+                  className={`${choiceCls(form.module === m.key)} disabled:opacity-50 disabled:cursor-not-allowed`}>
+                  {m.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              {hasSubs ? 'Module cannot change while this outlet has sub outlets.'
+                : 'One module per outlet. If a place does two modules, add it once for each module.'}
+            </p>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Outlet Name *</label>
-            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+            <input value={form.name} onChange={e => set('name', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g. Main Showroom" autoFocus />
+              placeholder="e.g. Agra Insurance" autoFocus />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Outlet Code *</label>
-            <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value }))}
+            <input value={form.code} onChange={e => set('code', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g. MH-001" />
-            <p className="text-xs text-gray-400 mt-0.5">This code is used to match rows in data uploads</p>
+              placeholder="e.g. INS-AG01" />
+            <p className="text-xs text-gray-400 mt-0.5">Code as it appears in upload files. Must be unique within the module; the same code may be used in another module.</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-            <input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
+            <input value={form.city} onChange={e => set('city', e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g. Pune" />
+              placeholder="e.g. Agra" />
           </div>
+
+          {/* Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Modules *</label>
-            <div className="flex gap-4">
-              {ALL_MODULES.map(mod => {
-                const disabled = !allowedModules.includes(mod);
-                return (
-                  <label key={mod} className={`flex items-center gap-1.5 select-none ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}>
-                    <input type="checkbox" checked={form.modules.includes(mod)}
-                      disabled={disabled}
-                      onChange={() => !disabled && toggleModule(mod)} />
-                    <span className="text-sm text-gray-700 capitalize">{mod}</span>
-                  </label>
-                );
-              })}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Outlet Type *</label>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => set('type', 'main')} className={choiceCls(form.type === 'main')}>🏢 Main Outlet</button>
+              <button type="button" disabled={hasSubs} onClick={() => set('type', 'sub')}
+                className={`${choiceCls(form.type === 'sub')} disabled:opacity-50 disabled:cursor-not-allowed`}>└ Sub Outlet</button>
             </div>
-            {selectedParent && (
-              <p className="text-xs text-blue-600 mt-1">Restricted to parent outlet's modules</p>
-            )}
-            {form.modules.length === 0 && (
-              <p className="text-xs text-red-500 mt-1">Select at least one module</p>
-            )}
+            {hasSubs && <p className="text-xs text-gray-400 mt-1">This outlet has sub outlets, so it stays a main outlet.</p>}
           </div>
-          {parentOutlets.length > 0 && (
+
+          {form.type === 'sub' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Parent Outlet <span className="text-gray-400 font-normal">(optional — for sub-outlets)</span>
-              </label>
-              <select value={form.parentId} onChange={e => handleParentChange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">— No parent (top-level outlet) —</option>
-                {parentOutlets.map(loc => (
-                  <option key={loc.id} value={loc.id}>{loc.name}{loc.code ? ` (${loc.code})` : ''}</option>
-                ))}
-              </select>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Comes under Main Outlet *</label>
+              {!form.module ? (
+                <p className="text-xs text-amber-600">Select a module first.</p>
+              ) : mainOptions.length === 0 ? (
+                <p className="text-xs text-amber-600">No active main outlet in this module yet. Add the main outlet first.</p>
+              ) : (
+                <select value={form.parentId} onChange={e => set('parentId', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="">— Select main outlet —</option>
+                  {mainOptions.map(loc => (
+                    <option key={loc.id} value={loc.id}>{loc.name}{loc.code ? ` (${loc.code})` : ''}</option>
+                  ))}
+                </select>
+              )}
+              <p className="text-xs text-gray-400 mt-1">Sub outlet data is stored under its own code and rolls up under this main outlet in reports.</p>
             </div>
           )}
+
+          {form.type === 'main' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Calling Mode</label>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => set('callingMode', 'central')} className={choiceCls(form.callingMode === 'central')}>📞 Central</button>
+                <button type="button" onClick={() => set('callingMode', 'local')} className={choiceCls(form.callingMode === 'local')}>📞 Local</button>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                {form.callingMode === 'central'
+                  ? "Central: this main outlet's team also calls the cases of its sub outlets."
+                  : "Local: each outlet's own team calls its own cases."}
+              </p>
+            </div>
+          )}
+
           {isEdit && (
             <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input type="checkbox" checked={form.isActive} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} />
+              <input type="checkbox" checked={form.isActive} onChange={e => set('isActive', e.target.checked)} />
               <span className="text-sm text-gray-700">Active</span>
             </label>
           )}
@@ -1195,40 +1222,7 @@ const DealershipCard = ({ d, number, onEdit, onAddLocation, onEditOutlet, onAddU
                   + Add Outlet
                 </button>
               </div>
-              {d.locations?.length === 0
-                ? <p className="text-xs text-gray-400 italic">No outlets yet</p>
-                : (
-                  <div className="space-y-2">
-                    {d.locations?.map(loc => (
-                      <div key={loc.id} className="bg-gray-50 rounded-lg px-3 py-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-gray-400 flex-shrink-0">🏪</span>
-                            <span className="text-sm font-medium text-gray-700 truncate">{loc.name}</span>
-                            {loc.code && <span className="text-xs bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded font-mono flex-shrink-0">{loc.code}</span>}
-                            {!loc.isActive && <span className="text-xs text-red-400 flex-shrink-0">(inactive)</span>}
-                          </div>
-                          <button onClick={() => onEditOutlet(d, loc)}
-                            className="text-xs text-gray-400 hover:text-blue-600 flex-shrink-0 px-2 py-1 rounded hover:bg-blue-50 transition-colors">
-                            Edit
-                          </button>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 ml-6">
-                          {loc.city && <span className="text-xs text-gray-400">{loc.city}</span>}
-                          {Array.isArray(loc.modules) && loc.modules.length > 0 && (
-                            <div className="flex gap-1">
-                              {loc.modules.map(m => (
-                                <span key={m} className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded capitalize">{m}</span>
-                              ))}
-                            </div>
-                          )}
-                          {loc.parentId && <span className="text-xs text-gray-400 italic">sub-outlet</span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )
-              }
+              <OutletTree outlets={d.locations || []} onEdit={(loc) => onEditOutlet(d, loc)} />
             </div>
           )}
 

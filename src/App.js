@@ -15,6 +15,7 @@ import SettingsPage from './pages/SettingsPage';
 import AdminPanel from './pages/AdminPanel';
 import ServiceIntervalMaster from './pages/ServiceIntervalMaster';
 import ReportsPage from './pages/ReportsPage';
+import OutletsPage from './pages/OutletsPage';
 import CampaignsPage from './pages/CampaignsPage';
 import AdminOverview from './pages/AdminOverview';
 import AdminUploadSetupPage from './pages/AdminUploadSetupPage';
@@ -199,6 +200,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={['manager', 'team_leader', 'super_admin', 'super_manager']}>
             <ReportsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/outlets"
+        element={
+          <ProtectedRoute allowedRoles={['manager', 'super_manager']}>
+            <OutletsPage />
           </ProtectedRoute>
         }
       />

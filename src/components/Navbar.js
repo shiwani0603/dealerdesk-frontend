@@ -84,6 +84,7 @@ const Navbar = ({ onSearchClick }) => {
           {isTL          && <NavBtn label="👥 Team"        active={isActive('/team-leader')} onClick={() => nav('/team-leader')} />}
           {canViewTeam   && <NavBtn label="👥 Team"        active={isActive('/manager-dashboard') || isActive('/manager')} activeClass="bg-purple-100 text-purple-700" onClick={() => nav('/manager-dashboard')} />}
           {canManageUsers && <NavBtn label="👤 Users"      active={isActive('/users')} onClick={() => nav('/users')} />}
+          {canViewTeam   && <NavBtn label="🏪 Outlets"    active={isActive('/outlets')} onClick={() => nav('/outlets')} />}
           {(canViewTeam || isTL) && <NavBtn label="📊 Reports"   active={isActive('/reports')} activeClass="bg-amber-100 text-amber-700" onClick={() => nav('/reports')} />}
           {(canViewTeam || isTL) && <NavBtn label="🎯 Campaigns" active={isActive('/campaigns')} activeClass="bg-indigo-100 text-indigo-700" onClick={() => nav('/campaigns')} />}
           {(canViewTeam || isTL) && <NavBtn label="🔎 Plan Search" active={isActive('/search/advanced')} onClick={() => nav('/search/advanced')} />}
@@ -190,6 +191,7 @@ const Navbar = ({ onSearchClick }) => {
             {isTL          && <MobileNavItem label="👥 Team"       active={isActive('/team-leader')} onClick={() => nav('/team-leader')} />}
             {canViewTeam   && <MobileNavItem label="👥 Team"       active={isActive('/manager-dashboard')} onClick={() => nav('/manager-dashboard')} />}
             {canManageUsers && <MobileNavItem label="👤 Users"     active={isActive('/users')} onClick={() => nav('/users')} />}
+            {canViewTeam    && <MobileNavItem label="🏪 Outlets"   active={isActive('/outlets')} onClick={() => nav('/outlets')} />}
             {(canViewTeam || isTL) && <MobileNavItem label="📊 Reports"   active={isActive('/reports')} onClick={() => nav('/reports')} />}
             {(canViewTeam || isTL) && <MobileNavItem label="🎯 Campaigns" active={isActive('/campaigns')} onClick={() => nav('/campaigns')} />}
             {(canViewTeam || isTL) && <MobileNavItem label="🔎 Plan Search" active={isActive('/search/advanced')} onClick={() => nav('/search/advanced')} />}
