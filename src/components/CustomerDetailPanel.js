@@ -348,6 +348,27 @@ useEffect(() => {
           )}
         </div>
 
+        {/* Where this customer's data came from */}
+        {(() => {
+          const svcCount = (customer.serviceRecords || []).length;
+          // Uploaded policies only — not renewal estimates auto-created from sales
+          const insCount = (customer.insuranceRecords || []).filter(r => !(r.isFreshPolicy && !r.policyNumber)).length;
+          const sources = [
+            customer.soldByOwnDealership && `🚗 Sales upload${customer.soldByLocation?.name ? ` (${customer.soldByLocation.name})` : ''}`,
+            svcCount > 0 && `🔧 Service upload · ${svcCount} visit${svcCount > 1 ? 's' : ''}`,
+            insCount > 0 && `🛡️ Insurance upload · ${insCount} polic${insCount > 1 ? 'ies' : 'y'}`,
+          ].filter(Boolean);
+          return (
+            <div className="px-5 py-1.5 border-b border-gray-100 flex flex-wrap items-center gap-1.5 text-xs flex-shrink-0">
+              <span className="text-gray-400">Data source:</span>
+              {sources.length > 0
+                ? sources.map(s => <span key={s} className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{s}</span>)
+                : <span className="text-gray-500">{customer.source || 'Manual entry'}</span>}
+              <span className="text-gray-400 ml-auto">First added {formatDate(customer.createdAt)}{customer.source ? ` via ${customer.source} upload` : ''}</span>
+            </div>
+          );
+        })()}
+
         {/* Sticky note */}
         {(customer.stickyNote || editingNote) && (
           <div className="bg-amber-50 border-b border-amber-200 px-5 py-2 flex-shrink-0">
