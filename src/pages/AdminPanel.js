@@ -373,7 +373,7 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
           {/* Outlet */}
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">
-              {isManagerRole ? 'Primary Outlet *' : 'Outlet *'}
+              Home Outlet * <span className="text-gray-400 font-normal">(where the user sits — link more outlets below)</span>
             </label>
             {dealership.locations?.length === 0
               ? <p className="text-xs text-red-500">No outlets — add an outlet to this dealership first.</p>
@@ -393,7 +393,7 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
           {RIGHTS_ROLES.includes(form.role) && (
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Outlet Rights <span className="text-gray-400 font-normal">(which outlets' data this user can see)</span>
+                Linked Outlets <span className="text-gray-400 font-normal">(one or more — the outlets this user works for)</span>
               </label>
               <OutletRightsEditor outlets={dealership.locations || []} value={form.outletRights} onChange={v => set('outletRights', v)} />
             </div>
@@ -713,6 +713,8 @@ const OutletModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
     parentId:    existingOutlet?.parentId || '',
     callingMode: existingOutlet?.callingMode || 'local',
     isActive:    existingOutlet?.isActive !== false,
+    linkedInsurance: existingOutlet?.linkedOutlets?.insurance || '',
+    linkedService:   existingOutlet?.linkedOutlets?.service || '',
   });
   const [saving, setSaving] = useState(false);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -746,14 +748,14 @@ const OutletModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
         parentId: form.type === 'sub' ? form.parentId : null,
         callingMode: form.type === 'main' ? form.callingMode : 'local',
         isActive: form.isActive,
+        linkedOutlets: form.module === 'sales'
+          ? { insurance: form.linkedInsurance || undefined, service: form.linkedService || undefined }
+          : {},
       };
-      if (isEdit) {
-        await dealershipService.updateLocation(dealership.id, existingOutlet.id, payload);
-        toast.success('Outlet updated');
-      } else {
-        await dealershipService.addLocation(dealership.id, payload);
-        toast.success('Outlet added');
-      }
+      const res = isEdit
+        ? await dealershipService.updateLocation(dealership.id, existingOutlet.id, payload)
+        : await dealershipService.addLocation(dealership.id, payload);
+      toast.success(res.data?.message || (isEdit ? 'Outlet updated' : 'Outlet added'), { duration: 6000 });
       onSaved();
     } catch (err) {
       toast.error(err.response?.data?.error || (isEdit ? 'Failed to update outlet' : 'Failed to add outlet'));
@@ -838,7 +840,7 @@ const OutletModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">— Select main outlet —</option>
                   {mainOptions.map(loc => (
-                    <option key={loc.id} value={loc.id}>{loc.name}{loc.code ? ` (${loc.code})` : ''}</option>
+                    <option key={loc.id} value={loc.id}>{outletLabel(loc, allOutlets)}</option>
                   ))}
                 </select>
               )}
@@ -858,6 +860,30 @@ const OutletModal = ({ dealership, existingOutlet, onClose, onSaved }) => {
                   ? "Central: this main outlet's team also calls the cases of its sub outlets."
                   : "Local: each outlet's own team calls its own cases."}
               </p>
+            </div>
+          )}
+
+          {/* Sales outlet → which insurance / service outlet gets the cases created from its sales */}
+          {form.module === 'sales' && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+              <p className="text-xs text-amber-800">
+                Sales uploads create insurance renewal and first-service cases. Choose which outlet receives them
+                (needed when codes differ, e.g. sales <span className="font-mono">Basti001</span> vs service <span className="font-mono">basto001</span>).
+              </p>
+              {[['linkedInsurance', 'insurance', '🛡️ Send insurance cases to'], ['linkedService', 'service', '🔧 Send service cases to']].map(([key, mod, lbl]) => {
+                const opts = allOutlets.filter(l => l.isActive !== false && Array.isArray(l.modules) && l.modules.includes(mod));
+                return (
+                  <div key={key}>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">{lbl}</label>
+                    <select value={form[key]} onChange={e => set(key, e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <option value="">— Same code as this outlet (if one exists) —</option>
+                      {opts.map(l => <option key={l.id} value={l.id}>{outletLabel(l, allOutlets)}</option>)}
+                    </select>
+                    {opts.length === 0 && <p className="text-xs text-gray-500 mt-0.5">No {mod} outlets yet — add one first.</p>}
+                  </div>
+                );
+              })}
             </div>
           )}
 

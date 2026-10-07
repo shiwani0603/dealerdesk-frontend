@@ -119,6 +119,8 @@ export const reportService = {
   getAutoCloseSummary: (fromDate, toDate) =>
     api.get(`/dashboard/reports/auto-close-summary?fromDate=${fromDate}&toDate=${toDate}`),
   getJobCardFraud: () => api.get('/dashboard/reports/job-card-fraud'),
+  getUploadedData: (module, year, dateType) =>
+    api.get(`/dashboard/reports/uploaded-data?module=${module}&year=${year}&dateType=${dateType}`),
   getPerformance: (fromDate, toDate) =>
     api.get(`/dashboard/reports/telecaller-performance?fromDate=${fromDate}&toDate=${toDate}`),
 };

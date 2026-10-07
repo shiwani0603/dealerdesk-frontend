@@ -511,7 +511,7 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
           {/* Location */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {isManagerRole ? 'Primary Location *' : 'Location *'}
+              Home Outlet * <span className="text-gray-400 font-normal text-xs">(where the user sits — link more outlets below)</span>
             </label>
             <select
               value={form.locationId}
@@ -531,8 +531,8 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
           {RIGHTS_ROLES.includes(currentRole) && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Outlet Rights{' '}
-                <span className="text-gray-400 font-normal text-xs">(which outlets' data this user can see)</span>
+                Linked Outlets{' '}
+                <span className="text-gray-400 font-normal text-xs">(one or more — the outlets this user works for)</span>
               </label>
               <OutletRightsEditor outlets={locations} value={form.outletRights} onChange={(v) => set('outletRights', v)} />
             </div>

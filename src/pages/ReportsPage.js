@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { reportService } from '../services/api';
 import Navbar from '../components/Navbar';
@@ -610,9 +610,131 @@ const JobCardFraud = () => {
   );
 };
 
+// ── Uploaded Data ────────────────────────────────────────────────────────────
+const UPLOAD_MODULES = [
+  { key: 'sales',     label: '🚗 Sales',     dateLabel: 'Sale date' },
+  { key: 'service',   label: '🔧 Service',   dateLabel: 'Service date' },
+  { key: 'insurance', label: '🛡️ Insurance', dateLabel: 'Policy expiry date' },
+];
+const monthName = (m) => {
+  if (m === 'no-date') return 'No date';
+  const [y, mo] = m.split('-');
+  return new Date(+y, +mo - 1, 1).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+};
+
+const UploadedData = () => {
+  const [mod, setMod] = useState('sales');
+  const [year, setYear] = useState('all');
+  const [dateType, setDateType] = useState('data');
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async (m = mod, y = year, d = dateType) => {
+    setLoading(true);
+    try { const r = await reportService.getUploadedData(m, y, d); setData(r.data); }
+    catch { toast.error('Failed to load report'); }
+    finally { setLoading(false); }
+  }, [mod, year, dateType]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const modInfo = UPLOAD_MODULES.find(m => m.key === mod);
+  const outletName = (o) => (o.subOutlet ? `${o.mainOutlet} / ${o.subOutlet}` : o.mainOutlet);
+
+  const exportCSV = () => {
+    if (!data) return;
+    downloadCSV(data.months.map(m => {
+      const row = { Month: monthName(m) };
+      data.outlets.forEach(o => { row[outletName(o)] = data.cells[m]?.[o.id] || 0; });
+      row.Total = data.byMonth[m];
+      return row;
+    }), `uploaded_${mod}_${dateType}`);
+  };
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {UPLOAD_MODULES.map(m => (
+          <button key={m.key} onClick={() => { setMod(m.key); setYear('all'); }}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium ${mod === m.key ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+            {m.label}
+          </button>
+        ))}
+        <select value={dateType} onChange={e => setDateType(e.target.value)}
+          className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm">
+          <option value="data">By {modInfo.dateLabel.toLowerCase()}</option>
+          <option value="upload">By upload date</option>
+        </select>
+        <select value={year} onChange={e => setYear(e.target.value)}
+          className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm">
+          <option value="all">All years</option>
+          {(data?.years || []).map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
+        {data?.total > 0 && <button onClick={exportCSV} className="ml-auto px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg">⬇ CSV</button>}
+      </div>
+
+      {loading && <p className="text-sm text-gray-400">Loading…</p>}
+      {!loading && data && data.total === 0 && <EmptyState msg={`No ${mod} data uploaded${year !== 'all' ? ` for ${year}` : ''}`} />}
+
+      {!loading && data && data.total > 0 && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <StatBox label={`Total ${mod} records`} value={data.total} color="blue" />
+            <StatBox label="Months" value={data.months.length} color="gray" />
+            <StatBox label="Outlets" value={data.outlets.length} color="gray" />
+            <StatBox label="Latest month" value={monthName(data.months[0])} color="green" />
+          </div>
+
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <div className="bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-700">
+              {modInfo.label} records by month ({dateType === 'upload' ? 'upload date' : modInfo.dateLabel.toLowerCase()}) and outlet
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-100 text-gray-600 text-xs font-semibold">
+                    <td className="px-4 py-2">Month</td>
+                    {data.outlets.map(o => (
+                      <td key={o.id} className="px-3 py-2 text-right whitespace-nowrap">
+                        <div>{o.subOutlet || o.mainOutlet}</div>
+                        <div className="font-normal text-gray-400">{o.subOutlet ? `Sub of ${o.mainOutlet}` : (o.id === 'none' ? '' : 'Main')}{o.code ? ` · ${o.code}` : ''}</div>
+                      </td>
+                    ))}
+                    <td className="px-4 py-2 text-right">Total</td>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.months.map((m, i) => (
+                    <tr key={m} className={`border-t border-gray-100 ${i % 2 === 1 ? 'bg-gray-50' : ''}`}>
+                      <td className="px-4 py-2.5 font-medium text-gray-800 whitespace-nowrap">{monthName(m)}</td>
+                      {data.outlets.map(o => (
+                        <td key={o.id} className="px-3 py-2.5 text-right text-gray-700">{data.cells[m]?.[o.id] || <span className="text-gray-300">—</span>}</td>
+                      ))}
+                      <td className="px-4 py-2.5 text-right font-bold text-gray-900">{data.byMonth[m]}</td>
+                    </tr>
+                  ))}
+                  <tr className="bg-gray-900 text-white">
+                    <td className="px-4 py-2.5 font-bold">Total</td>
+                    {data.outlets.map(o => <td key={o.id} className="px-3 py-2.5 text-right font-bold">{data.byOutlet[o.id]}</td>)}
+                    <td className="px-4 py-2.5 text-right font-bold">{data.total}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {mod === 'insurance' && (
+            <p className="text-xs text-gray-400">Counts uploaded policies only — renewal estimates created automatically from sales are not counted.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── Main Reports Page ─────────────────────────────────────────────────────────
 // Main reports (shown first) — daily-calls has its own page at /reports/daily-calls
 const MAIN_REPORTS = [
+  { id: 'uploaded',    icon: '📥', label: 'Uploaded Data',           desc: 'How many sales, service and insurance records were uploaded — by month, year and outlet.', component: UploadedData },
   { id: 'daily-calls', icon: '📞', label: 'Daily Call Report',       desc: 'Per-telecaller calls, appointments, won/lost for a day. Filter by date, module, location and telecaller.' },
   { id: 'retention',   icon: '🏠', label: 'Own Sale Retention',      desc: 'Own-sale customers retained vs lost in a date range, with retention rate.', component: OwnSaleRetention },
   { id: 'performance', icon: '👤', label: 'Telecaller Performance',  desc: 'Calls, connects, appointments, conversions and lost per telecaller.', component: PerformanceReport },
