@@ -1,8 +1,8 @@
 import React from 'react';
 import { OUTLET_MODULES } from './OutletTree';
 
-// Rights table: which outlets a user can see. value = [{ locationId, includeSubs }]
-// Empty = no restriction (all outlets).
+// Rights table: which outlets a user can see / be assigned cases of.
+// value = [{ locationId, includeSubs }]. Empty = no restriction (all outlets).
 const OutletRightsEditor = ({ outlets = [], value = [], onChange }) => {
   const rights = Array.isArray(value) ? value : [];
   const find = (id) => rights.find(r => r.locationId === id);
@@ -23,21 +23,28 @@ const OutletRightsEditor = ({ outlets = [], value = [], onChange }) => {
 
   if (outlets.length === 0) return <p className="text-xs text-gray-400 italic">No outlets set up yet.</p>;
 
-  const Row = ({ loc, isSub, parentRight }) => {
+  const Row = ({ loc, isSub, main }) => {
     const r = find(loc.id);
-    const coveredByMain = isSub && parentRight?.includeSubs;
+    const mainRight = isSub ? find(main.id) : null;
+    const includedViaMain = isSub && mainRight?.includeSubs;
     const subCount = isSub ? 0 : outlets.filter(l => l.parentId === loc.id).length;
     return (
       <div className={`flex items-center justify-between gap-2 py-1 ${isSub ? 'pl-6' : ''}`}>
-        <label className={`flex items-center gap-2 text-sm min-w-0 ${coveredByMain ? 'text-gray-400' : 'text-gray-700 cursor-pointer'}`}>
-          <input type="checkbox" disabled={coveredByMain} checked={!!r || coveredByMain} onChange={() => toggle(loc)} />
-          <span className="truncate">{isSub ? '└ ' : '🏢 '}{loc.name}</span>
+        <label className={`flex items-center gap-2 text-sm min-w-0 ${includedViaMain ? '' : 'cursor-pointer'}`}>
+          <input type="checkbox" disabled={includedViaMain} checked={!!r || includedViaMain} onChange={() => toggle(loc)} />
+          <span className="truncate text-gray-700">{isSub ? '└ ' : '🏢 '}{loc.name}</span>
           {loc.code && <span className="text-xs text-gray-400 font-mono">{loc.code}</span>}
+          {includedViaMain && (
+            <span className="text-xs text-indigo-600 whitespace-nowrap">✔ included with {main.name}</span>
+          )}
         </label>
         {!isSub && r && subCount > 0 && (
           <button type="button" onClick={() => toggleSubs(loc)}
-            className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${r.includeSubs ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-500'}`}>
-            {r.includeSubs ? `✔ + ${subCount} sub outlet${subCount > 1 ? 's' : ''}` : 'This outlet only'}
+            title="Click to switch"
+            className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap border ${r.includeSubs
+              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+              : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+            {r.includeSubs ? `Sub outlets: Included (${subCount})` : 'Sub outlets: Not included'}
           </button>
         )}
       </div>
@@ -45,22 +52,26 @@ const OutletRightsEditor = ({ outlets = [], value = [], onChange }) => {
   };
 
   return (
-    <div className="border border-gray-200 rounded-lg p-3 space-y-3 max-h-64 overflow-y-auto">
+    <div className="border border-gray-200 rounded-lg p-3 space-y-3 max-h-72 overflow-y-auto">
+      <p className="text-xs text-gray-500">
+        Tick each outlet this user works for — you can tick several, in any module.
+        Ticking a <b>main</b> outlet also includes its sub outlets; click <i>Sub outlets: Included</i> to switch that off and tick sub outlets one by one.
+      </p>
       {groups.map(g => (
         <div key={g.key}>
           <p className={`inline-block text-xs font-bold px-2 py-0.5 rounded mb-1 ${g.badge}`}>{g.label}</p>
           {g.mains.map(main => (
             <div key={main.id}>
               <Row loc={main} />
-              {g.subsOf(main.id).map(sub => <Row key={sub.id} loc={sub} isSub parentRight={find(main.id)} />)}
+              {g.subsOf(main.id).map(sub => <Row key={sub.id} loc={sub} isSub main={main} />)}
             </div>
           ))}
         </div>
       ))}
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-gray-400 border-t border-gray-100 pt-2">
         {rights.length === 0
-          ? 'Nothing selected = no restriction (all outlets).'
-          : `${rights.length} outlet right${rights.length > 1 ? 's' : ''} — user sees only these outlets' data.`}
+          ? 'Nothing ticked = no restriction (all outlets).'
+          : `Rights on ${rights.length} outlet${rights.length > 1 ? 's' : ''} — user works only with these outlets' data.`}
       </p>
     </div>
   );

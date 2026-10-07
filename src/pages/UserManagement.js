@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import { useAuth } from '../context/AuthContext';
 import OutletRightsEditor from '../components/OutletRightsEditor';
+import { outletLabel } from '../components/OutletTree';
 import toast from 'react-hot-toast';
 
 // ─── Deactivation Block Modal ─────────────────────────────────────────────────
@@ -210,7 +211,7 @@ const ROLE_STYLES = {
 
 const MODULE_LABELS = { insurance: 'Insurance', service: 'Service', both: 'Both' };
 // Roles whose data visibility is controlled by the outlet rights table
-const RIGHTS_ROLES = ['manager', 'team_leader', 'service_adviser'];
+const RIGHTS_ROLES = ['manager', 'team_leader', 'telecaller', 'service_adviser'];
 
 const suggestUsername = (name) =>
   name.toLowerCase().trim().replace(/\s+/g, '.').replace(/[^a-z0-9.]/g, '');
@@ -520,7 +521,7 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
               <option value="">Select location…</option>
               {locations.map((loc) => (
                 <option key={loc.id} value={loc.id}>
-                  {loc.name}{loc.city ? ` — ${loc.city}` : ''}
+                  {outletLabel(loc, locations)}
                 </option>
               ))}
             </select>

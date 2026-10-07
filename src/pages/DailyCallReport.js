@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { reportService, userService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { outletLabel } from '../components/OutletTree';
 import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import toast from 'react-hot-toast';
@@ -192,7 +193,7 @@ const DailyCallReport = () => {
               >
                 <option value="ALL">All Locations</option>
                 {locations.map(loc => (
-                  <option key={loc.id} value={loc.id}>{loc.name}</option>
+                  <option key={loc.id} value={loc.id}>{outletLabel(loc, locations)}</option>
                 ))}
               </select>
             </div>

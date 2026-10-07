@@ -8,6 +8,19 @@ export const OUTLET_MODULES = [
 
 const outletModule = (loc) => (Array.isArray(loc.modules) && loc.modules.length === 1 ? loc.modules[0] : null);
 
+const MODULE_NAME = { insurance: 'Insurance', service: 'Service', sales: 'Sales' };
+
+// Dropdown label: "basti (basto001) · Service · Sub of mahanager"
+export const outletLabel = (loc, all = []) => {
+  const mod = outletModule(loc);
+  const parent = loc.parentId ? all.find(l => l.id === loc.parentId) : null;
+  return [
+    `${loc.name}${loc.code ? ` (${loc.code})` : ''}`,
+    mod ? MODULE_NAME[mod] : null,
+    loc.parentId ? `Sub of ${parent?.name || 'main outlet'}` : 'Main',
+  ].filter(Boolean).join(' · ');
+};
+
 const OutletRow = ({ loc, isSub, onEdit }) => (
   <div className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 ${isSub ? 'bg-white border border-gray-100 ml-6' : 'bg-gray-50'}`}>
     <div className="flex items-center gap-2 min-w-0 flex-wrap">

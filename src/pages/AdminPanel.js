@@ -3,11 +3,11 @@ import { dealershipService, userService } from '../services/api';
 import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import toast from 'react-hot-toast';
-import OutletTree, { OUTLET_MODULES } from '../components/OutletTree';
+import OutletTree, { OUTLET_MODULES, outletLabel } from '../components/OutletTree';
 import OutletRightsEditor from '../components/OutletRightsEditor';
 
 // Roles whose data visibility is controlled by the outlet rights table
-const RIGHTS_ROLES = ['manager', 'team_leader', 'service_adviser'];
+const RIGHTS_ROLES = ['manager', 'team_leader', 'telecaller', 'service_adviser'];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -382,7 +382,7 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                   <option value="">Select outlet…</option>
                   {dealership.locations?.map(loc => (
-                    <option key={loc.id} value={loc.id}>{loc.name}{loc.city ? ` — ${loc.city}` : ''}{loc.code ? ` (${loc.code})` : ''}</option>
+                    <option key={loc.id} value={loc.id}>{outletLabel(loc, dealership.locations || [])}</option>
                   ))}
                 </select>
               )
