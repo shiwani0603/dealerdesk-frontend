@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import CustomerDetailPanel from '../components/CustomerDetailPanel';
+import { outletLabel } from '../components/OutletTree';
 
 const REQUIRED_FIELDS = {
   insurance: ['chassis_number', 'customer_name', 'mobile', 'policy_expiry_date', 'vehicle_purchase_date', 'outlet_code'],
@@ -410,7 +411,7 @@ const UploadPage = () => {
                   </p>
                 )}
                 {uploadModules.map(m => (
-                  <button key={m} onClick={() => setModule(m)}
+                  <button key={m} onClick={() => { setModule(m); setDefaultOutletId(''); }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
                       module === m ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}>
@@ -466,21 +467,34 @@ const UploadPage = () => {
               </div>
             </div>
 
-            {outlets.length > 0 && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Default Outlet <span className="text-gray-400 font-normal">(used when outlet not specified per row)</span>
-                </label>
-                <select value={defaultOutletId} onChange={e => setDefaultOutletId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                  <option value="">— No default outlet —</option>
-                  {outlets.filter(o => o.isActive).map(o => (
-                    <option key={o.id} value={o.id}>{o.name}{o.code ? ` (${o.code})` : ''}</option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-400 mt-1">If your file has an <strong>outlet_code</strong> column mapped, each row will auto-match its outlet. This default is the fallback.</p>
-              </div>
-            )}
+            {(() => {
+              // Only outlets of the selected module (the API already limits them to the user's outlet rights)
+              const moduleOutlets = outlets.filter(o => Array.isArray(o.modules) && o.modules.includes(module));
+              return (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Default Outlet <span className="text-gray-400 font-normal">(used for rows without an outlet code)</span>
+                  </label>
+                  {moduleOutlets.length === 0 ? (
+                    <div className="w-full px-3 py-2 border border-amber-300 bg-amber-50 rounded-lg text-sm text-amber-700">
+                      No {module} outlets available to you — ask Super Admin to set up outlets or give you outlet rights.
+                    </div>
+                  ) : (
+                    <select value={defaultOutletId} onChange={e => setDefaultOutletId(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                      <option value="">— No default (every row must have an outlet code) —</option>
+                      {moduleOutlets.map(o => (
+                        <option key={o.id} value={o.id}>{outletLabel(o, outlets)}</option>
+                      ))}
+                    </select>
+                  )}
+                  <p className="text-xs text-gray-400 mt-1">
+                    Each row's <strong>outlet_code</strong> is matched only against {module} outlets. Rows with an unknown code,
+                    or an outlet you have no rights on, are rejected and listed in the result.
+                  </p>
+                </div>
+              );
+            })()}
 
             <div
               onDrop={handleDrop}
