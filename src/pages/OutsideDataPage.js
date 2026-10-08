@@ -28,7 +28,7 @@ const downloadTemplate = (fields) => {
 const UploadTab = ({ meta, onUploaded }) => {
   const [vendorName, setVendorName] = useState('');
   const [useFor, setUseFor] = useState([]);
-  const [outletIds, setOutletIds] = useState({ insurance: '', service: '' });
+  const [outletIds, setOutletIds] = useState({ insurance: [], service: [] });
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [mapping, setMapping] = useState({});
@@ -39,6 +39,11 @@ const UploadTab = ({ meta, onUploaded }) => {
   const useForOptions = USE_FOR.filter(u => me[u.key] !== false);
   const outletsOf = (mod) => meta.outlets.filter(o => Array.isArray(o.modules) && o.modules.includes(mod));
   const toggleUseFor = (k) => setUseFor(u => (u.includes(k) ? u.filter(x => x !== k) : [...u, k]));
+  // Outlets keep the order they were ticked in — that is the order cases are dealt out
+  const toggleOutlet = (mod, id) => setOutletIds(o => ({
+    ...o, [mod]: o[mod].includes(id) ? o[mod].filter(x => x !== id) : [...o[mod], id],
+  }));
+  const outletName = (id) => meta.outlets.find(o => o.id === id)?.name || '';
 
   const reset = () => {
     setFile(null); setPreview(null); setMapping({}); setResults(null);
@@ -66,11 +71,12 @@ const UploadTab = ({ meta, onUploaded }) => {
   const process = async () => {
     if (useFor.length === 0) { toast.error('Choose what this data is used for'); return; }
     for (const m of useFor) {
-      if (!outletIds[m]) { toast.error(`Select the ${m} outlet`); return; }
+      if (outletIds[m].length === 0) { toast.error(`Select at least one ${m} outlet`); return; }
     }
     const mappedFields = Object.values(mapping);
     if (!mappedFields.includes('chassis_number')) { toast.error('Map the Chassis Number column'); return; }
     if (!mappedFields.includes('make')) { toast.error('Map the Make column'); return; }
+    if (!mappedFields.includes('mobile')) { toast.error('Map the Mobile column — it is required for calling'); return; }
     setBusy(true);
     try {
       const fd = new FormData();
@@ -78,7 +84,7 @@ const UploadTab = ({ meta, onUploaded }) => {
       fd.append('vendorName', vendorName.trim());
       fd.append('mappingJson', JSON.stringify(mapping));
       fd.append('useFor', JSON.stringify(useFor));
-      useFor.forEach(m => fd.append(`${m}OutletId`, outletIds[m]));
+      useFor.forEach(m => fd.append(`${m}OutletIds`, JSON.stringify(outletIds[m])));
       const res = await outsideService.process(fd);
       setResults(res.data.results);
       toast.success('Outside data uploaded');
@@ -118,6 +124,16 @@ const UploadTab = ({ meta, onUploaded }) => {
           {stat('Empty fields filled', results.filledFields, 'bg-gray-50 text-gray-700')}
           {stat('Contacts added', results.contactsAdded, 'bg-gray-50 text-gray-700')}
         </div>
+        {results.distribution?.length > 0 && (
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <div className="bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-700">Cases per outlet</div>
+            {results.distribution.map(d => (
+              <div key={d.module + d.outlet} className="px-4 py-1.5 text-sm border-t border-gray-100 flex justify-between">
+                <span>{d.module === 'insurance' ? '🛡️' : '🔧'} {d.outlet}</span><b>{d.count}</b>
+              </div>
+            ))}
+          </div>
+        )}
         <p className="text-xs text-gray-500">Existing customers were never overwritten — only empty fields were filled and new numbers added as extra contacts. All cases are unassigned in the chosen outlet for the team leader to distribute.</p>
         {results.notes.length > 0 && (
           <div className="border border-amber-200 rounded-xl overflow-hidden">
@@ -183,13 +199,27 @@ const UploadTab = ({ meta, onUploaded }) => {
                 {opts.length === 0 ? (
                   <div className="px-3 py-2 border border-amber-300 bg-amber-50 rounded-lg text-sm text-amber-700">No {mod} outlets available to you — ask Super Admin.</div>
                 ) : (
-                  <select value={outletIds[mod]} onChange={e => setOutletIds(o => ({ ...o, [mod]: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white">
-                    <option value="">— Select outlet —</option>
-                    {opts.map(o => <option key={o.id} value={o.id}>{outletLabel(o, meta.outlets)}</option>)}
-                  </select>
+                  <div className="border border-gray-300 rounded-lg p-2 max-h-40 overflow-y-auto space-y-1">
+                    {opts.map(o => {
+                      const pos = outletIds[mod].indexOf(o.id);
+                      return (
+                        <label key={o.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input type="checkbox" checked={pos >= 0} onChange={() => toggleOutlet(mod, o.id)} />
+                          {pos >= 0 && <span className="text-xs bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center">{pos + 1}</span>}
+                          <span className="text-gray-700">{outletLabel(o, meta.outlets)}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
                 )}
-                <p className="text-xs text-gray-400 mt-1">Cases arrive unassigned; the team leader distributes them.</p>
+                {outletIds[mod].length > 1 ? (
+                  <p className="text-xs text-blue-700 bg-blue-50 rounded px-2 py-1 mt-1">
+                    Cases are dealt out in turn: {[0, 1, 2, 3].map(i => `case ${i + 1} → ${outletName(outletIds[mod][i % outletIds[mod].length])}`).join(', ')}, … and so on.
+                    Each outlet gets an equal share (difference of at most 1).
+                  </p>
+                ) : (
+                  <p className="text-xs text-gray-400 mt-1">Tick one or more outlets. Cases arrive unassigned; the team leader distributes them.</p>
+                )}
               </div>
             );
           })}
@@ -238,7 +268,9 @@ const UploadTab = ({ meta, onUploaded }) => {
                         <select value={mapping[h] || ''} onChange={e => setMapping(m => ({ ...m, [h]: e.target.value }))}
                           className={`w-full px-2 py-1 border rounded text-xs ${mapping[h] ? 'border-green-300 bg-green-50' : 'border-gray-300'}`}>
                           <option value="">— Ignore —</option>
-                          {meta.fields.map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
+                          {meta.fields
+                            .filter(f => f.key === mapping[h] || !Object.entries(mapping).some(([col, v]) => col !== h && v === f.key))
+                            .map(f => <option key={f.key} value={f.key}>{f.label}</option>)}
                         </select>
                       </td>
                     </tr>
