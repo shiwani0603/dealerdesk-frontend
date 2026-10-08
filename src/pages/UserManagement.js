@@ -235,6 +235,7 @@ const buildEmptyForm = () => ({
   teamLeaderId: '',
   uploadRights: false,
   salesUploadRights: false,
+  outsideUploadRights: false,
   outletRights: [],
   teamScope: 'own_team',
   managedLocationIds: [],
@@ -254,6 +255,7 @@ const buildEditForm = (u) => ({
   teamLeaderId: u.teamLeaderId || '',
   uploadRights: u.uploadRights || false,
   salesUploadRights: u.salesUploadRights || false,
+  outsideUploadRights: u.outsideUploadRights || false,
   outletRights: Array.isArray(u.outletRights) ? u.outletRights : [],
   teamScope: u.teamScope || 'own_team',
   managedLocationIds: u.managedLocationIds || [],
@@ -369,6 +371,7 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
           teamLeaderId: form.teamLeaderId || null,
           uploadRights: form.uploadRights,
           salesUploadRights: form.salesUploadRights,
+          outsideUploadRights: form.outsideUploadRights,
           outletRights: RIGHTS_ROLES.includes(currentRole) ? form.outletRights : [],
           teamScope: form.teamScope,
           managedLocationIds: isManagerRole ? (form.managedLocationIds || []) : [],
@@ -391,6 +394,7 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
           teamLeaderId: form.teamLeaderId || null,
           uploadRights: form.uploadRights,
           salesUploadRights: form.salesUploadRights,
+          outsideUploadRights: form.outsideUploadRights,
           outletRights: RIGHTS_ROLES.includes(currentRole) ? form.outletRights : [],
           teamScope: form.teamScope,
           managedLocationIds: isManagerRole ? (form.managedLocationIds || []) : [],
@@ -644,6 +648,23 @@ const UserPanel = ({ editUser, locations, teamLeaders, existingUsernames, isSupe
             >
               <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
                 form.salesUploadRights ? 'translate-x-5' : 'translate-x-0.5'
+              }`} />
+            </button>
+          </div>
+
+          {/* Outside Data Upload Rights — any role */}
+          <div className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-gray-700">Outside Data Upload Rights</p>
+              <p className="text-xs text-gray-400 mt-0.5">Allow uploading purchased / external data (multi-make)</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => set('outsideUploadRights', !form.outsideUploadRights)}
+              className={`relative w-11 h-6 rounded-full transition-colors ${form.outsideUploadRights ? 'bg-blue-600' : 'bg-gray-300'}`}
+            >
+              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                form.outsideUploadRights ? 'translate-x-5' : 'translate-x-0.5'
               }`} />
             </button>
           </div>
@@ -982,6 +1003,9 @@ const UserManagement = () => {
                           )}
                           {user.salesUploadRights && (
                             <span className="ml-1 px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-700">🚗 Sales</span>
+                          )}
+                          {user.outsideUploadRights && (
+                            <span className="ml-1 px-2 py-1 rounded-md text-xs font-medium bg-indigo-100 text-indigo-700">🌐 Outside</span>
                           )}
                         </td>
                         <td className="px-4 py-3.5">

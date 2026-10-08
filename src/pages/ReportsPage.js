@@ -4,6 +4,7 @@ import { reportService } from '../services/api';
 import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import toast from 'react-hot-toast';
+import { OutsideBatches } from './OutsideDataPage';
 
 // ── CSV Export ────────────────────────────────────────────────────────────────
 const downloadCSV = (rows, filename) => {
@@ -735,6 +736,7 @@ const UploadedData = () => {
 // Main reports (shown first) — daily-calls has its own page at /reports/daily-calls
 const MAIN_REPORTS = [
   { id: 'uploaded',    icon: '📥', label: 'Uploaded Data',           desc: 'How many sales, service and insurance records were uploaded — by month, year and outlet.', component: UploadedData },
+  { id: 'outside',     icon: '🌐', label: 'Outside Data Performance', desc: 'Purchased / external data per vendor and batch — cases called, connected and converted.', component: OutsideBatches },
   { id: 'daily-calls', icon: '📞', label: 'Daily Call Report',       desc: 'Per-telecaller calls, appointments, won/lost for a day. Filter by date, module, location and telecaller.' },
   { id: 'retention',   icon: '🏠', label: 'Own Sale Retention',      desc: 'Own-sale customers retained vs lost in a date range, with retention rate.', component: OwnSaleRetention },
   { id: 'performance', icon: '👤', label: 'Telecaller Performance',  desc: 'Calls, connects, appointments, conversions and lost per telecaller.', component: PerformanceReport },

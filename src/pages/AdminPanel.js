@@ -179,6 +179,7 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
     ),
     uploadRights: existingUser?.uploadRights || false,
     salesUploadRights: existingUser?.salesUploadRights || false,
+    outsideUploadRights: existingUser?.outsideUploadRights || false,
     allowedMakes: existingUser?.allowedMakes || [],
     outletRights: Array.isArray(existingUser?.outletRights) ? existingUser.outletRights : [],
     teamScope: existingUser?.teamScope || 'own_team',
@@ -244,6 +245,7 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
         moduleRights: needsModuleRights ? form.moduleRights : null,
         uploadRights: form.uploadRights,
         salesUploadRights: form.salesUploadRights,
+        outsideUploadRights: form.outsideUploadRights,
         outletRights: RIGHTS_ROLES.includes(form.role) ? form.outletRights : [],
         teamScope: form.teamScope,
         managedLocationIds: isManagerRole ? (form.managedLocationIds || []) : [],
@@ -499,6 +501,18 @@ const AddDealershipUserModal = ({ dealership, existingUser, dealershipUsers, onC
             <button type="button" onClick={() => set('salesUploadRights', !form.salesUploadRights)}
               className={`relative w-11 h-6 rounded-full transition-colors ${form.salesUploadRights ? 'bg-blue-600' : 'bg-gray-300'}`}>
               <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.salesUploadRights ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+
+          {/* Outside Data Upload Rights */}
+          <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+            <div>
+              <p className="text-sm font-semibold text-gray-700">Outside Data Upload Rights</p>
+              <p className="text-xs text-gray-400">Allow uploading purchased / external data (multi-make)</p>
+            </div>
+            <button type="button" onClick={() => set('outsideUploadRights', !form.outsideUploadRights)}
+              className={`relative w-11 h-6 rounded-full transition-colors ${form.outsideUploadRights ? 'bg-blue-600' : 'bg-gray-300'}`}>
+              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.outsideUploadRights ? 'translate-x-5' : 'translate-x-0.5'}`} />
             </button>
           </div>
 
@@ -956,6 +970,7 @@ const DealershipSettingsTab = ({ dealership }) => {
         callingMode: form.callingMode,
         exportRightsEnabled: form.exportRightsEnabled,
         mobileExportEnabled: form.mobileExportEnabled,
+        outsideOtherMakesInsurance: form.outsideOtherMakesInsurance,
       });
       setSettings(res.data.settings);
       setForm(res.data.settings);
@@ -1095,6 +1110,14 @@ const DealershipSettingsTab = ({ dealership }) => {
           value={form.exportRightsEnabled} onChange={v => set('exportRightsEnabled', v)} />
         <ToggleRow label="Allow Mobile Number Export" hint="Include customer mobiles in exports"
           value={form.mobileExportEnabled} onChange={v => set('mobileExportEnabled', v)} />
+      </div>
+
+      {/* Outside data */}
+      <div className="space-y-2">
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Outside Data</p>
+        <ToggleRow label="Insurance cases for other makes"
+          hint="Outside data of makes this dealership does not deal in: create insurance cases (service cases are always skipped)"
+          value={form.outsideOtherMakesInsurance !== false} onChange={v => set('outsideOtherMakesInsurance', v)} />
       </div>
 
       {/* Save / Discard */}
@@ -1341,6 +1364,7 @@ const DealershipCard = ({ d, number, onEdit, onAddLocation, onEditOutlet, onAddU
                           )}
                           {user.uploadRights && <p className="text-xs text-blue-500">📤 Upload</p>}
                           {user.salesUploadRights && <p className="text-xs text-blue-500">🚗 Sales Upload</p>}
+                          {user.outsideUploadRights && <p className="text-xs text-indigo-500">🌐 Outside Data Upload</p>}
                         </div>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">

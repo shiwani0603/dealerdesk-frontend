@@ -37,6 +37,7 @@ const Navbar = ({ onSearchClick }) => {
   const isManager      = user?.role === 'manager';
   const isTL           = user?.role === 'team_leader';
   const canUpload      = ['manager', 'super_manager', 'team_leader'].includes(user?.role) || !!user?.salesUploadRights;
+  const canOutside     = !!user?.outsideUploadRights || ['manager', 'super_manager', 'team_leader'].includes(user?.role);
   const canViewTeam    = isManager || isSuperManager;
   const canManageUsers = isManager || isSuperManager;
 
@@ -89,6 +90,7 @@ const Navbar = ({ onSearchClick }) => {
           {(canViewTeam || isTL) && <NavBtn label="🎯 Campaigns" active={isActive('/campaigns')} activeClass="bg-indigo-100 text-indigo-700" onClick={() => nav('/campaigns')} />}
           {(canViewTeam || isTL) && <NavBtn label="🔎 Plan Search" active={isActive('/search/advanced')} onClick={() => nav('/search/advanced')} />}
           {canUpload     && <NavBtn label="📤 Upload"      active={isActive('/upload')} onClick={() => nav('/upload')} />}
+          {canOutside    && <NavBtn label="🌐 Outside Data" active={isActive('/outside-data')} onClick={() => nav('/outside-data')} />}
           {!isSuperAdmin && (
             <button onClick={onSearchClick} className="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors whitespace-nowrap flex items-center gap-1">
               🔍 Find
@@ -196,6 +198,7 @@ const Navbar = ({ onSearchClick }) => {
             {(canViewTeam || isTL) && <MobileNavItem label="🎯 Campaigns" active={isActive('/campaigns')} onClick={() => nav('/campaigns')} />}
             {(canViewTeam || isTL) && <MobileNavItem label="🔎 Plan Search" active={isActive('/search/advanced')} onClick={() => nav('/search/advanced')} />}
             {canUpload     && <MobileNavItem label="📤 Upload"     active={isActive('/upload')} onClick={() => nav('/upload')} />}
+            {canOutside    && <MobileNavItem label="🌐 Outside Data" active={isActive('/outside-data')} onClick={() => nav('/outside-data')} />}
             {!isSuperAdmin && <MobileNavItem label="🔍 Quick Find" active={false} onClick={() => { onSearchClick?.(); setMobileOpen(false); }} />}
 
             <div className="border-t border-gray-100 mt-2 pt-2 space-y-0.5">

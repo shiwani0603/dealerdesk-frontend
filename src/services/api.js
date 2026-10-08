@@ -125,6 +125,14 @@ export const reportService = {
     api.get(`/dashboard/reports/telecaller-performance?fromDate=${fromDate}&toDate=${toDate}`),
 };
 
+export const outsideService = {
+  meta: () => api.get('/outside/meta'),
+  preview: (formData) => api.post('/outside/preview', formData),
+  process: (formData) => api.post('/outside/process', formData, { timeout: 600000 }),
+  batches: () => api.get('/outside/batches'),
+  deleteBatch: (id) => api.delete(`/outside/batches/${id}`),
+};
+
 export const userService = {
   list: () => api.get('/users'),
   listLocations: () => api.get('/users/locations'),

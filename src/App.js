@@ -16,6 +16,7 @@ import AdminPanel from './pages/AdminPanel';
 import ServiceIntervalMaster from './pages/ServiceIntervalMaster';
 import ReportsPage from './pages/ReportsPage';
 import OutletsPage from './pages/OutletsPage';
+import OutsideDataPage from './pages/OutsideDataPage';
 import CampaignsPage from './pages/CampaignsPage';
 import AdminOverview from './pages/AdminOverview';
 import AdminUploadSetupPage from './pages/AdminUploadSetupPage';
@@ -200,6 +201,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={['manager', 'team_leader', 'super_admin', 'super_manager']}>
             <ReportsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/outside-data"
+        element={
+          <ProtectedRoute allowedRoles={['manager', 'super_manager', 'team_leader', 'telecaller', 'service_adviser']}>
+            <OutsideDataPage />
           </ProtectedRoute>
         }
       />
