@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import toast from 'react-hot-toast';
 import { OutsideBatches } from './OutsideDataPage';
+import ReportFilters, { filterQuery, outletColumns, sourceLabel } from '../components/ReportFilters';
 
 // ── CSV Export ────────────────────────────────────────────────────────────────
 const downloadCSV = (rows, filename) => {
@@ -82,15 +83,16 @@ const EmptyState = ({ msg = 'No data for the selected period' }) => (
 // ── LY vs TY ─────────────────────────────────────────────────────────────────
 const LyVsTy = () => {
   const [period, setPeriod] = useState('month');
+  const [filters, setFilters] = useState({ outletId: '', dataSource: '' });
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    try { const r = await reportService.getLyVsTy(period); setData(r.data); }
+    try { const r = await reportService.getLyVsTy(period, filterQuery(filters)); setData(r.data); }
     catch { toast.error('Failed to load report'); }
     finally { setLoading(false); }
-  }, [period]);
+  }, [period, filters]);
 
   const exportCSV = () => {
     if (!data) return;
@@ -119,6 +121,7 @@ const LyVsTy = () => {
         </button>
         {data && <button onClick={exportCSV} className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs rounded-lg">⬇ CSV</button>}
       </div>
+      <div className="mb-4"><ReportFilters value={filters} onChange={setFilters} /></div>
 
       {data && (
         <div className="space-y-4">
@@ -166,13 +169,14 @@ const LyVsTy = () => {
 // ── Lost Business ─────────────────────────────────────────────────────────────
 const LostBusiness = () => {
   const [from, setFrom] = useState(monthStart());
+  const [filters, setFilters] = useState({ outletId: '', dataSource: '' });
   const [to, setTo]     = useState(today());
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    try { const r = await reportService.getLostBusiness(from, to); setData(r.data); }
+    try { const r = await reportService.getLostBusiness(from, to, filterQuery(filters)); setData(r.data); }
     catch { toast.error('Failed to load report'); }
     finally { setLoading(false); }
   };
@@ -180,8 +184,8 @@ const LostBusiness = () => {
   const exportCSV = () => {
     if (!data) return;
     const rows = [
-      ...data.insurance.plans.map(p => ({ Module: 'Insurance', Customer: p.customer?.name, Chassis: p.customer?.chassisNumber, Reg: p.customer?.registrationNumber, Make: p.customer?.make, Model: p.customer?.model, Telecaller: p.assignedTo?.name || '—', ClosedAt: p.closedAt?.split('T')[0] })),
-      ...data.service.plans.map(p => ({ Module: 'Service', Customer: p.customer?.name, Chassis: p.customer?.chassisNumber, Reg: p.customer?.registrationNumber, Make: p.customer?.make, Model: p.customer?.model, Telecaller: p.assignedTo?.name || '—', ClosedAt: p.closedAt?.split('T')[0] })),
+      ...data.insurance.plans.map(p => ({ Module: 'Insurance', 'Main Outlet': outletColumns(p.location).main, 'Sub Outlet': outletColumns(p.location).sub, Source: sourceLabel(p.dataSource), Customer: p.customer?.name, Chassis: p.customer?.chassisNumber, Reg: p.customer?.registrationNumber, Make: p.customer?.make, Model: p.customer?.model, Telecaller: p.assignedTo?.name || '—', ClosedAt: p.closedAt?.split('T')[0] })),
+      ...data.service.plans.map(p => ({ Module: 'Service', 'Main Outlet': outletColumns(p.location).main, 'Sub Outlet': outletColumns(p.location).sub, Source: sourceLabel(p.dataSource), Customer: p.customer?.name, Chassis: p.customer?.chassisNumber, Reg: p.customer?.registrationNumber, Make: p.customer?.make, Model: p.customer?.model, Telecaller: p.assignedTo?.name || '—', ClosedAt: p.closedAt?.split('T')[0] })),
     ];
     downloadCSV(rows, 'lost_business');
   };
@@ -191,6 +195,7 @@ const LostBusiness = () => {
   return (
     <div>
       <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} onLoad={load} loading={loading} />
+      <div className="mb-4"><ReportFilters value={filters} onChange={setFilters} /></div>
       {data && (
         <div className="space-y-4">
           <div className="flex gap-4 mb-4">
@@ -207,7 +212,8 @@ const LostBusiness = () => {
                   <table className="w-full text-xs">
                     <thead><tr className="bg-gray-100 text-gray-500 font-semibold uppercase">
                       <td className="px-3 py-2">Customer</td><td className="px-3 py-2">Make / Model</td>
-                      <td className="px-3 py-2">Reg No</td><td className="px-3 py-2">Telecaller</td><td className="px-3 py-2">Closed</td>
+                      <td className="px-3 py-2">Reg No</td><td className="px-3 py-2">Main Outlet</td><td className="px-3 py-2">Sub Outlet</td>
+                      <td className="px-3 py-2">Source</td><td className="px-3 py-2">Telecaller</td><td className="px-3 py-2">Closed</td>
                     </tr></thead>
                     <tbody>
                       {plans.map((p, i) => (
@@ -215,6 +221,9 @@ const LostBusiness = () => {
                           <td className="px-3 py-2 font-medium text-gray-800">{p.customer?.name || '—'}</td>
                           <td className="px-3 py-2 text-gray-600">{p.customer?.make} {p.customer?.model}</td>
                           <td className="px-3 py-2 font-mono text-gray-600">{p.customer?.registrationNumber || p.customer?.chassisNumber || '—'}</td>
+                          <td className="px-3 py-2 text-gray-600">{outletColumns(p.location).main}</td>
+                          <td className="px-3 py-2 text-gray-500">{outletColumns(p.location).sub || '—'}</td>
+                          <td className="px-3 py-2 text-gray-500">{p.dataSource === 'outside' ? '🌐 Outside' : 'Own'}</td>
                           <td className="px-3 py-2 text-gray-600">{p.assignedTo?.name || '—'}</td>
                           <td className="px-3 py-2 text-gray-500">{fmt(p.closedAt)}</td>
                         </tr>
@@ -309,13 +318,14 @@ const OwnSaleRetention = () => {
 // ── Auto-Close Summary ────────────────────────────────────────────────────────
 const AutoCloseSummary = () => {
   const [from, setFrom] = useState(monthStart());
+  const [filters, setFilters] = useState({ outletId: '', dataSource: '' });
   const [to, setTo]     = useState(today());
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    try { const r = await reportService.getAutoCloseSummary(from, to); setData(r.data); }
+    try { const r = await reportService.getAutoCloseSummary(from, to, filterQuery(filters)); setData(r.data); }
     catch { toast.error('Failed to load report'); }
     finally { setLoading(false); }
   };
@@ -323,7 +333,8 @@ const AutoCloseSummary = () => {
   const exportCSV = () => {
     if (!data) return;
     downloadCSV(data.plans.map(p => ({
-      Module: p.module, Category: p.category, Customer: p.customer?.name,
+      Module: p.module, 'Main Outlet': outletColumns(p.location).main, 'Sub Outlet': outletColumns(p.location).sub,
+      Source: sourceLabel(p.dataSource), Category: p.category, Customer: p.customer?.name,
       Make: p.customer?.make, Telecaller: p.assignedTo?.name || 'Unassigned',
       ClosedAt: p.closedAt?.split('T')[0],
     })), 'auto_close_summary');
@@ -332,6 +343,7 @@ const AutoCloseSummary = () => {
   return (
     <div>
       <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} onLoad={load} loading={loading} />
+      <div className="mb-4"><ReportFilters value={filters} onChange={setFilters} /></div>
       {data && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -378,12 +390,13 @@ const AutoCloseSummary = () => {
 
 // ── PSF / CEI / NPS ───────────────────────────────────────────────────────────
 const PsfReport = () => {
+  const [filters, setFilters] = useState({ outletId: '', dataSource: '' });
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    try { const r = await reportService.getPsfSummary(); setData(r.data); }
+    try { const r = await reportService.getPsfSummary(filterQuery(filters)); setData(r.data); }
     catch { toast.error('Failed to load report'); }
     finally { setLoading(false); }
   };
@@ -394,6 +407,7 @@ const PsfReport = () => {
         className="mb-4 px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-lg disabled:opacity-50">
         {loading ? 'Loading…' : 'Load PSF Report'}
       </button>
+      <div className="mb-4"><ReportFilters value={filters} onChange={setFilters} showSource={false} module="service" /></div>
       {data && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -473,13 +487,14 @@ const PsfReport = () => {
 // ── Telecaller Performance ────────────────────────────────────────────────────
 const PerformanceReport = () => {
   const [from, setFrom] = useState(monthStart());
+  const [filters, setFilters] = useState({ outletId: '', dataSource: '' });
   const [to, setTo]     = useState(today());
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    try { const r = await reportService.getPerformance(from, to); setData(r.data); }
+    try { const r = await reportService.getPerformance(from, to, filterQuery(filters)); setData(r.data); }
     catch { toast.error('Failed to load report'); }
     finally { setLoading(false); }
   };
@@ -499,6 +514,7 @@ const PerformanceReport = () => {
   return (
     <div>
       <DateRange from={from} to={to} onFrom={setFrom} onTo={setTo} onLoad={load} loading={loading} />
+      <div className="mb-4"><ReportFilters value={filters} onChange={setFilters} /></div>
       {data && rows.length === 0 && <EmptyState msg="No telecallers found" />}
       {rows.length > 0 && (
         <div>

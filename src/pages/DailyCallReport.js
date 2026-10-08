@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { reportService, userService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { outletLabel } from '../components/OutletTree';
+import ReportFilters from '../components/ReportFilters';
 import Navbar from '../components/Navbar';
 import SearchModal from '../components/SearchModal';
 import toast from 'react-hot-toast';
@@ -39,8 +39,7 @@ const DailyCallReport = () => {
   const today = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(today);
   const [activeModule, setActiveModule] = useState('insurance');
-  const [locations, setLocations] = useState([]);
-  const [selectedLocation, setSelectedLocation] = useState('ALL');
+  const [filters, setFilters] = useState({ outletId: '', dataSource: '' });
   const [telecallers, setTelecallers] = useState([]);
   const [selectedTelecaller, setSelectedTelecaller] = useState('ALL');
   const [rows, setRows] = useState([]);
@@ -48,9 +47,6 @@ const DailyCallReport = () => {
   const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
-    userService.listLocations().then(res => {
-      setLocations(res.data?.locations || []);
-    }).catch(() => {});
     userService.list().then(res => {
       const tcs = (res.data?.users || []).filter(u =>
         u.role === 'telecaller' && (user?.role !== 'team_leader' || u.teamLeaderId === user.id));
@@ -61,14 +57,14 @@ const DailyCallReport = () => {
   const loadReport = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await reportService.getDailyCalls(selectedDate, activeModule, selectedLocation, selectedTelecaller);
+      const res = await reportService.getDailyCalls(selectedDate, activeModule, filters.outletId, selectedTelecaller, filters.dataSource);
       setRows(res.data?.rows || []);
     } catch (err) {
       toast.error('Failed to load report');
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, activeModule, selectedLocation, selectedTelecaller]);
+  }, [selectedDate, activeModule, filters, selectedTelecaller]);
 
   useEffect(() => { loadReport(); }, [loadReport]);
 
@@ -171,33 +167,22 @@ const DailyCallReport = () => {
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Module</label>
             <div className="flex gap-1 bg-gray-100 p-0.5 rounded-lg">
-              <button onClick={() => setActiveModule('insurance')}
+              <button onClick={() => { setActiveModule('insurance'); setFilters(f => ({ ...f, outletId: '' })); }}
                 className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeModule === 'insurance' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                 🛡️ Insurance
               </button>
-              <button onClick={() => setActiveModule('service')}
+              <button onClick={() => { setActiveModule('service'); setFilters(f => ({ ...f, outletId: '' })); }}
                 className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${activeModule === 'service' ? 'bg-green-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
                 🔧 Service
               </button>
             </div>
           </div>
 
-          {/* Location */}
-          {locations.length > 0 && (
-            <div>
-              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Location</label>
-              <select
-                value={selectedLocation}
-                onChange={e => setSelectedLocation(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-blue-300 bg-white"
-              >
-                <option value="ALL">All Locations</option>
-                {locations.map(loc => (
-                  <option key={loc.id} value={loc.id}>{outletLabel(loc, locations)}</option>
-                ))}
-              </select>
-            </div>
-          )}
+          {/* Outlet (main includes sub outlets) + data source */}
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Outlet / Data</label>
+            <ReportFilters value={filters} onChange={setFilters} module={activeModule} />
+          </div>
 
           {/* Telecaller */}
           {telecallers.length > 0 && (

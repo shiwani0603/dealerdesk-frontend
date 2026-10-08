@@ -101,28 +101,30 @@ export const searchService = {
 };
 
 export const reportService = {
-  getDailyCalls: (date, module, locationId, telecallerId) => {
+  // fq = extra filter query from ReportFilters (filterQuery): "&outletId=..&dataSource=.."
+  getDailyCalls: (date, module, outletId, telecallerId, dataSource) => {
     const params = new URLSearchParams();
     if (date) params.set('date', date);
     if (module) params.set('module', module);
-    if (locationId && locationId !== 'ALL') params.set('locationId', locationId);
+    if (outletId && outletId !== 'ALL') params.set('outletId', outletId);
     if (telecallerId && telecallerId !== 'ALL') params.set('telecallerId', telecallerId);
+    if (dataSource) params.set('dataSource', dataSource);
     return api.get(`/dashboard/reports/daily-calls?${params}`);
   },
-  getLostBusiness: (fromDate, toDate) =>
-    api.get(`/dashboard/reports/lost-business?fromDate=${fromDate}&toDate=${toDate}`),
+  getLostBusiness: (fromDate, toDate, fq = '') =>
+    api.get(`/dashboard/reports/lost-business?fromDate=${fromDate}&toDate=${toDate}${fq}`),
   getAutoClosed: () => api.get('/dashboard/reports/auto-closed'),
-  getPsfSummary: () => api.get('/dashboard/reports/psf-summary'),
-  getLyVsTy: (period) => api.get(`/dashboard/reports/ly-vs-ty?period=${period}`),
+  getPsfSummary: (fq = '') => api.get(`/dashboard/reports/psf-summary?x=1${fq}`),
+  getLyVsTy: (period, fq = '') => api.get(`/dashboard/reports/ly-vs-ty?period=${period}${fq}`),
   getOwnSaleRetention: (fromDate, toDate) =>
     api.get(`/dashboard/reports/own-sale-retention?fromDate=${fromDate}&toDate=${toDate}`),
-  getAutoCloseSummary: (fromDate, toDate) =>
-    api.get(`/dashboard/reports/auto-close-summary?fromDate=${fromDate}&toDate=${toDate}`),
+  getAutoCloseSummary: (fromDate, toDate, fq = '') =>
+    api.get(`/dashboard/reports/auto-close-summary?fromDate=${fromDate}&toDate=${toDate}${fq}`),
   getJobCardFraud: () => api.get('/dashboard/reports/job-card-fraud'),
   getUploadedData: (module, year, dateType) =>
     api.get(`/dashboard/reports/uploaded-data?module=${module}&year=${year}&dateType=${dateType}`),
-  getPerformance: (fromDate, toDate) =>
-    api.get(`/dashboard/reports/telecaller-performance?fromDate=${fromDate}&toDate=${toDate}`),
+  getPerformance: (fromDate, toDate, fq = '') =>
+    api.get(`/dashboard/reports/telecaller-performance?fromDate=${fromDate}&toDate=${toDate}${fq}`),
 };
 
 export const outsideService = {

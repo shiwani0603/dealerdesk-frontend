@@ -5,6 +5,8 @@ import Navbar from '../components/Navbar';
 import CustomerDetailPanel from '../components/CustomerDetailPanel';
 import SearchModal from '../components/SearchModal';
 import toast from 'react-hot-toast';
+import { outletLabel } from '../components/OutletTree';
+import { DATA_SOURCES, outletColumns, sourceLabel } from '../components/ReportFilters';
 
 const fd = (d) => {
   if (!d) return '—';
@@ -196,6 +198,50 @@ const AdvancedSearch = () => {
   const [filterOptions, setFilterOptions] = useState({ models: [], insurers: [] });
   const resultsRef = useRef(null);
   const PAGE_SIZE = 20;
+  const [exporting, setExporting] = useState(false);
+
+  // Download every plan matching the current filters (all pages), with outlet + source columns
+  const exportCSV = async () => {
+    setExporting(true);
+    try {
+      const all = [];
+      for (let page = 1; page <= 200; page++) {
+        const res = await searchService.searchPlans({ ...filters, module: activeModule, page, pageSize: 100 });
+        const batch = res.data?.plans || [];
+        all.push(...batch);
+        if (batch.length < 100 || all.length >= (res.data?.total || 0)) break;
+      }
+      const rows = all.map(pl => {
+        const c = pl.customer || {};
+        const o = outletColumns(pl.location);
+        const mobile = c.contacts?.find(ct => ct.contactType === 'mobile' && ct.isPrimary)?.value || c.contacts?.find(ct => ct.contactType === 'mobile')?.value || '';
+        return {
+          'Main Outlet': o.main, 'Sub Outlet': o.sub, Source: sourceLabel(pl.dataSource),
+          Customer: c.name || '', Mobile: mobile, Registration: c.registrationNumber || '', Chassis: c.chassisNumber || '',
+          Make: c.make || '', Model: c.model || '',
+          ...(activeModule === 'insurance'
+            ? { 'Policy Expiry': pl.latestRecord?.policyExpiryDate?.slice(0, 10) || '', Insurer: pl.latestRecord?.insurerName || '' }
+            : { 'Service Due': pl.currentServiceDue || '', 'Due Date': pl.calculatedNextDueDate?.slice(0, 10) || '' }),
+          'Next Follow-up': pl.nextFollowupDate?.slice(0, 10) || '',
+          'Assigned To': pl.assignedTo?.name || 'Unassigned',
+          'Last Call': pl.followUpLogs?.[0]?.callOutcome || '',
+          Status: pl.planStatus,
+        };
+      });
+      if (!rows.length) { toast.error('No data to export'); return; }
+      const headers = Object.keys(rows[0]);
+      const esc = (v) => { const s = v == null ? '' : String(v); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+      const csv = [headers.join(','), ...rows.map(r => headers.map(h => esc(r[h])).join(','))].join('\n');
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+      a.download = `plan_search_${activeModule}_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+    } catch {
+      toast.error('Export failed');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     userService.list().then(r => setUsers(r.data?.users || [])).catch(() => {});
@@ -390,10 +436,15 @@ const AdvancedSearch = () => {
                   <FField label="Insurance Outlet">
                     <select value={f.locationId || ''} onChange={e => set('locationId', e.target.value)} className={sel}>
                       <option value="">All Outlets</option>
-                      {insuranceOutlets.map(l => <option key={l.id} value={l.id}>{l.name}{l.code ? ` (${l.code})` : ''}</option>)}
+                      {insuranceOutlets.map(l => <option key={l.id} value={l.id}>{outletLabel(l, locations)}{!l.parentId && locations.some(s => s.parentId === l.id) ? ' (+ sub outlets)' : ''}</option>)}
                     </select>
                   </FField>
                 )}
+                <FField label="Data Source">
+                  <select value={f.dataSource || ''} onChange={e => set('dataSource', e.target.value)} className={sel}>
+                    {DATA_SOURCES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                  </select>
+                </FField>
                 <FField label="Policy Expiry From">
                   <input type="date" value={f.expiryFrom || ''} onChange={e => set('expiryFrom', e.target.value)} className={inp} />
                 </FField>
@@ -424,10 +475,15 @@ const AdvancedSearch = () => {
                   <FField label="Service Outlet">
                     <select value={f.locationId || ''} onChange={e => set('locationId', e.target.value)} className={sel}>
                       <option value="">All Outlets</option>
-                      {serviceOutlets.map(l => <option key={l.id} value={l.id}>{l.name}{l.code ? ` (${l.code})` : ''}</option>)}
+                      {serviceOutlets.map(l => <option key={l.id} value={l.id}>{outletLabel(l, locations)}{!l.parentId && locations.some(s => s.parentId === l.id) ? ' (+ sub outlets)' : ''}</option>)}
                     </select>
                   </FField>
                 )}
+                <FField label="Data Source">
+                  <select value={f.dataSource || ''} onChange={e => set('dataSource', e.target.value)} className={sel}>
+                    {DATA_SOURCES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                  </select>
+                </FField>
                 <FField label="Due Date From">
                   <input type="date" value={f.dueDateFrom || ''} onChange={e => set('dueDateFrom', e.target.value)} className={inp} />
                 </FField>
@@ -445,7 +501,7 @@ const AdvancedSearch = () => {
                 <FField label="Sold by Outlet">
                   <select value={f.soldByLocationId || ''} onChange={e => set('soldByLocationId', e.target.value)} className={sel}>
                     <option value="">All Outlets</option>
-                    {locations.map(l => <option key={l.id} value={l.id}>{l.name}{l.code ? ` (${l.code})` : ''}</option>)}
+                    {locations.filter(l => hasModule(l, 'sales')).map(l => <option key={l.id} value={l.id}>{outletLabel(l, locations)}</option>)}
                   </select>
                 </FField>
               )}
@@ -575,6 +631,13 @@ const AdvancedSearch = () => {
             </button>
           )}
 
+          {results && results.total > 0 && (
+            <button onClick={exportCSV} disabled={exporting}
+              className="px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-green-600 hover:bg-green-700 shadow-sm disabled:opacity-60">
+              {exporting ? 'Preparing…' : '⬇ CSV'}
+            </button>
+          )}
+
           {results && (
             <span className="text-sm text-gray-500 ml-1">
               Found <span className="font-bold text-gray-900">{results.total}</span> plan{results.total !== 1 ? 's' : ''}
@@ -619,6 +682,7 @@ const AdvancedSearch = () => {
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Vehicle</th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Outlet / Source</th>
                         {activeModule === 'insurance' ? (
                           <>
                             <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Expiry</th>
@@ -666,6 +730,11 @@ const AdvancedSearch = () => {
                                     className="text-blue-600 text-xs font-medium hover:underline">{primaryMobile}</a>
                                 : <span className="text-gray-300 text-xs">—</span>
                               }
+                            </td>
+                            <td className="px-4 py-3 text-xs cursor-pointer" onClick={openDetail}>
+                              <p className="text-gray-700 whitespace-nowrap">{outletColumns(plan.location).main}</p>
+                              {outletColumns(plan.location).sub && <p className="text-gray-400 whitespace-nowrap">└ {outletColumns(plan.location).sub}</p>}
+                              {plan.dataSource === 'outside' && <span className="inline-block mt-0.5 bg-indigo-100 text-indigo-700 px-1.5 rounded">🌐 Outside</span>}
                             </td>
                             {activeModule === 'insurance' ? (
                               <>
